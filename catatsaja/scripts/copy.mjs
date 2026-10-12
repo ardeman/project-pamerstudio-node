@@ -1,0 +1,36 @@
+// On-screen captions, casual, in both languages.
+
+export const copy = {
+  en: {
+    hook: { title: 'Notes here, budget there, health stuff… somewhere? 🙃', sub: "Let's fix that." },
+    brand: { title: 'Catat Saja', sub: 'Just write it down.' },
+    notes: { title: 'Notes that format themselves ✍️', sub: 'Lists, headings, bold. Just type.' },
+    tasks: { title: 'Shared checklists 🛒', sub: 'Groceries with your partner, synced live.' },
+    money: { title: 'Know where your money goes 💸', sub: 'A book for every month or trip, any currency.' },
+    charts: { title: 'Charts that actually make sense 📊', sub: 'Cash flow, balance and spending by category.' },
+    smart: { title: 'Type “Grab”, it picks Transport 🤖', sub: 'Smart categories, worked out on your phone.' },
+    health: { title: 'Health for the whole family ❤️', sub: 'Weight, BMI, blood sugar, periods and more.' },
+    growth: { title: "Track your kid's growth 👶", sub: 'Charted against the WHO standards.' },
+    share: { title: 'Share with who you choose 🤝', sub: 'Read-only or editable, updates show up instantly.' },
+    private: { title: 'End-to-end encrypted 🔒', sub: 'Only you and the people you share with can read it. Not even us.' },
+    anywhere: { title: 'Phone or laptop, it’s all there 💻', sub: 'Install it like an app. Opens offline too.' },
+    dark: { title: 'Light or dark. English or Bahasa 🌗', sub: 'Make it yours.' },
+    cta: { title: 'Try it, it’s free!', sub: 'Notes · Tasks · Finances · Health', url: 'catatsaja.ardeman.com' },
+  },
+  id: {
+    hook: { title: 'Catatan di sini, keuangan di sana, data kesehatan… entah di mana? 🙃', sub: 'Yuk, beresin.' },
+    brand: { title: 'Catat Saja', sub: 'Catat saja.' },
+    notes: { title: 'Catatan yang rapi sendiri ✍️', sub: 'List, judul, huruf tebal. Tinggal ketik.' },
+    tasks: { title: 'Daftar tugas bareng 🛒', sub: 'Belanjaan sama pasangan, langsung sinkron.' },
+    money: { title: 'Tahu uangmu ke mana aja 💸', sub: 'Buku per bulan atau per liburan, mata uang apa pun.' },
+    charts: { title: 'Grafik yang gampang dibaca 📊', sub: 'Arus kas, saldo, dan pengeluaran per kategori.' },
+    smart: { title: 'Ketik “Grab”, langsung Transportasi 🤖', sub: 'Kategori otomatis, dihitung di HP-mu sendiri.' },
+    health: { title: 'Kesehatan sekeluarga ❤️', sub: 'Berat badan, IMT, gula darah, haid, dan lainnya.' },
+    growth: { title: 'Pantau tumbuh kembang si kecil 👶', sub: 'Dibandingkan dengan standar WHO.' },
+    share: { title: 'Bagikan ke siapa aja yang kamu mau 🤝', sub: 'Cuma baca atau bisa edit, langsung ter-update.' },
+    private: { title: 'Terenkripsi end-to-end 🔒', sub: 'Cuma kamu dan yang kamu ajak yang bisa baca. Kami pun nggak.' },
+    anywhere: { title: 'Di HP atau laptop, semua ada 💻', sub: 'Pasang kayak aplikasi. Bisa dibuka offline juga.' },
+    dark: { title: 'Terang atau gelap. Inggris atau Indonesia 🌗', sub: 'Atur sesukamu.' },
+    cta: { title: 'Cobain, gratis!', sub: 'Catatan · Tugas · Keuangan · Kesehatan', url: 'catatsaja.ardeman.com' },
+  },
+}

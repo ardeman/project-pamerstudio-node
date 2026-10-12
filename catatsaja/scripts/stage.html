@@ -1,0 +1,500 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    font-family: Inter, 'Apple Color Emoji', sans-serif;
+    color: #0c0a09;
+    background: #fbfaf7;
+    -webkit-font-smoothing: antialiased;
+  }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .bg { position: absolute; inset: -20%; pointer-events: none; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .abs { position: absolute; will-change: transform, opacity; }
+  .headline { font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; text-wrap: balance; }
+  .sub { font-weight: 500; color: #57534e; line-height: 1.3; text-wrap: balance; }
+  .word { display: inline-block; white-space: pre; }
+  .phone {
+    background: #0c0a09;
+    box-shadow: 0 40px 80px rgba(41, 37, 36, 0.28), 0 10px 24px rgba(41, 37, 36, 0.16), inset 0 0 0 2px #44403c;
+  }
+  .phone .screen { position: absolute; overflow: hidden; background: #fff; }
+  .phone .screen img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .crop {
+    border-radius: 28px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 30px 70px rgba(41, 37, 36, 0.3), 0 8px 20px rgba(41, 37, 36, 0.14);
+    outline: 1px solid rgba(12, 10, 9, 0.08);
+  }
+  .crop img { display: block; width: 100%; height: 100%; }
+  .browser {
+    border-radius: 18px; overflow: hidden; background: #fff;
+    box-shadow: 0 40px 90px rgba(41, 37, 36, 0.26), 0 10px 24px rgba(41, 37, 36, 0.12);
+    outline: 1px solid rgba(12, 10, 9, 0.1);
+  }
+  .browser .bar { height: 44px; background: #f5f5f4; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid #e7e5e4; }
+  .browser .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .browser .url { margin-left: 18px; flex: 1; max-width: 420px; height: 28px; border-radius: 8px; background: #fff; font-size: 14px; color: #57534e; display: flex; align-items: center; padding: 0 12px; font-weight: 500; }
+  .browser img { display: block; width: 100%; }
+  .pill { background: #facc15; color: #422006; font-weight: 700; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(250, 204, 21, 0.45); }
+  .logo { border-radius: 22%; box-shadow: 0 20px 50px rgba(41, 37, 36, 0.25); }
+  .tag { color: #ca8a04; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
+  const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3)
+  const easeInOut = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2 }
+  const back = (x) => { x = clamp(x); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2) }
+  // 0 → 1 over [start, start + length].
+  const ramp = (t, start, length) => clamp((t - start) / length)
+
+  const el = (parent, className, style = {}, html) => {
+    const node = document.createElement('div')
+    node.className = className
+    Object.assign(node.style, style)
+    if (html !== undefined) node.innerHTML = html
+    parent.appendChild(node)
+    return node
+  }
+  const img = (parent, src, style = {}) => {
+    const node = document.createElement('img')
+    node.src = src
+    Object.assign(node.style, style)
+    parent.appendChild(node)
+    return node
+  }
+  const px = (v) => `${v}px`
+  const set = (node, { x = 0, y = 0, s = 1, r = 0, o = 1 }) => {
+    node.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${r}deg)`
+    node.style.opacity = o
+  }
+  const words = (parent, text) =>
+    text.split(/(\s+)/).filter(Boolean).map((part) => {
+      const span = document.createElement('span')
+      span.className = 'word'
+      span.textContent = part
+      parent.appendChild(span)
+      return span
+    })
+
+  let W, H, orient, config, scenes = [], fitters = []
+
+  // A layout box per orientation.
+  const L = () => {
+    if (orient === 'portrait') return {
+      cap: { x: 80, y: 170, w: W - 160, size: 74, sub: 40, align: 'center' },
+      phone: { w: 590, x: (W - 590) / 2, y: 520 },
+      crop: { w: 760, x: (W - 760) / 2 + 60, y: 1150 },
+    }
+    if (orient === 'square') return {
+      cap: { x: 70, y: 90, w: W - 140, size: 58, sub: 32, align: 'center' },
+      phone: { w: 410, x: (W - 410) / 2 - 150, y: 400 },
+      crop: { w: 560, x: W - 560 - 60, y: 690 },
+    }
+    return {
+      cap: { x: 130, y: 0, w: 720, size: 72, sub: 34, align: 'left', middle: true },
+      phone: { w: 420, x: 1300, y: 100 },
+      crop: { w: 620, x: 930, y: 560 },
+    }
+  }
+
+  const screenRatio = 2532 / 1170
+  const makePhone = (parent, srcs, w) => {
+    const bezel = Math.round(w * 0.032)
+    const sw = w - bezel * 2
+    const sh = Math.round(sw * screenRatio)
+    const h = sh + bezel * 2
+    const node = el(parent, 'abs phone', { width: px(w), height: px(h), borderRadius: px(w * 0.15), transformOrigin: '50% 50%' })
+    const screen = el(node, 'screen', { left: px(bezel), top: px(bezel), width: px(sw), height: px(sh), borderRadius: px(w * 0.12) })
+    const imgs = srcs.map((src, i) => img(screen, src, { opacity: i === 0 ? 1 : 0 }))
+    return { node, imgs, h }
+  }
+
+  const caption = (parent, text, box, t0 = 0.15) => {
+    const wrap = el(parent, 'abs', { left: px(box.x), top: px(box.y), width: px(box.w), textAlign: box.align })
+    const h = el(wrap, 'headline', { fontSize: px(box.size) })
+    const ws = words(h, text.title)
+    let sub
+    if (text.sub) sub = el(wrap, 'sub', { fontSize: px(box.sub), marginTop: px(box.sub * 0.6) }, text.sub)
+    if (box.middle) requestAnimationFrame(() => {})
+    return {
+      wrap,
+      update(t) {
+        ws.forEach((w, i) => {
+          const p = easeOut(ramp(t, t0 + i * 0.045, 0.45))
+          set(w, { y: (1 - p) * 40, o: p })
+        })
+        if (sub) { const p = easeOut(ramp(t, t0 + 0.35 + ws.length * 0.03, 0.5)); set(sub, { y: (1 - p) * 24, o: p }) }
+      },
+    }
+  }
+
+  // An illustrated person, head and shoulders in a circle (the stories
+  // videos). update(t, level) blinks, sways, and opens the mouth by how loud
+  // their voice is (0 to 1) in that frame.
+  const SVG = 'http://www.w3.org/2000/svg'
+  const shade = (hex, amount) => {
+    const n = parseInt(hex.slice(1), 16)
+    const f = (c) => Math.max(0, Math.min(255, Math.round(c * (1 + amount))))
+    return `rgb(${f(n >> 16)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`
+  }
+  let people = 0
+  const character = (parent, look, size) => {
+    const id = `p${people++}`
+    const hairColor = look.hairColor ?? '#2b1d16'
+    const svg = document.createElementNS(SVG, 'svg')
+    svg.setAttribute('viewBox', '0 0 400 400')
+    svg.setAttribute('width', size)
+    svg.setAttribute('height', size)
+    svg.style.overflow = 'visible'
+    svg.style.flex = 'none'
+    const hijab = look.hair === 'hijab'
+    const front = {
+      short: `<path d="M126 196 C 116 122 160 96 205 98 C 256 100 288 130 278 196 C 272 160 252 140 215 138 C 178 136 150 142 134 172 Z" fill="${hairColor}"/>`,
+      messy: [[140, 160, 30], [160, 128, 32], [196, 112, 36], [236, 120, 33], [264, 150, 30], [124, 186, 18], [278, 182, 18]]
+        .map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${hairColor}"/>`).join(''),
+      bun: `<path d="M122 210 C 110 122 158 96 200 98 C 246 96 292 122 278 210 C 274 168 250 136 204 134 C 160 136 128 160 122 210 Z" fill="${hairColor}"/>`,
+    }
+    svg.innerHTML = `
+      <defs><clipPath id="${id}"><circle cx="200" cy="200" r="200"/></clipPath></defs>
+      <g clip-path="url(#${id})">
+        <circle cx="200" cy="200" r="200" fill="${look.bg}"/>
+        <g class="sway">
+          ${look.hair === 'bun' ? `<circle cx="200" cy="84" r="38" fill="${hairColor}"/><ellipse cx="200" cy="200" rx="96" ry="104" fill="${hairColor}"/>` : ''}
+          ${hijab ? '' : `<rect x="170" y="250" width="60" height="90" rx="24" fill="${shade(look.skin, -0.12)}"/>`}
+          <path d="M30 420 C 40 338 110 316 200 316 C 290 316 360 338 370 420 Z" fill="${look.top}"/>
+          ${hijab ? '' : `<path d="M168 318 Q200 350 232 318" fill="none" stroke="${shade(look.top, -0.25)}" stroke-width="6" stroke-linecap="round"/>`}
+          ${look.headphones ? '<path d="M118 340 C 118 290 282 290 282 340" fill="none" stroke="#2f2f35" stroke-width="14" stroke-linecap="round"/><ellipse cx="120" cy="344" rx="20" ry="26" fill="#2f2f35"/><ellipse cx="280" cy="344" rx="20" ry="26" fill="#2f2f35"/>' : ''}
+          ${hijab ? `<path d="M200 62 C 108 62 92 150 98 226 C 102 292 124 352 200 376 C 276 352 298 292 302 226 C 308 150 292 62 200 62 Z" fill="${look.cloth}"/><ellipse cx="200" cy="200" rx="80" ry="94" fill="${shade(look.cloth, -0.12)}"/>` : ''}
+          <g class="head">
+            ${hijab ? '' : `<ellipse cx="124" cy="204" rx="15" ry="21" fill="${shade(look.skin, -0.06)}"/><ellipse cx="276" cy="204" rx="15" ry="21" fill="${shade(look.skin, -0.06)}"/>`}
+            <ellipse cx="200" cy="200" rx="${hijab ? 72 : 77}" ry="${hijab ? 85 : 90}" fill="${look.skin}"/>
+            ${look.earrings ? '<circle cx="124" cy="230" r="6" fill="#e9b949"/><circle cx="276" cy="230" r="6" fill="#e9b949"/>' : ''}
+            ${look.stubble ? `<path d="M134 222 C 142 300 258 300 266 222 C 256 274 144 274 134 222 Z" fill="${hairColor}" opacity="0.2"/>` : ''}
+            ${front[look.hair] ?? ''}
+            <circle cx="153" cy="234" r="15" fill="#f0827a" opacity="0.22"/>
+            <circle cx="247" cy="234" r="15" fill="#f0827a" opacity="0.22"/>
+            <path d="M154 176 Q170 167 186 175" fill="none" stroke="${hijab ? '#3a2a22' : hairColor}" stroke-width="6" stroke-linecap="round"/>
+            <path d="M214 175 Q230 167 246 176" fill="none" stroke="${hijab ? '#3a2a22' : hairColor}" stroke-width="6" stroke-linecap="round"/>
+            <g class="eyes">
+              <ellipse cx="170" cy="202" rx="8.5" ry="10.5" fill="#2a1d17"/><circle cx="173" cy="198" r="3" fill="#fff"/>
+              <ellipse cx="230" cy="202" rx="8.5" ry="10.5" fill="#2a1d17"/><circle cx="233" cy="198" r="3" fill="#fff"/>
+            </g>
+            ${look.glasses ? '<g fill="rgba(255,255,255,0.12)" stroke="#2b2b30" stroke-width="5"><circle cx="170" cy="203" r="25"/><circle cx="230" cy="203" r="25"/><path d="M195 201 Q200 196 205 201" fill="none"/></g>' : ''}
+            <path d="M200 208 Q193 230 205 232" fill="none" stroke="${shade(look.skin, -0.22)}" stroke-width="4.5" stroke-linecap="round"/>
+            <path class="smile" d="M180 252 Q200 268 220 252" fill="none" stroke="#7a3b2e" stroke-width="5.5" stroke-linecap="round"/>
+            <g class="open"><ellipse cx="200" cy="256" rx="17" ry="10" fill="#6b2a22"/><ellipse cx="200" cy="263" rx="10" ry="4" fill="#d9776b"/></g>
+          </g>
+        </g>
+      </g>`
+    parent.appendChild(svg)
+    const sway = svg.querySelector('.sway')
+    const head = svg.querySelector('.head')
+    const eyes = svg.querySelector('.eyes')
+    const smile = svg.querySelector('.smile')
+    const open = svg.querySelector('.open')
+    const mouth = open.querySelector('ellipse')
+    const seed = people * 1.7
+    return {
+      svg,
+      update(t, level = 0) {
+        // A blink every few seconds, 0.14 s long.
+        const cycle = (t + seed) % 3.4
+        const blink = cycle < 0.14 ? Math.abs(Math.cos((cycle / 0.14) * Math.PI)) : 1
+        eyes.setAttribute('transform', `translate(0 202) scale(1 ${Math.max(0.08, blink)}) translate(0 -202)`)
+        const nod = Math.sin(t * 1.3 + seed) * 1.6 + level * 2.2
+        head.setAttribute('transform', `rotate(${nod} 200 300) translate(0 ${-level * 3})`)
+        sway.setAttribute('transform', `translate(0 ${Math.sin(t * 0.9 + seed) * 2.5})`)
+        const talking = level > 0.06
+        smile.style.opacity = talking ? 0 : 1
+        open.style.opacity = talking ? 1 : 0
+        mouth.setAttribute('ry', (3 + level * 13).toFixed(1))
+        mouth.setAttribute('rx', (13 + level * 5).toFixed(1))
+      },
+    }
+  }
+
+  // A scene's lines ({ who, text, at, d, levels }), timed from the scene's
+  // start. levels: loudness per frame (none when rendered silent: a made-up
+  // talking rhythm instead).
+  const lineAt = (lines, a) => lines.reduce((current, line) => (a >= line.at - 0.15 ? line : current), lines[0])
+  const levelOf = (lines, who, a) => {
+    const line = lines.find((l) => l.who === who && a >= l.at && a < l.at + l.d)
+    if (!line) return 0
+    if (line.levels) return line.levels[Math.floor((a - line.at) * 30)] ?? 0
+    return Math.max(0, Math.sin((a - line.at) * 17) * 0.5 + Math.sin((a - line.at) * 7.3) * 0.4)
+  }
+  // Words appear as they're said.
+  const quote = (parent, line, style) => {
+    const node = el(parent, 'headline', style)
+    const ws = words(node, line.text)
+    return {
+      node,
+      update(a) {
+        ws.forEach((w, i) => {
+          const p = easeOut(ramp(a, line.at - 0.1 + (i / ws.length) * line.d * 0.85, 0.25))
+          set(w, { y: (1 - p) * 18, o: 0.12 + 0.88 * p })
+        })
+      },
+    }
+  }
+
+  // The caption of an app scene in the stories videos: the speaker's face,
+  // what the app does (tag) and what they say, word by word.
+  const sayCaption = (parent, s, box) => {
+    const wrap = el(parent, 'abs', { left: px(box.x), top: px(box.y), width: px(box.w), textAlign: box.align })
+    const row = el(wrap, '', { display: 'flex', alignItems: 'center', gap: px(box.size * 0.3), justifyContent: box.align === 'center' ? 'center' : 'flex-start' })
+    const who = s.lines[0].who
+    const face = character(row, s.cast[who].look, Math.round(box.size * 1.5))
+    const tag = el(row, 'pill', { fontSize: px(box.sub * 0.85), padding: `${box.sub * 0.3}px ${box.sub * 0.65}px`, boxShadow: 'none' }, s.tag)
+    const quotes = s.lines.map((line) => quote(wrap, line, { fontSize: px(box.size * (orient === 'landscape' ? 0.8 : 0.72)), marginTop: px(box.size * 0.3), fontWeight: 700 }))
+    return {
+      wrap,
+      update(t) {
+        const a = t - s.lead
+        const p = back(ramp(t, 0.1, 0.5))
+        set(face.svg, { s: 0.6 + 0.4 * p, o: clamp(p * 2) })
+        face.update(t, levelOf(s.lines, who, a))
+        const q = easeOut(ramp(t, 0.25, 0.45))
+        set(tag, { x: (1 - q) * -30, o: q })
+        const current = lineAt(s.lines, a)
+        quotes.forEach((item, i) => {
+          item.node.style.display = s.lines[i] === current ? 'block' : 'none'
+          item.update(a)
+        })
+      },
+    }
+  }
+
+  const background = () => {
+    const bg = el(document.getElementById('stage'), 'bg')
+    return (t) => {
+      const a = 30 + Math.sin(t * 0.35) * 8, b = 70 + Math.cos(t * 0.27) * 8
+      bg.style.background = `radial-gradient(circle at ${b}% ${a}%, rgba(250, 204, 21, 0.28), transparent 38%), radial-gradient(circle at ${a}% ${b + 10}%, rgba(253, 230, 138, 0.35), transparent 42%), #fbfaf7`
+    }
+  }
+
+  // Scene builders: each returns update(t) for t in seconds since its start.
+  const builders = {
+    title(root, s) {
+      const box = L().cap
+      const size = orient === 'landscape' ? 96 : orient === 'square' ? 80 : 98
+      const wrap = el(root, 'abs', { left: px(orient === 'landscape' ? 200 : 80), width: px(W - (orient === 'landscape' ? 400 : 160)), top: '50%', textAlign: 'center' })
+      const h = el(wrap, 'headline', { fontSize: px(size) })
+      const ws = words(h, s.text.title)
+      const sub = el(wrap, 'sub tag', { fontSize: px(size * 0.5), marginTop: px(size * 0.45) }, s.text.sub)
+      return (t) => {
+        wrap.style.transform = `translateY(-50%) scale(${1 + t * 0.012})`
+        ws.forEach((w, i) => { const p = back(ramp(t, 0.1 + i * 0.07, 0.4)); set(w, { y: (1 - p) * 60, o: clamp(p * 1.4) }) })
+        const p = easeOut(ramp(t, 0.35 + ws.length * 0.07, 0.5)); set(sub, { y: (1 - p) * 30, o: p })
+      }
+    },
+    brand(root, s) {
+      const size = orient === 'landscape' ? 220 : 260
+      const wrap = el(root, 'abs', { left: 0, width: px(W), top: '50%', textAlign: 'center' })
+      const logo = img(wrap, config.logo, { width: px(size), height: px(size), display: 'block', margin: '0 auto' })
+      logo.className = 'logo'
+      const name = el(wrap, 'headline', { fontSize: px(size * 0.5), marginTop: px(size * 0.22) }, s.text.title)
+      const sub = el(wrap, 'sub', { fontSize: px(size * 0.2), marginTop: px(size * 0.08) }, s.text.sub)
+      return (t) => {
+        wrap.style.transform = 'translateY(-50%)'
+        const p = back(ramp(t, 0.05, 0.6)); set(logo, { s: 0.4 + 0.6 * p, o: clamp(p * 2), r: (1 - p) * -12 })
+        const q = easeOut(ramp(t, 0.35, 0.5)); set(name, { y: (1 - q) * 40, o: q })
+        const r = easeOut(ramp(t, 0.6, 0.5)); set(sub, { y: (1 - r) * 30, o: r })
+      }
+    },
+    phone(root, s) {
+      const l = L()
+      const cap = s.lines ? sayCaption(root, s, l.cap) : caption(root, s.text, l.cap)
+      const srcs = s.shots.map((name) => `${config.shots}${name}.png`)
+      // A spoken caption is taller: the phone and cards sit lower.
+      const drop = s.lines && orient !== 'landscape' ? (orient === 'portrait' ? 110 : 50) : 0
+      let pw = l.phone.w, px0 = l.phone.x, py0 = l.phone.y + drop
+      if (s.desk && orient === 'landscape') { pw = 320; px0 = 700; py0 = 360 }
+      const phone = makePhone(root, srcs, pw)
+      if (orient === 'landscape' && !s.desk) py0 = (H - phone.h) / 2 + 10
+      phone.node.style.left = px(px0); phone.node.style.top = px(py0)
+      if (orient === 'landscape') { cap.wrap.style.top = '50%'; cap.wrap.style.transform = 'translateY(-50%)' }
+      let browser
+      if (s.desk && orient === 'landscape') {
+        const bw = 1120
+        browser = el(root, 'abs browser', { left: px(760), top: px((H - (bw * 0.625 + 44)) / 2), width: px(bw) })
+        const bar = el(browser, 'bar')
+        ;['#f87171', '#fbbf24', '#4ade80'].forEach((c) => el(bar, 'dot', { background: c }))
+        el(bar, 'url', {}, '🔒&nbsp; catatsaja.ardeman.com')
+        img(browser, `${config.shots}${s.desk}.png`)
+        cap.wrap.style.width = px(560)
+        cap.wrap.style.left = px(100)
+        phone.node.style.left = px(660); phone.node.style.top = px(H - phone.h - 50)
+        root.appendChild(phone.node)
+      }
+      const crops = (s.crops ?? []).map((c) => {
+        const w = c.w ?? l.crop.w
+        // dy: a second card lower down, in px of a 1920 px tall video.
+        const top = (c.y ?? l.crop.y) + drop + ((c.dy ?? 0) * H) / 1920
+        const node = el(root, 'abs crop', { width: px(w), left: px(c.x ?? l.crop.x), top: px(top), transformOrigin: '50% 50%' })
+        const image = img(node, `${config.shots}${c.shot}.png`)
+        const maxH = H - top - (orient === 'portrait' ? 70 : 50)
+        // Tall cards shrink to fit above the bottom edge, keeping the
+        // centre where the full width would put it.
+        fitters.push(() => {
+          const fit = Math.min(w, (maxH * image.naturalWidth) / image.naturalHeight)
+          node.style.width = px(fit)
+          node.style.left = px((c.x ?? l.crop.x) + (w - fit) / 2)
+        })
+        return { node, at: c.at ?? 1.1, r: c.r ?? -2 }
+      })
+      return (t, d) => {
+        cap.update(t)
+        const p = easeOut(ramp(t, 0.05, 0.7))
+        set(phone.node, { y: (1 - p) * 160 - t * 6, o: clamp(p * 1.5), s: 1 + t * 0.006, r: orient === 'landscape' ? 0 : (1 - p) * 4 })
+        if (browser) { const b = easeOut(ramp(t, 0, 0.7)); set(browser, { x: (1 - b) * 120, o: b, s: 1 + t * 0.004 }) }
+        if (phone.imgs.length > 1) {
+          const swap = s.swap ?? d * 0.5
+          const q = ramp(t, swap, 0.35)
+          phone.imgs[1].style.opacity = q
+        }
+        crops.forEach((c) => {
+          const q = back(ramp(t, c.at, 0.55))
+          set(c.node, { y: (1 - q) * 120 - (t - c.at) * 5, s: 0.82 + 0.18 * q, o: clamp(q * 1.6), r: c.r * q })
+        })
+      }
+    },
+    phones(root, s) {
+      const l = L()
+      const cap = s.lines ? sayCaption(root, s, l.cap) : caption(root, s.text, l.cap)
+      if (orient === 'landscape') { cap.wrap.style.top = '50%'; cap.wrap.style.transform = 'translateY(-50%)' }
+      const w = orient === 'landscape' ? 380 : orient === 'square' ? 380 : 470
+      const ph = s.shots.map((name, i) => {
+        const p = makePhone(root, [`${config.shots}${name}.png`], w)
+        const gap = 40
+        const total = w * 2 + gap
+        const left = orient === 'landscape' ? 1000 + i * (w + gap) : (W - total) / 2 + i * (w + gap)
+        const top = orient === 'landscape' ? (H - p.h) / 2 : l.phone.y + (orient === 'square' ? 20 : 120) + (i ? 60 : 0) + (s.lines ? (orient === 'square' ? 40 : 60) : 0)
+        p.node.style.left = px(left); p.node.style.top = px(top)
+        // Whose phone it is, on a tag at its top.
+        if (s.labels) el(p.node, 'pill', { position: 'absolute', left: '50%', top: px(-w * 0.07), transform: 'translateX(-50%)', fontSize: px(w * 0.065), padding: `${w * 0.018}px ${w * 0.05}px` }, s.labels[i])
+        return p
+      })
+      return (t) => {
+        cap.update(t)
+        ph.forEach((p, i) => { const q = easeOut(ramp(t, 0.1 + i * 0.25, 0.7)); set(p.node, { y: (1 - q) * 160, o: clamp(q * 1.5), r: (i ? 3 : -3) * q }) })
+      }
+    },
+    // Meet the people of a story: their faces, names and what they do, and
+    // what they say, word by word, the speaker's mouth moving with it.
+    person(root, s) {
+      const many = s.people.length > 1
+      const portrait = orient === 'portrait', landscape = orient === 'landscape'
+      const size = landscape ? (many ? 400 : 520) : portrait ? (many ? 440 : 600) : many ? 360 : 460
+      const faces = el(root, 'abs', { display: 'flex', gap: px(size * 0.08), justifyContent: 'center',
+        ...(landscape ? { left: px(80), width: px(860), top: '50%' } : { left: 0, width: px(W), top: px(portrait ? 260 : 110) }) })
+      const people = s.people.map((key) => ({ key, face: character(faces, s.cast[key].look, size) }))
+      const text = el(root, 'abs', landscape
+        ? { left: px(1000), width: px(800), top: '50%', textAlign: 'left' }
+        : { left: px(80), width: px(W - 160), top: px((portrait ? 260 : 110) + size + (portrait ? 70 : 50)), textAlign: 'center' })
+      const fs = landscape ? 64 : portrait ? 72 : 60
+      const name = el(text, 'headline', { fontSize: px(fs * 1.1) }, s.people.map((key) => s.cast[key].name).join(' & '))
+      const role = el(text, 'sub tag', { fontSize: px(fs * 0.5), marginTop: px(fs * 0.15) }, s.role)
+      const quotes = s.lines.map((line) => {
+        const box = el(text, '', { marginTop: px(fs * 0.6) })
+        if (many) el(box, 'sub', { fontSize: px(fs * 0.42), fontWeight: 700, color: '#a16207', marginBottom: px(fs * 0.12) }, s.cast[line.who].name)
+        const q = quote(box, line, { fontSize: px(fs * 0.72), fontWeight: 700 })
+        return { box, update: q.update }
+      })
+      return (t) => {
+        const a = t - s.lead
+        if (landscape) { faces.style.transform = 'translateY(-50%)'; text.style.transform = 'translateY(-50%)' }
+        const current = lineAt(s.lines, a)
+        people.forEach(({ key, face }, i) => {
+          const p = back(ramp(t, 0.05 + i * 0.15, 0.6))
+          const speaking = current.who === key ? 1 : 0
+          set(face.svg, { s: (0.5 + 0.5 * p) * (many ? 0.94 + speaking * 0.06 : 1), o: clamp(p * 2) * (many ? 0.75 + speaking * 0.25 : 1) })
+          face.update(t, levelOf(s.lines, key, a))
+        })
+        const q = easeOut(ramp(t, 0.3, 0.5)); set(name, { y: (1 - q) * 30, o: q })
+        const r = easeOut(ramp(t, 0.45, 0.5)); set(role, { y: (1 - r) * 24, o: r })
+        quotes.forEach((item, i) => {
+          item.box.style.display = s.lines[i] === current ? 'block' : 'none'
+          item.update(a)
+        })
+      }
+    },
+    cta(root, s) {
+      const size = orient === 'landscape' ? 170 : 220
+      const wrap = el(root, 'abs', { left: 0, width: px(W), top: '50%', textAlign: 'center' })
+      const logo = img(wrap, config.logo, { width: px(size), height: px(size), display: 'block', margin: '0 auto' })
+      logo.className = 'logo'
+      const name = el(wrap, 'headline', { fontSize: px(size * 0.42), marginTop: px(size * 0.2) }, 'Catat Saja')
+      const title = el(wrap, 'headline', { fontSize: px(size * 0.36), marginTop: px(size * 0.12), color: '#44403c', fontWeight: 700 }, s.text.title)
+      const pillWrap = el(wrap, '', { marginTop: px(size * 0.24) })
+      const pill = el(pillWrap, 'pill', { fontSize: px(size * 0.2), padding: `${size * 0.09}px ${size * 0.2}px` }, s.text.url)
+      const sub = el(wrap, 'sub', { fontSize: px(size * 0.14), marginTop: px(size * 0.22) }, s.text.sub)
+      return (t) => {
+        wrap.style.transform = 'translateY(-50%)'
+        const p = back(ramp(t, 0.05, 0.6)); set(logo, { s: 0.5 + 0.5 * p, o: clamp(p * 2) })
+        const q = easeOut(ramp(t, 0.3, 0.5)); set(name, { y: (1 - q) * 30, o: q })
+        const r = easeOut(ramp(t, 0.5, 0.5)); set(title, { y: (1 - r) * 30, o: r })
+        const u = back(ramp(t, 0.8, 0.55)); set(pill, { s: (0.7 + 0.3 * u) * (1 + 0.025 * Math.sin(Math.max(0, t - 1.4) * 4)), o: clamp(u * 2) })
+        const v = easeOut(ramp(t, 1.1, 0.5)); set(sub, { o: v, y: (1 - v) * 20 })
+      }
+    },
+  }
+
+  window.setup = async (cfg) => {
+    config = cfg
+    W = cfg.width; H = cfg.height
+    orient = W > H ? 'landscape' : W === H || H / W < 1.4 ? 'square' : 'portrait'
+    const stage = document.getElementById('stage')
+    const bg = background()
+    let start = 0
+    scenes = cfg.scenes.map((s, index) => {
+      const root = el(stage, 'scene')
+      // How far a scene's animation time runs ahead of its audio (scenes
+      // after the first start animating as they fade in).
+      s.lead = index === 0 ? 0 : FADE
+      s.cast = cfg.cast
+      const update = builders[s.type](root, s)
+      const scene = { root, update, start, d: s.d }
+      start += s.d
+      return scene
+    })
+    scenes.bg = bg
+    await document.fonts.ready
+    await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = r; i.onerror = r }))))
+    fitters.forEach((fit) => fit())
+    return start
+  }
+
+  // Scenes cross-fade over FADE seconds at each boundary.
+  const FADE = 0.35
+  window.seek = (t) => {
+    scenes.bg(t)
+    scenes.forEach((s, i) => {
+      const local = t - s.start
+      const last = i === scenes.length - 1
+      const visible = local > -FADE && (last || local < s.d)
+      s.root.style.display = visible ? 'block' : 'none'
+      if (!visible) return
+      const fadeIn = i === 0 ? 1 : ramp(local, -FADE, FADE)
+      const fadeOut = last ? 1 : 1 - ramp(local, s.d - FADE, FADE)
+      s.root.style.opacity = Math.min(fadeIn, fadeOut)
+      const exit = last ? 0 : ramp(local, s.d - FADE, FADE)
+      s.root.style.transform = `translateY(${-exit * 40}px)`
+      // Its animations start with the fade-in, so no frame is empty.
+      s.update(Math.max(0, local + (i === 0 ? 0 : FADE)), s.d + (i === 0 ? 0 : FADE))
+    })
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# AGENTS.md
+
+Instructions for AI agents working in this folder. `README.md` has the setup, layout and commands; this file does not repeat them.
+
+## Credits and the account
+
+- ElevenLabs is paid per character and per second of music. Don't make calls that cost credits (voice, music, speech to text) without the user's go-ahead for that render. Listing voices, models and the subscription is free.
+- Before asking, say what it will cost: the characters of new or changed lines (cached clips are free) and the seconds of any new music track.
+- Iterate on layout with `--stills --silent`, which makes no calls, and look at the stills before rendering a video.
+- Adding a voice from the voice library to the account, or changing the account in any other way, needs the user's approval too.
+
+## Keep it cheap to re-render
+
+- Every clip and track goes through `shared/eleven.mjs`, which caches by what made it. Don't call the ElevenLabs API directly from a project, and don't delete `audio/`: a re-render would buy everything again.
+- Changing a line, a voice or a music prompt buys a new clip or track; changing timing or visuals doesn't.
+
+## Truthful content
+
+- Show only what the app really does, on its real screens: capture them from the demo data on the emulators (`capture*.mjs`), never mock up a screen. Check a claim against the app repo (its `README.md`, `AGENTS.md` and code) before a line says it.
+- Stories are about people the demo data makes up. Don't present them as real customers or testimonials, and don't draw or name real people.
+- Health lines describe what is logged and shown; never a diagnosis or a medical promise.
+
+## Both languages
+
+- Every video, caption and line exists in English and Indonesian, written for that language (casual, the way people talk), not translated word for word.
+- In Indonesian, an English voice reads “c” as “k”: lines for the narrator (an English voice) go through `spoken()` in `narration.mjs`, which spells it “ch”. Native Indonesian voices (the stories' cast) need no respelling.
+- After a new Indonesian narrator line with a “c”, run `check-voice.mjs` (it costs speech-to-text credits, so ask first).
+
+## Look at the result
+
+- Look at the stills (`out/stills/`, `out/stories/stills/`) for every format you changed, in both languages: text must not run into phones or cards, and nothing may be cut off.
+- Watch the finished video (or a contact sheet of frames) before saying it's done.
+
+## Conventions
+
+- Scripts are Node ES modules (`.mjs`) with no dependencies beyond Playwright (linked from the app repo) and ffmpeg. Keep comments short and about why.
+- One folder per project; helpers more than one project can use go in `shared/`.
+- The app repo stays clean: no media, keys or promo scripts go into it.
+- Never write the API key anywhere but `.env`, and never print it.
+
+## Keeping docs current
+
+When you change a command, the layout or the setup, update `README.md`; when you change a rule, update this file. `CLAUDE.md` contains only the import of this file.

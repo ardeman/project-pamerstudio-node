@@ -1,0 +1,14 @@
+# Local secrets; keep the setup template tracked.
+.env
+.env.*
+!.env.example
+
+# Dependencies and local system files.
+node_modules
+.DS_Store
+*.log
+
+# Generated media and paid audio caches. Keep caches on disk for re-renders.
+audio/
+out/
+shots/
