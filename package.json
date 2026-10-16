@@ -2,6 +2,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "node shared/cli.mjs",
     "dashboard": "node shared/dashboard.mjs"
   }
 }
