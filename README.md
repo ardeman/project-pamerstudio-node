@@ -16,7 +16,7 @@ Tools: Node 24, ffmpeg, and Google Chrome (Playwright uses it to render). Captur
 ## Credits and the dashboard
 
 ```sh
-node shared/dashboard.mjs [--no-open]
+npm run dashboard        # or: node shared/dashboard.mjs [--no-open]
 ```
 
 It writes `dashboard.html` here and opens it in the browser: the ElevenLabs credits left and when they reset, the last paid calls from `usage.jsonl` (estimate, what was charged, what was left), and every project's stills and videos, filterable by language. The credits are read when you run it, on this machine, so the key never goes in the page; run it again to refresh. Both files are local and not committed. Speech to text (`check-voice.mjs`) isn't logged, but it shows in the balance.
