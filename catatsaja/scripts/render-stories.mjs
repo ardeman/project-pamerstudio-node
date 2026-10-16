@@ -1,6 +1,6 @@
 // Renders the stories videos (stories.mjs): the full one with all five
 // people, and a short one per story. Usage:
-//   node scripts/render-stories.mjs [video|all] [format|all] [en|id|all] [--stills] [--silent] [--meta]
+//   node scripts/render-stories.mjs [video|all] [format|all] [en|id|all] [--stills] [--silent] [--dry-run] [--force] [--meta]
 // video: full, rina, couple, adit or maya. The full video is made in every
 // format; the short ones only vertically. Without a language, each format is
 // made in the languages it is posted in (`formats`). --stills writes a frame per scene
@@ -13,7 +13,7 @@ import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright'
 
 import { copy } from './copy.mjs'
-import { music, speak } from '../../shared/eleven.mjs'
+import { dryRun, estimate, music, speak } from '../../shared/eleven.mjs'
 import { spoken } from './narration.mjs'
 import { cast, cta, hook, stories } from './stories.mjs'
 import { audioArgs, envelope, record } from './video.mjs'
@@ -87,7 +87,7 @@ const say = async (lang, name, [who, en, id]) => {
     text: who === 'narrator' ? spoken(text, lang) : text,
     voice: cast[who].voice[lang],
   })
-  return { who, text, d: clip.length, file: clip.file, levels: envelope(clip.file) }
+  return { who, text, d: clip.length, file: clip.file, levels: clip.file && envelope(clip.file) }
 }
 
 // Lines one after another; a scene lasts until its last line ends.
@@ -193,6 +193,10 @@ if (!silent && !stills) {
     const lengths = plans.filter((plan) => (plan.video === 'full') === (kind === 'full')).map((plan) => plan.total)
     if (lengths.length) tracks[kind] = await music({ dir: `${ROOT}audio`, name: `stories-${kind}`, prompt: MUSIC_PROMPT, seconds: Math.max(...lengths) })
   }
+}
+if (dryRun) {
+  await estimate()
+  process.exit(0)
 }
 
 const browser = await chromium.launch({ channel: 'chrome' })

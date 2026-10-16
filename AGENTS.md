@@ -5,7 +5,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 ## Credits and the account
 
 - ElevenLabs is paid per character and per second of music. Don't make calls that cost credits (voice, music, speech to text) without the user's go-ahead for that render. Listing voices, models and the subscription is free.
-- Before asking, say what it will cost: the characters of new or changed lines (cached clips are free) and the seconds of any new music track.
+- Before asking, say what it will cost: run the render with `--dry-run` (free) and give its list and total against the credits left. Don't pass `--force` without the user's go-ahead.
 - Iterate on layout with `--stills --silent`, which makes no calls, and look at the stills before rendering a video.
 - Adding a voice from the voice library to the account, or changing the account in any other way, needs the user's approval too.
 

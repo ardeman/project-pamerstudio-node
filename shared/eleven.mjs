@@ -5,14 +5,22 @@
 //   ELEVENLABS_API_KEY  required
 //   VOICE_<LANG>        a voice id per language (VOICE_EN, VOICE_ID, ...)
 //   TTS_MODEL           a model id; otherwise the newest one for the language
+// Every paid call is checked against the credits left and logged to
+// ../usage.jsonl. With --dry-run nothing is bought: missing clips and tracks
+// are collected for estimate(); --force buys past the balance.
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, writeFile } from 'node:fs/promises'
+import { relative } from 'node:path'
 
 const API = 'https://api.elevenlabs.io'
-const envFile = new URL('../.env', import.meta.url).pathname
+const ROOT = new URL('../', import.meta.url).pathname
+const envFile = `${ROOT}.env`
+export const usageFile = `${ROOT}usage.jsonl`
+export const dryRun = process.argv.includes('--dry-run')
+const force = process.argv.includes('--force')
 const env = Object.fromEntries(
   existsSync(envFile)
     ? readFileSync(envFile, 'utf8')
@@ -41,6 +49,52 @@ const call = async (path, body) => {
 export const duration = (file) =>
   Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString())
 
+// The account's credits: free to read, and the only cost that is exact.
+export const subscription = async () => {
+  const s = await (await call('/v1/user/subscription')).json()
+  return { tier: s.tier, used: s.character_count, limit: s.character_limit, resetsAt: s.next_character_count_reset_unix * 1000 }
+}
+
+export const usage = () =>
+  existsSync(usageFile)
+    ? readFileSync(usageFile, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    : []
+
+// Credits per second of music, from what earlier tracks really cost.
+const musicRate = () => {
+  const tracks = usage().filter((u) => u.kind === 'music' && u.credits > 0)
+  return tracks.length ? tracks.reduce((sum, u) => sum + u.credits, 0) / tracks.reduce((sum, u) => sum + u.seconds, 0) : undefined
+}
+
+// Voice credits are about one per character; the log keeps what was charged.
+const pending = []
+const buy = async (entry, estimate, run) => {
+  const before = await subscription()
+  const left = before.limit - before.used
+  if (estimate > left && !force) throw new Error(`${entry.name} needs ~${Math.round(estimate)} credits, ${left} left (--force to buy anyway)`)
+  const result = await run()
+  const after = await subscription()
+  const project = relative(ROOT, entry.dir).split('/')[0]
+  const { dir, ...rest } = entry
+  await appendFile(usageFile, `${JSON.stringify({ at: new Date().toISOString(), project, ...rest, estimate: Math.round(estimate), credits: after.used - before.used, left: after.limit - after.used })}\n`)
+  return result
+}
+
+// What a --dry-run would buy, against the credits left. Call it once the
+// clips and tracks are planned, then stop.
+export const estimate = async () => {
+  const account = await subscription()
+  const left = account.limit - account.used
+  const rate = musicRate()
+  for (const p of pending) p.estimate = p.kind === 'voice' ? p.chars : rate && p.seconds * rate
+  for (const p of pending) console.log(p.kind, p.lang ?? '', p.name, p.chars ? `${p.chars} chars` : `${p.seconds} s`, p.estimate ? `~${Math.round(p.estimate)} credits` : 'cost unknown')
+  const total = pending.reduce((sum, p) => sum + (p.estimate ?? 0), 0)
+  const unknown = pending.some((p) => !p.estimate)
+  console.log(pending.length ? `~${Math.round(total)}${unknown ? '+' : ''} credits for ${pending.length} new` : 'Everything is cached: free.', `· ${left} of ${account.limit} left`)
+  if (total > left) console.log('Not enough credits for this render.')
+  return { pending, total, left }
+}
+
 const hash = (value) => createHash('sha1').update(JSON.stringify(value)).digest('hex').slice(0, 10)
 
 // Jessica, a friendly, conversational premade voice.
@@ -66,14 +120,20 @@ export const speak = async ({ dir, lang, name, text, voice, settings }) => {
   const voiceSettings = { stability: 0.45, similarity_boost: 0.75, style: 0.35, speed: 1.05, ...settings }
   const file = `${dir}/${name}-${hash(settings ? [text, model, voiceId, voiceSettings] : [text, model, voiceId])}.mp3`
   if (!existsSync(file)) {
+    if (dryRun) {
+      pending.push({ kind: 'voice', lang, name, chars: text.length })
+      return { file: null, length: text.split(/\s+/).length / 2.7 + 0.3 }
+    }
     await mkdir(dir, { recursive: true })
-    const response = await call(`/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
-      text,
-      model_id: model,
-      ...(model !== 'eleven_multilingual_v2' && { language_code: lang }),
-      voice_settings: voiceSettings,
+    await buy({ kind: 'voice', dir, lang, name, chars: text.length, model }, text.length, async () => {
+      const response = await call(`/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+        text,
+        model_id: model,
+        ...(model !== 'eleven_multilingual_v2' && { language_code: lang }),
+        voice_settings: voiceSettings,
+      })
+      await writeFile(file, Buffer.from(await response.arrayBuffer()))
     })
-    await writeFile(file, Buffer.from(await response.arrayBuffer()))
     console.log('voice', lang, name, model)
   }
   return { file, length: duration(file) }
@@ -90,13 +150,19 @@ export const music = async ({ dir, name, prompt, seconds }) => {
   )
   const file = existing ?? `${dir}/music-${name}-${hash([prompt, length])}.mp3`
   if (!existing) {
+    if (dryRun) {
+      pending.push({ kind: 'music', name, seconds: length })
+      return null
+    }
     await mkdir(dir, { recursive: true })
-    const response = await call('/v1/music', {
-      prompt,
-      music_length_ms: Math.max(3000, length * 1000),
-      force_instrumental: true,
+    await buy({ kind: 'music', dir, name, seconds: length }, (musicRate() ?? 0) * length, async () => {
+      const response = await call('/v1/music', {
+        prompt,
+        music_length_ms: Math.max(3000, length * 1000),
+        force_instrumental: true,
+      })
+      await writeFile(file, Buffer.from(await response.arrayBuffer()))
     })
-    await writeFile(file, Buffer.from(await response.arrayBuffer()))
     console.log('music', name, length, 's')
   }
   return file

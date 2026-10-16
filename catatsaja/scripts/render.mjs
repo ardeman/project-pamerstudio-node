@@ -1,6 +1,6 @@
 // Renders the promo videos frame by frame from stage.html and encodes them
 // with ffmpeg. Usage:
-//   node scripts/render.mjs [format|all] [en|id|all] [--stills] [--silent]
+//   node scripts/render.mjs [format|all] [en|id|all] [--stills] [--silent] [--dry-run] [--force]
 // --stills writes a few frames per scene to out/stills instead of a video.
 // Unless --silent, each scene gets its voice-over line (a scene is stretched
 // to fit it) over an instrumental track, both from ElevenLabs
@@ -11,7 +11,7 @@ import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright'
 
 import { copy } from './copy.mjs'
-import { music, speak } from '../../shared/eleven.mjs'
+import { dryRun, estimate, music, speak } from '../../shared/eleven.mjs'
 import { narration, spoken } from './narration.mjs'
 import { audioArgs, record } from './video.mjs'
 
@@ -130,6 +130,10 @@ if (!silent && !stills) {
     const longest = Math.max(...langs.map((lang) => plans[`${name}-${lang}`].reduce((sum, scene) => sum + scene.d, 0)))
     tracks[name] = await music({ dir: `${ROOT}audio`, name, prompt: MUSIC_PROMPT, seconds: longest })
   }
+}
+if (dryRun) {
+  await estimate()
+  process.exit(0)
 }
 
 // The voice clips at their place in the video.
