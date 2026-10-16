@@ -163,8 +163,16 @@ try {
     await page.waitForTimeout(700)
     return target.evaluate((node) => {
       let box = node
-      while (box && !(box.classList?.contains('rounded-xl') && box.classList.contains('border'))) box = box.parentElement
+      // A card, or the top part of one drawn in two (the book's totals,
+      // which float on their own, above its accounts).
+      const isCard = (n) => n.classList?.contains('border') && (n.classList.contains('rounded-xl') || n.classList.contains('rounded-t-xl'))
+      while (box && !isCard(box)) box = box.parentElement
       const r = (box ?? node).getBoundingClientRect()
+      const rest = box?.classList.contains('rounded-t-xl') ? box.nextElementSibling : undefined
+      if (rest?.classList.contains('rounded-b-xl')) {
+        const b = rest.getBoundingClientRect()
+        return { x: r.x, y: r.y, width: r.width, height: b.bottom - r.y }
+      }
       return { x: r.x, y: r.y, width: r.width, height: r.height }
     })
   }

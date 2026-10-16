@@ -17,7 +17,7 @@ Tools: Node 24, ffmpeg, and Google Chrome (Playwright uses it to render). Captur
 
 Two videos, each in English and Indonesian:
 
-- **Promo** (`render.mjs`): a tour of the features, with one narrator.
+- **Promo** (`render.mjs`): a tour of the features, with one narrator. The vertical cut (Reels, Shorts) opens on a fast cut of the real screens under a spoken hook, not a title card.
 - **Stories** (`render-stories.mjs`): four stories of people using the app in their own lives (Rina, a new mum; Sari and Dimas, a couple; Adit, a freelancer in Tokyo; Maya, caring for her dad). Each is an illustrated character speaking in their own ElevenLabs voice, with their mouth moving to it, next to the app's real screens. There is a full video, and a short one per story.
 
 ### Layout

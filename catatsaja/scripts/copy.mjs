@@ -2,6 +2,7 @@
 
 export const copy = {
   en: {
+    opener: { title: 'Notes, money and your family’s health. One app. 👀', chips: ['Notes', 'Tasks', 'Money', 'Charts', 'Health', 'Growth'] },
     hook: { title: 'Notes here, budget there, health stuff… somewhere? 🙃', sub: "Let's fix that." },
     brand: { title: 'Catat Saja', sub: 'Just write it down.' },
     notes: { title: 'Notes that format themselves ✍️', sub: 'Lists, headings, bold. Just type.' },
@@ -18,6 +19,7 @@ export const copy = {
     cta: { title: 'Try it, it’s free!', sub: 'Notes · Tasks · Finances · Health', url: 'catatsaja.ardeman.com' },
   },
   id: {
+    opener: { title: 'Catatan, keuangan, kesehatan keluarga. Satu aplikasi. 👀', chips: ['Catatan', 'Tugas', 'Keuangan', 'Grafik', 'Kesehatan', 'Tumbuh kembang'] },
     hook: { title: 'Catatan di sini, keuangan di sana, data kesehatan… entah di mana? 🙃', sub: 'Yuk, beresin.' },
     brand: { title: 'Catat Saja', sub: 'Catat saja.' },
     notes: { title: 'Catatan yang rapi sendiri ✍️', sub: 'List, judul, huruf tebal. Tinggal ketik.' },

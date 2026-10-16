@@ -16,7 +16,8 @@ import { narration, spoken } from './narration.mjs'
 import { audioArgs, record } from './video.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
-// The voice starts once a scene has faded in, and leaves a breath after.
+// The voice starts once a scene has faded in (an opener sets its own
+// `voiceAt`: no one waits in a feed), and leaves a breath after.
 const VOICE_AT = 0.35
 const VOICE_TAIL = 0.45
 const MUSIC_PROMPT =
@@ -32,8 +33,7 @@ const formats = {
     width: 1080,
     height: 1920,
     scenes: [
-      s('title', 'hook', 2.8),
-      s('brand', 'brand', 2.2),
+      s('hook', 'opener', 3.6, { voiceAt: 0.1, shots: ['notes', 'task', 'finance', 'finance-analysis-2', 'health-me', 'health-child-body'] }),
       s('phone', 'notes', 3, { shots: ['notes'], crops: [{ shot: 'crop-note', at: 1.0 }] }),
       s('phone', 'tasks', 3, { shots: ['task'], crops: [{ shot: 'crop-task', at: 1.0, r: 2 }] }),
       s('phone', 'money', 3.2, { shots: ['finance'], crops: [{ shot: 'crop-balance', at: 1.0 }] }),
@@ -119,7 +119,7 @@ for (const name of formatNames) {
         continue
       }
       const voice = await speak({ dir: `${ROOT}audio/${lang}`, lang, name: scene.key, text: spoken(narration[lang][scene.key], lang) })
-      scenes.push({ ...scene, d: Math.max(scene.d, VOICE_AT + voice.length + VOICE_TAIL), voice: voice.file })
+      scenes.push({ ...scene, d: Math.max(scene.d, (scene.voiceAt ?? VOICE_AT) + voice.length + VOICE_TAIL), voice: voice.file })
     }
     plans[`${name}-${lang}`] = scenes
   }
@@ -137,7 +137,7 @@ const clipsOf = (scenes) => {
   const clips = []
   let start = 0
   for (const scene of scenes) {
-    if (scene.voice) clips.push({ file: scene.voice, at: start + VOICE_AT })
+    if (scene.voice) clips.push({ file: scene.voice, at: start + (scene.voiceAt ?? VOICE_AT) })
     start += scene.d
   }
   return clips

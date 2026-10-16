@@ -3,7 +3,9 @@
 // `pnpm emulators` running there:
 //   node ../ai-generated-content/catatsaja/scripts/capture.mjs <en|id> [explore]
 
-import { mkdir } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 
 import {
   APP,
@@ -76,6 +78,32 @@ const add = async (collection, item, me, partner) => {
   return id
 }
 
+// Gemini's answer to a receipt scan, as the e2e tests fake it: the screens
+// stay real without calling Gemini. Printed text, so the same in both languages.
+const receipt = {
+  merchant: 'INDOMARET',
+  date: '2026-10-16',
+  currency: 'IDR',
+  items: [
+    { description: 'INDOMIE GORENG', quantity: 5, unitPrice: 3500, discount: 0 },
+    { description: 'SUSU UHT 1L', quantity: 2, unitPrice: 19_900, discount: 4000 },
+    { description: 'TELUR AYAM 1KG', quantity: 1, unitPrice: 28_500, discount: 0 },
+    { description: 'MINYAK GORENG 2L', quantity: 1, unitPrice: 38_900, discount: 0 },
+  ],
+  charges: [],
+  discount: 0,
+  total: 120_700,
+}
+const fakeGemini = (context) =>
+  context.route('**/firebasevertexai.googleapis.com/**', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        candidates: [{ index: 0, finishReason: 'STOP', content: { role: 'model', parts: [{ text: JSON.stringify(receipt) }] } }],
+      }),
+    }),
+  )
+
 const currencyFormat =
   lang === 'id'
     ? {
@@ -124,6 +152,8 @@ try {
     theme: toValue('light'),
     currencyFormat: toValue(currencyFormat),
     defaultCurrency: toValue('IDR'),
+    // Past the one-time Gemini notice, so the scan goes straight to the check.
+    aiConsent: toValue(true),
   })
   // Oldest first, so the first of each list ends up newest.
   for (const note of data.notes.toReversed()) await add('notes', note, me, partner)
@@ -135,6 +165,9 @@ try {
   // Reloading unlocked encrypts the seeded items (encryptOwnItems).
   await page.reload()
   await page.waitForTimeout(8000)
+  // A photo to choose; its content doesn't matter, Gemini's answer is fixed.
+  const receiptPhoto = path.join(await mkdtemp(path.join(tmpdir(), 'catatsaja-capture-')), 'receipt.jpg')
+  await writeFile(receiptPhoto, await page.screenshot({ type: 'jpeg' }))
   await setup.close()
 
   const contexts = {}
@@ -145,6 +178,7 @@ try {
       viewport: { width, height: 844 },
       deviceScaleFactor: key === 'desk' ? 2 : 3,
     })
+    await fakeGemini(context)
     const devicePage = await context.newPage()
     await signIn(devicePage, 'rina@example.com')
     const gate = devicePage.getByText(/Unlock your data|Buka datamu/).first()
@@ -175,8 +209,8 @@ try {
   }
 
   const L = {
-    en: { analysis: 'Analysis', body: 'Body', share: 'Share', add: 'Add entry', security: 'Security', unlock: 'Unlock your data', typed: 'Grab to the airport' },
-    id: { analysis: 'Analisis', body: 'Tubuh', share: 'Bagikan', add: 'Tambah entri', security: 'Keamanan', unlock: 'Buka datamu', typed: 'Grab ke bandara' },
+    en: { analysis: 'Analysis', body: 'Body', share: 'Share', add: 'Add entry', security: 'Security', unlock: 'Unlock your data', typed: 'Grab to the airport', scan: 'Scan receipt', review: 'Check the receipt' },
+    id: { analysis: 'Analisis', body: 'Tubuh', share: 'Bagikan', add: 'Tambah entri', security: 'Keamanan', unlock: 'Buka datamu', typed: 'Grab ke bandara', scan: 'Pindai struk', review: 'Periksa struk' },
   }[lang]
   const scroll = async (shotPage, y) => {
     await shotPage.mouse.move(195, 420)
@@ -197,6 +231,21 @@ try {
     { name: 'finance', path: `/finances/${ids.finances[0]}` },
     { name: 'finance-analysis', path: `/finances/${ids.finances[0]}`, act: async (p) => { await tab(L.analysis)(p); await scroll(p, 520) } },
     { name: 'finance-analysis-2', path: `/finances/${ids.finances[0]}`, act: async (p) => { await tab(L.analysis)(p); await scroll(p, 1250) } },
+    { name: 'receipt', path: `/finances/${ids.finances[0]}`, act: async (p) => {
+      // entry-suggest leaves its entry open as a draft, which hides the Gemini button.
+      await p.evaluate(() => {
+        for (const storage of [localStorage, sessionStorage])
+          for (const key of Object.keys(storage)) if (key.startsWith('catatsaja-draft:')) storage.removeItem(key)
+      })
+      await p.reload()
+      await p.waitForTimeout(3500)
+      await p.getByRole('button', { name: 'Gemini', exact: true }).click()
+      const chooser = p.waitForEvent('filechooser')
+      await p.getByRole('button', { name: L.scan }).click()
+      await (await chooser).setFiles(receiptPhoto)
+      await p.getByText(L.review).first().waitFor({ timeout: 30_000 })
+      await p.waitForTimeout(1500)
+    } },
     { name: 'entry-suggest', path: `/finances/${ids.finances[0]}`, act: async (p) => {
       await p.getByRole('button', { name: L.add }).first().click()
       await p.waitForTimeout(1200)
@@ -232,8 +281,8 @@ try {
     } },
   ]
   const L2 = {
-    en: { balance: 'Balance', categories: 'By category', cashFlow: 'Cash flow', weight: 'Weight over time', growth: 'Growth (WHO standards)' },
-    id: { balance: 'Saldo', categories: 'Per kategori', cashFlow: 'Arus kas', weight: 'Berat badan dari waktu ke waktu', growth: 'Tumbuh kembang (standar WHO)' },
+    en: { balance: 'Balance', categories: 'By category', cashFlow: 'Cash flow', weight: 'Weight over time', growth: 'Growth (WHO)' },
+    id: { balance: 'Saldo', categories: 'Per kategori', cashFlow: 'Arus kas', weight: 'Berat badan dari waktu ke waktu', growth: 'Tumbuh kembang (WHO)' },
   }[lang]
   const cardOf = (locate) => async (p) => {
     const target = locate(p).first()
@@ -242,8 +291,16 @@ try {
     await p.waitForTimeout(700)
     return target.evaluate((el) => {
       let node = el
-      while (node && !(node.classList?.contains('rounded-xl') && node.classList.contains('border'))) node = node.parentElement
+      // A card, or the top part of one drawn in two (the book's totals,
+      // which float on their own, above its accounts).
+      const isCard = (n) => n.classList?.contains('border') && (n.classList.contains('rounded-xl') || n.classList.contains('rounded-t-xl'))
+      while (node && !isCard(node)) node = node.parentElement
       const r = (node ?? el).getBoundingClientRect()
+      const rest = node?.classList.contains('rounded-t-xl') ? node.nextElementSibling : undefined
+      if (rest?.classList.contains('rounded-b-xl')) {
+        const b = rest.getBoundingClientRect()
+        return { x: r.x, y: r.y, width: r.width, height: b.bottom - r.y }
+      }
       return { x: r.x, y: r.y, width: r.width, height: r.height }
     })
   }
@@ -255,6 +312,7 @@ try {
     { name: 'crop-balance', path: `/finances/${ids.finances[0]}`, card: cardOf(text(L2.balance)) },
     { name: 'crop-categories', path: `/finances/${ids.finances[0]}`, act: tab(L.analysis), card: cardOf(text(L2.categories)) },
     { name: 'crop-cashflow', path: `/finances/${ids.finances[0]}`, act: tab(L.analysis), card: cardOf(text(L2.cashFlow)) },
+    { name: 'crop-receipt', path: `/finances/${ids.finances[0]}`, act: shots.find((x) => x.name === 'receipt').act, card: async (p) => p.getByRole('dialog').boundingBox() },
     { name: 'crop-entry', path: `/finances/${ids.finances[0]}`, act: shots.find((x) => x.name === 'entry-suggest').act, card: cardOf((p) => p.locator('input[name=description]')) },
     { name: 'crop-health-me', path: '/health', card: cardOf(text(data2.people.me)) },
     { name: 'crop-weight', path: `/health/${ids.healthLogs[0]}`, act: tab(L.body), card: cardOf(text(L2.weight)) },

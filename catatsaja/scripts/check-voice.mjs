@@ -10,7 +10,7 @@ import { narration, spoken } from './narration.mjs'
 const ROOT = new URL('../', import.meta.url).pathname
 const env = readFileSync(`${ROOT}../.env`, 'utf8')
 const key = env.match(/^ELEVENLABS_API_KEY=(.*)$/m)[1].trim().replace(/^["']|["']$/g, '')
-const [scenes = 'hook|brand|notes|charts|health|growth|share|private|cta', heardAs = 'ind'] = process.argv.slice(2)
+const [scenes = 'opener|hook|brand|notes|charts|health|growth|share|private|cta', heardAs = 'ind'] = process.argv.slice(2)
 
 for (const lang of ['en', 'id']) {
   for (const name of Object.keys(narration[lang]).filter((scene) => new RegExp(`^(${scenes})$`).test(scene))) {

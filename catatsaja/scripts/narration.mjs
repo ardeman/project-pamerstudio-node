@@ -4,6 +4,7 @@
 
 export const narration = {
   en: {
+    opener: 'Okay, this one app does your notes, your money, and your family’s health.',
     hook: 'Notes in one app, budget in another, health stuff… who knows where?',
     brand: 'Meet Catat Saja. Just write it down.',
     notes: 'Notes that format themselves. Just type.',
@@ -20,6 +21,7 @@ export const narration = {
     cta: "Give Catat Saja a try. It's free!",
   },
   id: {
+    opener: 'Oke, satu aplikasi ini bisa buat catatan, keuangan, sampai kesehatan keluarga.',
     hook: 'Catatan di sini, keuangan di sana, data kesehatan… entah di mana?',
     brand: 'Kenalin, Catat Saja. Catat aja.',
     notes: 'Catatan yang rapi sendiri. Tinggal ketik.',
