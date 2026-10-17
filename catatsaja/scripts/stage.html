@@ -167,13 +167,16 @@
       behind: (look.hair === 'long' ? `<path d="M104 210 C 96 116 150 86 200 86 C 250 86 304 116 296 210 L 306 348 C 262 362 138 362 94 348 Z" fill="${hairColor}"/>` : '') +
         (look.hair === 'bun' ? `<circle cx="200" cy="84" r="38" fill="${hairColor}"/><ellipse cx="200" cy="200" rx="96" ry="104" fill="${hairColor}"/>` : ''),
       neck: hijab ? '' : `<rect x="170" y="250" width="60" height="90" rx="24" fill="${shade(look.skin, -0.12)}"/>`,
-      drape: hijab ? `<path d="M200 62 C 108 62 92 150 98 226 C 102 292 124 352 200 376 C 276 352 298 292 302 226 C 308 150 292 62 200 62 Z" fill="${look.cloth}"/><ellipse cx="200" cy="200" rx="80" ry="94" fill="${shade(look.cloth, -0.12)}"/>` : '',
+      drape: hijab ? `<path d="M200 62 C 108 62 92 150 98 226 C 102 292 124 352 200 376 C 276 352 298 292 302 226 C 308 150 292 62 200 62 Z" fill="${look.cloth}"/><ellipse class="opening" cx="200" cy="200" rx="80" ry="94" fill="${shade(look.cloth, -0.12)}"/>` : '',
       head: `<g class="head">
-            ${hijab ? '' : `<ellipse cx="124" cy="204" rx="15" ry="21" fill="${shade(look.skin, -0.06)}"/><ellipse cx="276" cy="204" rx="15" ry="21" fill="${shade(look.skin, -0.06)}"/>`}
+            <g class="ear-l">${hijab ? '' : `<ellipse cx="124" cy="204" rx="15" ry="21" fill="${shade(look.skin, -0.06)}"/>`}</g>
+            <g class="ear-r">${hijab ? '' : `<ellipse cx="276" cy="204" rx="15" ry="21" fill="${shade(look.skin, -0.06)}"/>`}</g>
             <ellipse cx="200" cy="200" rx="${hijab ? 72 : 77}" ry="${hijab ? 85 : 90}" fill="${look.skin}"/>
-            ${look.earrings ? '<circle cx="124" cy="230" r="6" fill="#e9b949"/><circle cx="276" cy="230" r="6" fill="#e9b949"/>' : ''}
+            <g class="ear-l">${look.earrings ? '<circle cx="124" cy="230" r="6" fill="#e9b949"/>' : ''}</g>
+            <g class="ear-r">${look.earrings ? '<circle cx="276" cy="230" r="6" fill="#e9b949"/>' : ''}</g>
             ${look.stubble ? `<path d="M134 222 C 142 300 258 300 266 222 C 256 274 144 274 134 222 Z" fill="${hairColor}" opacity="0.2"/>` : ''}
             ${front[look.hair] ?? ''}
+            <g class="features">
             <circle cx="153" cy="234" r="15" fill="#f0827a" opacity="0.22"/>
             <circle cx="247" cy="234" r="15" fill="#f0827a" opacity="0.22"/>
             <path d="M154 176 Q170 167 186 175" fill="none" stroke="${hijab ? '#3a2a22' : hairColor}" stroke-width="6" stroke-linecap="round"/>
@@ -186,6 +189,7 @@
             <path d="M200 208 Q193 230 205 232" fill="none" stroke="${shade(look.skin, -0.22)}" stroke-width="4.5" stroke-linecap="round"/>
             <path class="smile" d="M180 252 Q200 268 220 252" fill="none" stroke="#7a3b2e" stroke-width="5.5" stroke-linecap="round"/>
             <g class="open"><ellipse cx="200" cy="256" rx="17" ry="10" fill="#6b2a22"/><ellipse cx="200" cy="263" rx="10" ry="4" fill="#d9776b"/></g>
+            </g>
           </g>`,
     }
   }
@@ -196,7 +200,22 @@
     const smile = root.querySelector('.smile')
     const open = root.querySelector('.open')
     const mouth = open.querySelector('ellipse')
-    return (t, level, tilt = 0) => {
+    const features = root.querySelector('.features'), opening = root.querySelector('.opening')
+    const ears = [...root.querySelectorAll('.ear-l')].map((node) => [node, -1]).concat([...root.querySelectorAll('.ear-r')].map((node) => [node, 1]))
+    let turned = null
+    return (t, level, tilt = 0, turn = 0) => {
+      // Turning (−1 left, 1 right): the face moves toward where they look,
+      // the near ear toward the face, the far one goes out of sight.
+      if (turn !== turned) {
+        turned = turn
+        features.setAttribute('transform', `translate(${turn * 34} 0)`)
+        opening?.setAttribute('transform', `translate(${turn * 12} 0)`)
+        ears.forEach(([node, side]) => {
+          const far = side * turn > 0
+          node.style.opacity = far ? clamp(1 - Math.abs(turn) * 2.5) : 1
+          node.setAttribute('transform', `translate(${far ? 0 : turn * 18} 0)`)
+        })
+      }
       // A blink every few seconds, 0.14 s long.
       const cycle = (t + seed) % 3.4
       const blink = cycle < 0.14 ? Math.abs(Math.cos((cycle / 0.14) * Math.PI)) : 1
@@ -276,7 +295,7 @@
         <line x2="0" y2="${BODY.thigh}" stroke="${look.bottom}" stroke-width="52" stroke-linecap="round"/>
         <g class="shin" transform="translate(0 ${BODY.thigh})">
           <line x2="0" y2="${BODY.shin - 12}" stroke="${shade(look.bottom, -0.06)}" stroke-width="46" stroke-linecap="round"/>
-          <ellipse cx="${side * 8}" cy="${BODY.shin - 4}" rx="34" ry="15" fill="${look.shoe}"/>
+          <ellipse class="shoe" cx="${side * 8}" cy="${BODY.shin - 4}" rx="34" ry="15" fill="${look.shoe}"/>
         </g>
       </g>`
     const arm = (side) => `
@@ -293,16 +312,22 @@
       ${leg(-1)}${leg(1)}
       <g class="upper">
         <g transform="${headAt}">${behind}${neck}</g>
+        <g class="arms-back"></g>
+        <g class="torso">
         <path d="M-70 -632 Q0 -644 70 -632 Q100 -620 100 -580 Q88 -470 92 -420 L110 -292 Q0 -278 -110 -292 L-92 -420 Q-88 -470 -100 -580 Q-100 -620 -70 -632 Z" fill="${look.top}"/>
         <path d="M-104 -318 Q0 -304 104 -318" fill="none" stroke="${shade(look.top, -0.18)}" stroke-width="6" opacity="0.6"/>
+        </g>
         <g transform="${headAt}">${drape}${head}</g>
-        ${arm(-1)}${arm(1)}
+        <g class="arms-front">${arm(-1)}${arm(1)}</g>
       </g>`
     parent.appendChild(g)
     const q = (sel) => g.querySelector(sel)
     const parts = {
       upper: q('.upper'),
-      legs: [-1, 1].map((side) => ({ side, node: q(`.leg-${side}`), shin: q(`.leg-${side} .shin`) })),
+      torso: q('.torso'),
+      back: q('.arms-back'),
+      front: q('.arms-front'),
+      legs: [-1, 1].map((side) => ({ side, node: q(`.leg-${side}`), shin: q(`.leg-${side} .shin`), shoe: q(`.leg-${side} .shoe`) })),
       arms: [-1, 1].map((side) => ({ side, node: q(`.arm-${side}`), fore: q(`.arm-${side} .fore`), hold: q(`.arm-${side} .hold`), item: null })),
     }
     const face = animateHead(g, people++ * 1.7)
@@ -312,19 +337,29 @@
       const phase = (pose.x / 150) * Math.PI
       const bob = -Math.abs(Math.cos(phase)) * 9 * walk + Math.sin(t * 1.8) * 1.5
       g.setAttribute('transform', `translate(${pose.x} ${pose.y + bob}) scale(${pose.flip ? -1 : 1} 1)`)
-      parts.legs.forEach(({ side, node, shin }) => {
+      // Turned (`turn`, −1 left to 1 right), the body narrows: hips and
+      // shoulders close up, the far arm goes behind it, the feet point ahead.
+      const turn = pose.turn ?? 0, narrow = Math.abs(turn)
+      parts.torso.setAttribute('transform', `scale(${1 - 0.28 * narrow} 1)`)
+      parts.legs.forEach(({ side, node, shin, shoe }) => {
         const swing = Math.sin(phase) * 24 * walk * side
-        node.setAttribute('transform', `translate(${side * hx} ${hy}) rotate(${swing})`)
+        node.setAttribute('transform', `translate(${side * hx * (1 - 0.6 * narrow)} ${hy}) rotate(${swing})`)
+        shoe.setAttribute('cx', side * 8 * (1 - narrow) + turn * 18)
         shin.setAttribute('transform', `translate(0 ${BODY.thigh}) rotate(${Math.max(0, -Math.sin(phase) * side) * 28 * walk})`)
       })
       const lean = pose.lean ?? 0
       parts.upper.setAttribute('transform', `rotate(${lean} 0 ${hy}) translate(0 ${-(pose.shrug ?? 0) * 10})`)
       parts.arms.forEach((a) => {
         let [dx, dy] = a.side < 0 ? pose.L : pose.R
+        // Hands reach the same spots however she's turned.
+        const ax = a.side * sx * (1 - 0.5 * narrow) + turn * 6
+        dx += a.side * sx - ax
+        const slot = a.side * turn < -0.15 ? parts.back : parts.front
+        if (a.node.parentNode !== slot) slot.appendChild(a.node)
         // Arms swing as she walks, against the legs.
         dx += Math.sin(phase) * 34 * walk * (pose.carry ? 0.3 : 1)
         const [up, fore] = reach([dx, dy], a.side)
-        a.node.setAttribute('transform', `translate(${a.side * sx} ${sy}) rotate(${up})`)
+        a.node.setAttribute('transform', `translate(${ax} ${sy}) rotate(${up})`)
         a.fore.setAttribute('transform', `translate(0 ${BODY.upper}) rotate(${fore})`)
         const item = a.side < 0 ? pose.lHold : pose.rHold
         if (item !== a.item) { a.hold.innerHTML = item ? props[item.split(':')[0]](item) : ''; a.item = item }
@@ -333,7 +368,7 @@
         const receipt = a.hold.querySelector('.length')
         if (receipt) receipt.setAttribute('height', pose.receipt ?? 40)
       })
-      face(t, level, pose.tilt ?? 0)
+      face(t, level, pose.tilt ?? 0, turn)
     }
   }
 
@@ -441,7 +476,7 @@
   // put down. What isn't a number switches at its frame.
   const HANG = { L: [-14, 236], R: [14, 236] }
   const keyframes = (frames) => {
-    let carried = { x: 600, y: 1150, talk: 0, ...HANG }
+    let carried = { x: 600, y: 1150, talk: 0, turn: 0, ...HANG }
     const full = frames.map(([at, change]) => [at, (carried = { ...carried, ...change })])
     return (t) => {
       const i = Math.max(0, full.findLastIndex(([at]) => at <= t))
@@ -457,44 +492,45 @@
     // Walks in with two shopping bags, puts them on the counter, pulls out
     // a very long receipt and shrugs.
     arrive: keyframes([
-      [0, { x: 160, walk: 1, carry: true, rHold: 'bag', lHold: 'bag:green', bags: 0 }],
+      [0, { x: 160, walk: 1, carry: true, rHold: 'bag', lHold: 'bag:green', bags: 0, turn: 0.85 }],
       [1.55, { x: 600, walk: 0.15 }],
-      [1.75, { walk: 0, R: [160, 120] }],
+      [1.75, { walk: 0, R: [160, 120], turn: 0.55 }],
       [2.05, { R: [202, -25], lean: 2 }],
       [2.1, { rHold: '', bags: 1, R: [190, -10] }],
       [2.35, { R: [60, 200], L: [80, 150], lean: 4 }],
       [2.7, { L: [238, -25], lean: 6 }],
       [2.75, { lHold: '', bags: 2, L: [220, -10] }],
-      [3.05, { L: [-20, 230], R: [200, -20], lean: 1 }],
+      [3.05, { L: [-20, 230], R: [200, -20], lean: 1, turn: 0.4 }],
       [3.15, { rHold: 'receipt', receipt: 40 }],
       // Holds it up, elbow down, and looks at how long it is.
-      [3.7, { R: [64, -20], receipt: 430, tilt: -5 }],
+      [3.7, { R: [64, -20], receipt: 430, tilt: -5, turn: 0.1 }],
       [3.95, { L: [-30, 228] }],
       // A shrug: shoulders up, elbow at her side, the forearm out, palm up.
-      [4.3, { L: [-128, 146], shrug: 1, tilt: 7 }],
+      [4.3, { L: [-128, 146], shrug: 1, tilt: 7, turn: 0 }],
       [4.6, {}],
       [5, { L: [-36, 222], shrug: 0.15, tilt: 2 }],
     ]),
     // Photographs the receipt on the counter, then checks the phone.
     snap: keyframes([
-      [0, { bags: 2, counterReceipt: true, rHold: 'phone', R: [60, 140], L: [-20, 230], flash: 0 }],
-      [0.7, { R: [160, -40], lean: 3, tilt: 4 }],
+      [0, { bags: 2, counterReceipt: true, rHold: 'phone', R: [60, 140], L: [-20, 230], flash: 0, turn: 0.2 }],
+      [0.7, { R: [160, -40], lean: 3, tilt: 4, turn: 0.6 }],
       [1.2, { flash: 0, talk: 1 }],
       [1.3, { flash: 1 }],
       [1.65, { flash: 0 }],
       // Brings the phone in to check what it read.
-      [2.2, { R: [40, 30], lean: 0, tilt: 8 }],
+      [1.9, { turn: 0.5 }],
+      [2.4, { R: [40, 30], lean: 0, tilt: 8, turn: 0.1 }],
       [3, { tilt: 3 }],
     ]),
     // Puts the groceries away on the shelf, then turns to the viewer with
     // an open hand.
     unpack: keyframes([
-      [0, { bags: 2, counterReceipt: true, shelf: 0, R: [60, 200] }],
+      [0, { bags: 2, counterReceipt: true, shelf: 0, R: [60, 200], turn: 0.1 }],
       [0.5, { talk: 1 }],
       ...['milk', 'rice', 'oil'].flatMap((name, i) => {
         const at = 0.25 + i * 0.85
         return [
-          [at, { R: [150, 30], lean: 2 }],
+          [at, { R: [150, 30], lean: 2, turn: 0.5 }],
           [at + 0.25, { rHold: `item:${name}` }],
           [at + 0.6, { R: [places.kitchen.counter.shelf[i][0] - 680, -60], lean: 3 }],
           [at + 0.65, { rHold: '', shelf: i + 1 }],
@@ -502,7 +538,7 @@
       }),
       [2.9, { talk: 0 }],
       // Turns to the viewer: the hand open, out at her side, as if to say "see?".
-      [3.3, { R: [30, 222], lean: 0, L: [-118, 168], tilt: -4 }],
+      [3.3, { R: [30, 222], lean: 0, L: [-118, 168], tilt: -4, turn: 0 }],
       [3.8, { L: [-110, 160] }],
     ]),
   }
