@@ -213,7 +213,6 @@ export const stories = {
       },
     ],
   },
-  // Draft lines, over the promo's screens (`../`) until his own are captured.
   hendra: {
     people: ['hendra'],
     full: false,
@@ -229,15 +228,15 @@ export const stories = {
         act: 'scan',
         tag: { en: 'Gemini reads it, you check ✅', id: 'Gemini yang baca, kamu cek ✅' },
         lines: [['hendra', 'Now I snap each one. Gemini reads the items, and I check before adding.', 'Sekarang tinggal kufoto satu-satu. Gemini yang baca barangnya, aku cek dulu sebelum ditambah.']],
-        shots: ['../receipt'],
-        crops: [{ shot: '../crop-receipt', at: 1.6 }],
+        shots: ['hendra-receipt'],
+        crops: [{ shot: 'hendra-crop-receipt', at: 1.6 }],
       },
       {
         act: 'file',
         tag: { en: 'Income and expenses, per week 📊', id: 'Pemasukan dan pengeluaran per minggu 📊' },
         lines: [['hendra', 'Every week I see what came in, what went out, and how much I kept.', 'Tiap minggu kelihatan yang masuk, yang keluar, dan berapa yang tersisa.']],
-        shots: ['../finance-analysis'],
-        crops: [{ shot: '../crop-cashflow' }],
+        shots: ['hendra-analysis'],
+        crops: [{ shot: 'hendra-crop-cashflow' }],
       },
     ],
   },

@@ -23,9 +23,11 @@ import {
 } from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
 import { bookSeed } from './book-seed.mjs'
-import { accounts, content, passphraseOf, wulanReceipt } from './stories-data.mjs'
+import { accounts, content, hendraReceipt, passphraseOf, wulanReceipt } from './stories-data.mjs'
 
 const lang = process.argv[2] ?? 'en'
+// Gemini's fixed answer for the people who scan a receipt.
+const receipts = { wulan: wulanReceipt(), hendra: hendraReceipt() }
 const OUT = new URL(`../shots/${lang}/stories/`, import.meta.url).pathname
 const DATABASE =
   'http://127.0.0.1:8080/v1/projects/demo-catatsaja/databases/(default)/documents'
@@ -130,8 +132,8 @@ try {
       theme: toValue('light'),
       currencyFormat: toValue(currencyFormat),
       defaultCurrency: toValue('IDR'),
-      // Wulan has said yes to Gemini already, so the notice doesn't show.
-      ...(key === 'wulan' && { aiConsent: toValue(true) }),
+      // The people who scan have said yes to Gemini already, so the notice doesn't show.
+      ...(receipts[key] && { aiConsent: toValue(true) }),
     })
     await context.close()
     console.log('account', key)
@@ -153,7 +155,7 @@ try {
       deviceScaleFactor: desk ? 2 : 3,
     })
     await context.addCookies([{ name: 'i18next', value: lang, url: APP }])
-    if (key === 'wulan') await fakeGemini(context, wulanReceipt())
+    if (receipts[key]) await fakeGemini(context, receipts[key])
     const page = await context.newPage()
     await signIn(page, accounts[key].email)
     const gate = page.getByText(t.encryption.unlock.title).first()
@@ -164,7 +166,7 @@ try {
     devices[name] = page
     return page
   }
-  for (const owner of ['rina', 'sari', 'adit', 'maya', 'nadia', 'wulan']) {
+  for (const owner of ['rina', 'sari', 'adit', 'maya', 'nadia', 'wulan', 'hendra']) {
     const page = await deviceOf(owner)
     await page.waitForTimeout(8000)
   }
@@ -251,10 +253,10 @@ try {
   const dad = `/health/${ids['maya.healthLogs']}`
   const cycle = `/health/${ids['nadia.healthLogs']}`
   const household = `/finances/${ids['wulan.finances']}`
+  const shop = `/finances/${ids['hendra.finances']}`
   // A photo to choose; its content doesn't matter, Gemini's answer is fixed.
   const receiptPhoto = path.join(await mkdtemp(path.join(tmpdir(), 'catatsaja-stories-')), 'receipt.jpg')
   await writeFile(receiptPhoto, await (await deviceOf('wulan')).screenshot({ type: 'jpeg' }))
-  const receipt = wulanReceipt()
   // Scanned and checked item by item, as she'd add a big shop.
   const scan = async (page) => {
     await page.getByRole('button', { name: 'Gemini', exact: true }).click()
@@ -264,12 +266,19 @@ try {
     await page.getByText(t.finances.receipt.review).first().waitFor({ timeout: 30_000 })
     await tab(t.finances.receipt.mode.items)(page)
   }
-  const receiptTotal = text(t.finances.receipt.chosenTotal_other.replace('{{count}}', receipt.items.length))
+  const countOf = (key) => receipts[key].items.length
   // Adds the scanned items: the shots after it show them in the book.
-  const addReceipt = async (page) => {
+  const addReceipt = (key) => async (page) => {
     await scan(page)
-    await page.getByRole('button', { name: t.finances.receipt.add_other.replace('{{count}}', receipt.items.length) }).click()
+    await page.getByRole('button', { name: t.finances.receipt.add_other.replace('{{count}}', countOf(key)) }).click()
     await page.waitForTimeout(4000)
+  }
+  // From "Check the receipt" down, without the Gemini card's header, so every item stays readable.
+  const receiptCard = (key) => async (page) => {
+    const total = text(t.finances.receipt.chosenTotal_other.replace('{{count}}', countOf(key)))
+    const box = await cardTo(text(t.finances.receipt.review), total)(page)
+    const top = (await text(t.finances.receipt.review)(page).first().boundingBox()).y - 14
+    return { ...box, y: top, height: box.y + box.height - top }
   }
   const typeEntry = async (page) => {
     await page.getByRole('button', { name: t.finances.entry.add }).first().click()
@@ -328,15 +337,18 @@ try {
     { name: 'wulan-book', who: 'wulan', path: household },
     { name: 'wulan-receipt', who: 'wulan', path: household, act: scan },
     { name: 'wulan-receipt-2', who: 'wulan', path: household, act: async (page) => { await scan(page); await scroll(page, 500) } },
-    { name: 'wulan-crop-receipt', who: 'wulan', path: household, act: scan, card: async (page) => {
-      // From "Check the receipt" down, without the Gemini card's header, so 8 items stay readable.
-      const box = await cardTo(text(t.finances.receipt.review), receiptTotal)(page)
-      const top = (await text(t.finances.receipt.review)(page).first().boundingBox()).y - 14
-      return { ...box, y: top, height: box.y + box.height - top }
-    } },
-    { name: 'wulan-added', who: 'wulan', path: household, act: addReceipt },
+    { name: 'wulan-crop-receipt', who: 'wulan', path: household, act: scan, card: receiptCard('wulan') },
+    { name: 'wulan-added', who: 'wulan', path: household, act: addReceipt('wulan') },
     { name: 'wulan-analysis', who: 'wulan', path: household, act: async (page) => { await tab(t.finances.view.analysis)(page); await scroll(page, 520) } },
     { name: 'wulan-crop-categories', who: 'wulan', path: household, act: tab(t.finances.view.analysis), card: cardOf(text(t.finances.analysis.categories.title)) },
+    // Hendra: a wholesaler's invoice, then his weeks. Nine weeks of entries,
+    // so the cash flow is per week, as his line and tag say.
+    { name: 'hendra-book', who: 'hendra', path: shop },
+    { name: 'hendra-receipt', who: 'hendra', path: shop, act: scan },
+    { name: 'hendra-crop-receipt', who: 'hendra', path: shop, act: scan, card: receiptCard('hendra') },
+    { name: 'hendra-added', who: 'hendra', path: shop, act: addReceipt('hendra') },
+    { name: 'hendra-analysis', who: 'hendra', path: shop, act: async (page) => { await tab(t.finances.view.analysis)(page); await scroll(page, 520) } },
+    { name: 'hendra-crop-cashflow', who: 'hendra', path: shop, act: tab(t.finances.view.analysis), card: cardOf(text(t.finances.analysis.cashFlow.title)) },
   ]
   const only = process.env.ONLY?.split(',')
   for (const shot of shots) {

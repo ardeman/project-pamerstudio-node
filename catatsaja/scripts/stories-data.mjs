@@ -35,6 +35,7 @@ export const accounts = {
   andi: { name: 'Andi', email: 'andi@example.com' },
   nadia: { name: 'Nadia', email: 'nadia@example.com' },
   wulan: { name: 'Wulan', email: 'wulan@example.com' },
+  hendra: { name: 'Hendra', email: 'hendra@example.com' },
 }
 export const passphraseOf = (key) => `${key} demo passphrase`
 
@@ -84,6 +85,13 @@ const text = {
     // Wulan files things her own way (milk with the baby's things, detergent
     // under laundry), so the receipt's items follow her entries. The receipt
     // is printed in Indonesian, so she keeps the product names.
+    // Hendra sells every day and restocks every week, so his book is
+    // weekly rows over nine weeks (see shopEntries).
+    shop: 'The shop',
+    takings: 'Takings for the week',
+    stock: 'Stock, Grosir Makmur',
+    power: 'PLN token',
+    bags: 'Plastic bags',
     household: 'Household, October',
     householdEntries: [
       [1, '2026-09-01', 'income', 'income', 'Salary', 6_500_000],
@@ -141,6 +149,11 @@ const text = {
     ],
     child: 'Arka',
     dad: 'Bapak',
+    shop: 'Toko',
+    takings: 'Hasil jualan seminggu',
+    stock: 'Kulakan Grosir Makmur',
+    power: 'Token PLN',
+    bags: 'Kantong plastik',
     household: 'Rumah tangga, Oktober',
     householdEntries: [
       [1, '2026-09-01', 'income', 'income', 'Gaji', 6_500_000],
@@ -160,6 +173,38 @@ const text = {
 }
 
 // What each account owns. `with` lists who it is shared with and how.
+// Nine weeks back from the day of capture (the app uses the real date), so
+// the analysis groups by week (32 to 183 days) and this week is his scan's.
+const shopEntries = (t) => {
+  const takings = [4_650_000, 4_980_000, 4_420_000, 5_210_000, 4_870_000, 5_060_000, 4_730_000, 5_340_000, 5_120_000]
+  const stock = [3_420_000, 3_610_000, 3_150_000, 3_880_000, 3_540_000, 3_700_000, 3_380_000, 3_920_000, 2_450_000]
+  // Last week's invoice he scanned item by item, so the items on this
+  // week's file under his own category, not the starter words' guesses
+  // ("air" is a water bill there).
+  const scanned = [
+    ['MIE INSTAN GORENG 1 DUS', 115_000, 4],
+    ['AIR MINERAL 600ML 1 DUS', 42_000, 3],
+    ['MINYAK GORENG 1L 1 DUS', 205_000, 2],
+    ['KOPI SACHET 1 RENTENG', 13_500, 20],
+    ['SABUN CUCI 1 DUS', 96_000, 2],
+  ]
+  const rows = takings.flatMap((amount, index) => {
+    const back = (8 - index) * 7
+    if (index !== 7) return [
+      ['income', 'business', t.takings, amount, back + 1],
+      ['expense', 'groceries', t.stock, stock[index], back + 4],
+    ]
+    const items = scanned.map(([description, price, quantity]) => ['expense', 'groceries', description, price, back + 4, quantity])
+    const rest = stock[index] - scanned.reduce((sum, [, price, quantity]) => sum + price * quantity, 0)
+    return [['income', 'business', t.takings, amount, back + 1], ...items, ['expense', 'groceries', t.stock, rest, back + 4]]
+  })
+  rows.push(['expense', 'bills', t.power, 300_000, 50], ['expense', 'bills', t.power, 300_000, 20])
+  rows.push(['expense', 'groceries', t.bags, 45_000, 35], ['expense', 'groceries', t.bags, 45_000, 6])
+  return rows.map(([type, category, description, amount, back, quantity], index) =>
+    entry([index + 1, daysAgo(back), type, category, description, amount, quantity]),
+  )
+}
+
 export const content = (lang) => {
   const t = text[lang]
   return {
@@ -275,6 +320,9 @@ export const content = (lang) => {
         },
       ],
     },
+    hendra: {
+      finances: [{ title: t.shop, pinned: true, currency: currency.IDR, content: shopEntries(t) }],
+    },
     typed: t.typed,
     ticked: t.ticked,
   }
@@ -296,6 +344,28 @@ export const wulanReceipt = () => {
   ]
   return {
     merchant: 'SUPERINDO',
+    date: daysAgo(0),
+    currency: 'IDR',
+    items,
+    charges: [],
+    discount: 0,
+    total: items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
+  }
+}
+
+// A wholesaler's printed invoice (not a handwritten nota: Gemini reads what
+// is printed), cartons and packs for his shelves.
+export const hendraReceipt = () => {
+  const items = [
+    { description: 'MIE INSTAN GORENG 1 DUS', quantity: 3, unitPrice: 115_000, discount: 0 },
+    { description: 'AIR MINERAL 600ML 1 DUS', quantity: 2, unitPrice: 42_000, discount: 0 },
+    { description: 'MINYAK GORENG 1L 1 DUS', quantity: 1, unitPrice: 205_000, discount: 0 },
+    { description: 'GULA PASIR 1KG', quantity: 10, unitPrice: 17_000, discount: 0 },
+    { description: 'KOPI SACHET 1 RENTENG', quantity: 10, unitPrice: 13_500, discount: 0 },
+    { description: 'SABUN CUCI 1 DUS', quantity: 1, unitPrice: 96_000, discount: 0 },
+  ]
+  return {
+    merchant: 'GROSIR MAKMUR',
     date: daysAgo(0),
     currency: 'IDR',
     items,
