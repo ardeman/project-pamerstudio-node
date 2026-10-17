@@ -37,6 +37,12 @@ export const cast = {
     look: { skin: '#cf9670', hair: 'long', hairColor: '#2a1c15', top: '#d9667b', earrings: true, bg: '#f9d3dc' },
     voice: { en: 'Xb7hH8MSUJpSbSDYk0k2', id: 'ffTJE9l3Kt2ipEM32UOc' }, // Alice; Aita
   },
+  // Drawn whole, in her kitchen: `bottom` and `shoe` dress the legs.
+  wulan: {
+    name: 'Wulan',
+    look: { skin: '#c68d66', hair: 'hijab', cloth: '#4f7fa8', top: '#f2a65a', bottom: '#5b4636', shoe: '#3b2f2a', bg: '#fde2c4' },
+    voice: {}, // TODO: chosen before her voice is bought
+  },
 }
 
 // A line: [who, English, Indonesian].
@@ -169,6 +175,35 @@ export const stories = {
         lines: [['nadia', 'I get a reminder three days before. And it’s end-to-end encrypted, so it’s just mine.', 'Tiga hari sebelumnya ada pengingat. Terenkripsi end-to-end, jadi cuma aku yang bisa baca.']],
         shots: ['nadia-overview'],
         crops: [{ shot: 'nadia-crop-reminders' }, { shot: 'nadia-crop-encryption', at: 2.6, dy: 420, r: 2 }],
+      },
+    ],
+  },
+  // In a place: the opening is the place itself, the person acting.
+  wulan: {
+    people: ['wulan'],
+    full: false,
+    place: 'kitchen',
+    scenes: [
+      {
+        act: 'arrive',
+        d: 5.2,
+        tag: { en: 'Scan a receipt 🧾', id: 'Pindai struk 🧾' },
+        lines: [['wulan', 'After the big monthly shop, I never typed in the receipt. Too many items.', 'Habis belanja bulanan, struknya nggak pernah kucatat. Kebanyakan barangnya.']],
+      },
+      {
+        act: 'snap',
+        tag: { en: 'Gemini reads it, you check ✅', id: 'Gemini yang baca, kamu cek ✅' },
+        lines: [['wulan', 'Now I just snap it. Gemini reads every item, and I check before adding.', 'Sekarang tinggal foto. Gemini yang baca tiap barang, aku cek dulu sebelum ditambah.']],
+        // For the preview: the promo's screens until hers are captured.
+        shots: ['../receipt'],
+        crops: [{ shot: '../crop-receipt', at: 1.6 }],
+      },
+      {
+        act: 'unpack',
+        tag: { en: 'Where did it go? 📊', id: 'Uangnya ke mana? 📊' },
+        lines: [['wulan', 'Categories come from my own entries, so I can see where the money went.', 'Kategorinya dari catatanku sendiri, jadi kelihatan uangnya ke mana aja.']],
+        shots: ['../finance-analysis'],
+        crops: [{ shot: '../crop-categories' }],
       },
     ],
   },

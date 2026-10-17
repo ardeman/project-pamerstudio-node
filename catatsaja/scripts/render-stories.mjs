@@ -1,7 +1,7 @@
 // Renders the stories videos (stories.mjs): the full one, and a short one
 // per story. Usage:
 //   node scripts/render-stories.mjs [video|all] [format|all] [en|id|all] [--stills] [--silent] [--dry-run] [--force] [--meta]
-// video: full, rina, couple, adit, maya or nadia. The full video is made in every
+// video: full, rina, couple, adit, maya, nadia or wulan. The full video is made in every
 // format; the short ones only vertically. Without a language, each format is
 // made in the languages it is posted in (`formats`). --stills writes a frame per scene
 // to out/stories/stills; --silent skips ElevenLabs (lines get an estimated
@@ -44,7 +44,11 @@ const storyScenes = (key, landscape) => {
   return [
     ...(story.intro ? [{ type: 'person', key: `${key}-intro`, people: story.people, role: story.role, lines: story.intro, d: 3.5 }] : []),
     ...story.scenes.map((scene, index) => ({
-      type: scene.type ?? 'phone',
+      // A story told in a place opens there (`place`), then keeps it as a
+      // band over the app's screens; `act` is what the person does.
+      type: scene.type ?? (story.place && index === 0 ? 'place' : 'phone'),
+      place: story.place,
+      act: scene.act,
       key: `${key}-${index + 1}`,
       tag: scene.tag,
       lines: scene.lines,
@@ -52,7 +56,7 @@ const storyScenes = (key, landscape) => {
       labels: scene.labels,
       // 16:9 shows the laptop screen instead of the cards, where there is one.
       ...(landscape && scene.desk ? { desk: scene.desk } : { crops: scene.crops }),
-      d: 4,
+      d: scene.d ?? 4,
     })),
   ]
 }
