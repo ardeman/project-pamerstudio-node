@@ -397,8 +397,9 @@
         curl.setAttribute('cy', length)
       }
     },
-    // A phone comes in over the receipt and takes a photo; the receipt's
-    // lines fly up out of it, read.
+    // A phone comes up in front of the receipt, screen to us and camera to
+    // the receipt, which fills its viewfinder; it takes the photo and the
+    // receipt's lines fly up out of it, read.
     snap: (layer, svg) => {
       const [bx, by, bs] = KITCHEN.bag
       svgEl(layer, `<g transform="translate(${bx} ${by - 174 * bs}) scale(${bs})">${shoppingBag('#e6cfa6')}</g>`)
@@ -407,16 +408,23 @@
       const lines = Array.from({ length: 8 }, () => svgEl(layer, '<rect x="-26" y="-4" width="52" height="8" rx="4" fill="#facc15"/>'))
       const phone = svgEl(layer, `
         <rect x="-80" y="-150" width="160" height="300" rx="28" fill="#1f1d1b"/>
-        <rect x="-50" y="-126" width="54" height="54" rx="14" fill="#2f2c2a"/><circle cx="-23" cy="-99" r="15" fill="#57534e"/><circle cx="-23" cy="-99" r="6" fill="#a8a29e"/>`)
+        <rect x="-70" y="-138" width="140" height="276" rx="20" fill="#3f3b38"/>
+        <rect x="-30" y="-120" width="60" height="230" fill="url(#receipt-lines)"/>
+        <path d="M-56 -100 v-22 h22 M56 -100 v-22 h-22 M-56 90 v22 h22 M56 90 v22 h-22" stroke="#facc15" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <circle cy="124" r="11" fill="none" stroke="#fff" stroke-width="4"/>
+        <rect class="shutter" x="-70" y="-138" width="140" height="276" rx="20" fill="#fff" opacity="0"/>`)
+      const shutter = phone.querySelector('.shutter')
       const flash = svg.querySelector('.flash')
       return (t) => {
         const p = back(ramp(t, 0.25, 0.6))
-        // Beside the receipt, so it stays in sight.
-        phone.setAttribute('transform', `translate(${1440 - (1440 - 1150) * p} ${570 + Math.sin(t * 1.6) * 6}) rotate(${(1 - p) * 14 - 10}) scale(0.8)`)
+        // Held a little in front of the receipt, which shows above and below it.
+        phone.setAttribute('transform', `translate(${1440 - (1440 - 985) * p} ${600 + Math.sin(t * 1.6) * 5}) rotate(${(1 - p) * 14 - 4}) scale(0.78)`)
+        // The flash lights up the receipt; the screen blinks like a shutter.
         const f = ramp(t, 1.1, 0.08) * (1 - ramp(t, 1.2, 0.45))
-        flash.setAttribute('opacity', f)
-        flash.setAttribute('cx', 1118)
-        flash.setAttribute('cy', 495)
+        flash.setAttribute('opacity', f * 0.9)
+        flash.setAttribute('cx', bx)
+        flash.setAttribute('cy', 560)
+        shutter.setAttribute('opacity', f)
         lines.forEach((node, i) => {
           const start = 1.3 + i * 0.1, q = easeInOut(ramp(t, start, 0.7))
           node.style.opacity = t < start ? 0 : 1 - ramp(t, start + 0.5, 0.2)
