@@ -47,7 +47,7 @@ export const cast = {
   // English voice yet.
   hendra: {
     name: 'Hendra',
-    look: { skin: '#b9825c', hair: 'short', hairColor: '#4a4440', top: '#5e8f86', stubble: true, bg: '#fde68a' },
+    look: { skin: '#b9825c', hair: 'short', hairColor: '#4a4440', top: '#b8574a', stubble: true, bg: '#fde68a' },
     voice: { id: 'gP7FRCgEZ8Lr3rnyGgpw' }, // Andra
   },
 }

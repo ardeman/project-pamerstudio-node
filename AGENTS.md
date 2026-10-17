@@ -8,7 +8,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 - Before asking, say what it will cost: run the render with `--dry-run` (free) and give its list and total against the credits left. Don't pass `--force` without the user's go-ahead.
 - Iterate on layout with `--stills --silent`, which makes no calls, and look at the stills before rendering a video.
 - Adding a voice from the voice library to the account, or changing the account in any other way, needs the user's approval too.
-- fal.ai (pictures, through `shared/fal.mjs`) is paid per picture from a prepaid balance. The same rules apply: run `--dry-run` for the price, and ask before a new or changed prompt. Never call it from a project directly, and don't delete `art/`.
+- fal.ai (pictures and videos, through `shared/fal.mjs`) is paid per picture or second of video from a prepaid balance. The same rules apply: run `--dry-run` for the price, and ask before a new or changed prompt. Never call it from a project directly, and don't delete `art/`.
 
 ## Keep it cheap to re-render
 
@@ -17,7 +17,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 
 ## Truthful content
 
-- Show only what the app really does, on its real screens: capture them from the demo data on the emulators (`capture*.mjs`), never mock up a screen. Generated pictures are only for the places stories happen in: never an app screen, a person, text or a brand. Check a claim against the app repo (its `README.md`, `AGENTS.md` and code) before a line says it.
+- Show only what the app really does, on its real screens: capture them from the demo data on the emulators (`capture*.mjs`), never mock up a screen. Generated pictures are only for the places stories happen in: never an app screen, text or a brand. Generated video may move a story's made-up person, drawn in the stories' flat style from a frame we drew (`first-frame.mjs`), never photoreal and never a real person. Check a claim against the app repo (its `README.md`, `AGENTS.md` and code) before a line says it.
 - Stories are about people the demo data makes up. Don't present them as real customers or testimonials, and don't draw or name real people.
 - Health lines describe what is logged and shown; never a diagnosis or a medical promise.
 

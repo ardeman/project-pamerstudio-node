@@ -265,6 +265,21 @@
     }
   }
 
+  // A person standing in a place, head and chest in the face's 400 × 400
+  // box, the body running on below it (hidden behind a counter). Still: it's
+  // the first frame an AI video makes them move from.
+  const bust = (look) => {
+    const { hijab, behind, neck, drape, head } = headParts(look)
+    return `
+      ${behind}
+      ${neck}
+      <path d="M40 760 L34 430 C 40 338 110 316 200 316 C 290 316 360 338 366 430 L360 760 Z" fill="${look.top}"/>
+      <path d="M86 380 C 70 470 74 600 84 760 M314 380 C 330 470 326 600 316 760" fill="none" stroke="${shade(look.top, -0.14)}" stroke-width="6" stroke-linecap="round"/>
+      ${hijab ? '' : `<path d="M168 318 Q200 350 232 318" fill="none" stroke="${shade(look.top, -0.25)}" stroke-width="6" stroke-linecap="round"/>`}
+      ${drape}
+      ${head.replace('class="open"', 'class="open" opacity="0"')}`
+  }
+
   // A shopping bag, full, standing on its bottom at y 174.
   const shoppingBag = (color) => `
     <path d="M-60 36 L-6 4 M60 36 L6 4" stroke="${shade(color, -0.35)}" stroke-width="7" stroke-linecap="round" fill="none"/>
@@ -360,6 +375,9 @@
     shop: {
       full: '740 150 700 796',
       strip: '700 380 760 405',
+      // Where someone stands behind the counter (top at y 680): x, the
+      // counter's top, and their size.
+      stand: [1030, 682, 0.92],
       draw: () => `
         <defs>${receiptPaper}</defs>
         ${config.art.shop.replace(/<svg[^>]*>/, '<svg viewBox="0 0 2048 1536" x="-27" width="1654" height="1240">')}
@@ -554,8 +572,18 @@
     const n = views++
     svg.querySelectorAll('[id]').forEach((node) => { node.id = `${node.id}-${n}` })
     svg.querySelectorAll('[fill^="url(#"]').forEach((node) => node.setAttribute('fill', node.getAttribute('fill').replace(')', `-${n})`)))
+    const look = s.cast[s.lines[0].who].look
+    // `figure`: they stand in the place (behind the counter, which hides
+    // their body), and no face in the corner.
+    if (s.figure) {
+      const [x, top, size] = place.stand
+      svg.querySelector('.fx').insertAdjacentHTML('beforebegin', `
+        <clipPath id="behind-${n}"><rect x="0" y="0" width="1600" height="${top}"/></clipPath>
+        <g clip-path="url(#behind-${n})"><g transform="translate(${x - 200 * size} ${top - 480 * size}) scale(${size})">${bust(look)}</g></g>`)
+      return { svg, update: (t) => act(t) }
+    }
     const corner = el(parent, 'abs', { left: px(faceSize * 0.22), top: px(faceSize * 0.22) })
-    const face = character(corner, s.cast[s.lines[0].who].look, faceSize)
+    const face = character(corner, look, faceSize)
     face.svg.style.filter = 'drop-shadow(0 12px 24px rgba(41, 37, 36, 0.22))'
     return {
       svg,
