@@ -43,11 +43,12 @@ export const cast = {
     look: { skin: '#c68d66', hair: 'hijab', cloth: '#4f7fa8', top: '#f2a65a', bottom: '#5b4636', shoe: '#3b2f2a', bg: '#fde2c4' },
     voice: { en: 'pFZP5JQG7iQjIQuC4Bku', id: 'yLyL4E4r0QfLyYpCwPir' }, // Lily; Sikedewo
   },
-  // Runs a toko kelontong. His voices are chosen before his lines are voiced.
+  // Runs a toko kelontong. His short is Indonesian only, so he has no
+  // English voice yet.
   hendra: {
     name: 'Hendra',
     look: { skin: '#b9825c', hair: 'short', hairColor: '#4a4440', top: '#5e8f86', stubble: true, bg: '#fde68a' },
-    voice: {},
+    voice: { id: 'gP7FRCgEZ8Lr3rnyGgpw' }, // Andra
   },
 }
 
