@@ -375,6 +375,9 @@
     shop: {
       full: '740 150 700 796',
       strip: '700 380 760 405',
+      // The strip with someone standing in it (`figure`, `avatar`): taller,
+      // so their head and the counter both show.
+      stripStand: '600 230 960 512',
       // Where someone stands behind the counter (top at y 680): x, the
       // counter's top, and their size.
       stand: [1030, 682, 0.92],
@@ -503,7 +506,8 @@
       spike(layer)
       SHOP.slips.forEach(([x, y, r]) => svgEl(layer, `<g transform="translate(${x} ${y}) rotate(${r})">${slip}</g>`))
       const [sx, sy] = SHOP.spike
-      return camera(layer, svg, { at: [1030, 520], flash: [sx, sy - 70], lines: [sx, sy - 90], gap: 10 })
+      // Held below his face, so a talking Hendra (avatar.mjs) shows over it.
+      return camera(layer, svg, { at: [990, 610], flash: [sx, sy - 70], lines: [sx, sy - 90], gap: 10 })
     },
     // Read, the receipts come off the spike one by one, top first, and fly
     // up out of the place: filed.
@@ -564,7 +568,7 @@
   const placeView = (parent, s, view, faceSize) => {
     const place = places[s.place]
     const svg = document.createElementNS(SVG, 'svg')
-    svg.setAttribute('viewBox', place[view])
+    svg.setAttribute('viewBox', ((s.figure || s.avatar) && place[`${view}Stand`]) || place[view])
     svg.setAttribute('preserveAspectRatio', 'xMidYMid slice')
     svg.innerHTML = place.draw()
     parent.appendChild(svg)
@@ -575,9 +579,10 @@
     svg.querySelectorAll('[id]').forEach((node) => { node.id = `${node.id}-${n}` })
     svg.querySelectorAll('[fill^="url(#"]').forEach((node) => node.setAttribute('fill', node.getAttribute('fill').replace(')', `-${n})`)))
     // `avatar`: the person talking in their place, an AI video made from this
-    // view's first frame (avatar.mjs). Its frames are drawn over the place,
-    // frame 0 with the line's first word; its own sound is not used.
-    if (s.avatar && view === 'full') {
+    // view's first frame (avatar.mjs), the full place or the band over the
+    // phone. Its frames are drawn over the place, frame 0 with the line's
+    // first word; its own sound is not used.
+    if (s.avatar) {
       svg.style.visibility = 'hidden'
       const canvas = document.createElement('canvas')
       Object.assign(canvas.style, { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' })
@@ -777,8 +782,9 @@
     // A story's opening in its place: the person acting it out, what the
     // app does and what they say below.
     place(root, s) {
-      const height = Math.round(H * 0.64)
-      const scene = placeBand(root, s, 'full', height)
+      // `view: 'strip'`: only the band a later scene keeps (first-frame.mjs).
+      const height = Math.round(H * (s.view === 'strip' ? 0.3 : 0.64))
+      const scene = placeBand(root, s, s.view ?? 'full', height)
       const cap = placeCaption(root, s, { x: 70, y: height + 10, w: W - 140, size: orient === 'portrait' ? 60 : 50, sub: 40 })
       const who = s.lines[0].who
       return (t) => {

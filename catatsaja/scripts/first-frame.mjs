@@ -15,9 +15,11 @@ const ROOT = new URL('../', import.meta.url).pathname
 const OUT = `${ROOT}out/stories/first-frames/`
 const [name = 'hendra', number = '1'] = process.argv.slice(2)
 const scene = stories[name].scenes[Number(number) - 1]
-// The vertical short's place band (stage.html `place`: 64% of 1920).
+// The vertical short's place band (stage.html): 64% of 1920 for the opening
+// scene, 30% for the strip a phone scene keeps over the app.
+const view = Number(number) === 1 ? 'full' : 'strip'
 const width = 1080
-const height = Math.round(1920 * 0.64)
+const height = Math.round(1920 * (view === 'full' ? 0.64 : 0.3))
 
 await mkdir(OUT, { recursive: true })
 const browser = await chromium.launch({ channel: 'chrome' })
@@ -31,7 +33,7 @@ try {
     shots: '',
     art: Object.fromEntries(readdirSync(`${ROOT}places`).map((file) => [file.replace(/\.svg$/, ''), readFileSync(`${ROOT}places/${file}`, 'utf8')])),
     cast,
-    scenes: [{ type: 'place', place: stories[name].place, act: scene.act, d, tag: '', figure: true, lines: [{ who: scene.lines[0][0], text: '', at: 0, d: 0 }] }],
+    scenes: [{ type: 'place', view, place: stories[name].place, act: scene.act, d, tag: '', figure: true, lines: [{ who: scene.lines[0][0], text: '', at: 0, d: 0 }] }],
   })
   await page.evaluate((t) => {
     window.seek(t)

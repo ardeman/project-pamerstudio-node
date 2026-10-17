@@ -127,7 +127,7 @@ const timed = async (lang, scene) => {
   const end = at - GAP + TAIL + (scene.type === 'cta' ? 0.6 : 0)
   return {
     ...scene,
-    avatar: scene.type === 'place' ? avatarOf(scene.key, lang) : undefined,
+    avatar: scene.place ? avatarOf(scene.key, lang) : undefined,
     lines,
     d: Math.max(scene.d, end),
     role: scene.role?.[lang],
