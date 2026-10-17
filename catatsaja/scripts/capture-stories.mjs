@@ -5,7 +5,9 @@
 // ONLY=name,name captures just those shots (the accounts are seeded anyway).
 
 import { readFileSync } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 
 import {
   APP,
@@ -21,7 +23,7 @@ import {
 } from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
 import { bookSeed } from './book-seed.mjs'
-import { accounts, content, passphraseOf } from './stories-data.mjs'
+import { accounts, content, passphraseOf, wulanReceipt } from './stories-data.mjs'
 
 const lang = process.argv[2] ?? 'en'
 const OUT = new URL(`../shots/${lang}/stories/`, import.meta.url).pathname
@@ -53,6 +55,18 @@ const currencyFormat = {
   currencyType: 'symbol',
   addSpace: true,
 }
+
+// Gemini's answer to a receipt scan, as the e2e tests fake it: the screens
+// stay real without calling Gemini.
+const fakeGemini = (context, receipt) =>
+  context.route('**/firebasevertexai.googleapis.com/**', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        candidates: [{ index: 0, finishReason: 'STOP', content: { role: 'model', parts: [{ text: JSON.stringify(receipt) }] } }],
+      }),
+    }),
+  )
 
 const uids = {}
 const ids = {}
@@ -116,6 +130,8 @@ try {
       theme: toValue('light'),
       currencyFormat: toValue(currencyFormat),
       defaultCurrency: toValue('IDR'),
+      // Wulan has said yes to Gemini already, so the notice doesn't show.
+      ...(key === 'wulan' && { aiConsent: toValue(true) }),
     })
     await context.close()
     console.log('account', key)
@@ -137,6 +153,7 @@ try {
       deviceScaleFactor: desk ? 2 : 3,
     })
     await context.addCookies([{ name: 'i18next', value: lang, url: APP }])
+    if (key === 'wulan') await fakeGemini(context, wulanReceipt())
     const page = await context.newPage()
     await signIn(page, accounts[key].email)
     const gate = page.getByText(t.encryption.unlock.title).first()
@@ -147,7 +164,7 @@ try {
     devices[name] = page
     return page
   }
-  for (const owner of ['rina', 'sari', 'adit', 'maya', 'nadia']) {
+  for (const owner of ['rina', 'sari', 'adit', 'maya', 'nadia', 'wulan']) {
     const page = await deviceOf(owner)
     await page.waitForTimeout(8000)
   }
@@ -233,6 +250,27 @@ try {
   const trip = `/finances/${ids['adit.finances']}`
   const dad = `/health/${ids['maya.healthLogs']}`
   const cycle = `/health/${ids['nadia.healthLogs']}`
+  const household = `/finances/${ids['wulan.finances']}`
+  // A photo to choose; its content doesn't matter, Gemini's answer is fixed.
+  const receiptPhoto = path.join(await mkdtemp(path.join(tmpdir(), 'catatsaja-stories-')), 'receipt.jpg')
+  await writeFile(receiptPhoto, await (await deviceOf('wulan')).screenshot({ type: 'jpeg' }))
+  const receipt = wulanReceipt()
+  // Scanned and checked item by item, as she'd add a big shop.
+  const scan = async (page) => {
+    await page.getByRole('button', { name: 'Gemini', exact: true }).click()
+    const chooser = page.waitForEvent('filechooser')
+    await page.getByRole('button', { name: t.finances.receipt.scan }).click()
+    await (await chooser).setFiles(receiptPhoto)
+    await page.getByText(t.finances.receipt.review).first().waitFor({ timeout: 30_000 })
+    await tab(t.finances.receipt.mode.items)(page)
+  }
+  const receiptTotal = text(t.finances.receipt.chosenTotal_other.replace('{{count}}', receipt.items.length))
+  // Adds the scanned items: the shots after it show them in the book.
+  const addReceipt = async (page) => {
+    await scan(page)
+    await page.getByRole('button', { name: t.finances.receipt.add_other.replace('{{count}}', receipt.items.length) }).click()
+    await page.waitForTimeout(4000)
+  }
   const typeEntry = async (page) => {
     await page.getByRole('button', { name: t.finances.entry.add }).first().click()
     await page.waitForTimeout(1200)
@@ -284,6 +322,21 @@ try {
     { name: 'nadia-overview', who: 'nadia', path: cycle },
     { name: 'nadia-crop-reminders', who: 'nadia', path: cycle, card: cardTo(text(t.health.reminders.title), text(t.health.reminders.periodBefore_other.replace('{{count}}', 3))) },
     { name: 'nadia-crop-encryption', who: 'nadia', path: '/settings/account', card: cardTo(text(t.encryption.settings.on), text(t.encryption.settings.on)) },
+    // Wulan: her monthly-shop receipt, read by Gemini, checked item by item,
+    // then where the money went. `wulan-added` adds it, so it comes after the
+    // receipt shots and before the analysis ones.
+    { name: 'wulan-book', who: 'wulan', path: household },
+    { name: 'wulan-receipt', who: 'wulan', path: household, act: scan },
+    { name: 'wulan-receipt-2', who: 'wulan', path: household, act: async (page) => { await scan(page); await scroll(page, 500) } },
+    { name: 'wulan-crop-receipt', who: 'wulan', path: household, act: scan, card: async (page) => {
+      // From "Check the receipt" down, without the Gemini card's header, so 8 items stay readable.
+      const box = await cardTo(text(t.finances.receipt.review), receiptTotal)(page)
+      const top = (await text(t.finances.receipt.review)(page).first().boundingBox()).y - 14
+      return { ...box, y: top, height: box.y + box.height - top }
+    } },
+    { name: 'wulan-added', who: 'wulan', path: household, act: addReceipt },
+    { name: 'wulan-analysis', who: 'wulan', path: household, act: async (page) => { await tab(t.finances.view.analysis)(page); await scroll(page, 520) } },
+    { name: 'wulan-crop-categories', who: 'wulan', path: household, act: tab(t.finances.view.analysis), card: cardOf(text(t.finances.analysis.categories.title)) },
   ]
   const only = process.env.ONLY?.split(',')
   for (const shot of shots) {

@@ -41,7 +41,7 @@ export const cast = {
   wulan: {
     name: 'Wulan',
     look: { skin: '#c68d66', hair: 'hijab', cloth: '#4f7fa8', top: '#f2a65a', bottom: '#5b4636', shoe: '#3b2f2a', bg: '#fde2c4' },
-    voice: {}, // TODO: chosen before her voice is bought
+    voice: { en: 'pFZP5JQG7iQjIQuC4Bku', id: 'yLyL4E4r0QfLyYpCwPir' }, // Lily; Sikedewo
   },
 }
 
@@ -194,16 +194,15 @@ export const stories = {
         act: 'snap',
         tag: { en: 'Gemini reads it, you check ✅', id: 'Gemini yang baca, kamu cek ✅' },
         lines: [['wulan', 'Now I just snap it. Gemini reads every item, and I check before adding.', 'Sekarang tinggal foto. Gemini yang baca tiap barang, aku cek dulu sebelum ditambah.']],
-        // For the preview: the promo's screens until hers are captured.
-        shots: ['../receipt'],
-        crops: [{ shot: '../crop-receipt', at: 1.6 }],
+        shots: ['wulan-receipt'],
+        crops: [{ shot: 'wulan-crop-receipt', at: 1.6 }],
       },
       {
         act: 'unpack',
         tag: { en: 'Where did it go? 📊', id: 'Uangnya ke mana? 📊' },
         lines: [['wulan', 'Categories come from my own entries, so I can see where the money went.', 'Kategorinya dari catatanku sendiri, jadi kelihatan uangnya ke mana aja.']],
-        shots: ['../finance-analysis'],
-        crops: [{ shot: '../crop-categories' }],
+        shots: ['wulan-added'],
+        crops: [{ shot: 'wulan-crop-categories' }],
       },
     ],
   },

@@ -34,6 +34,7 @@ export const accounts = {
   maya: { name: 'Maya', email: 'maya@example.com' },
   andi: { name: 'Andi', email: 'andi@example.com' },
   nadia: { name: 'Nadia', email: 'nadia@example.com' },
+  wulan: { name: 'Wulan', email: 'wulan@example.com' },
 }
 export const passphraseOf = (key) => `${key} demo passphrase`
 
@@ -80,6 +81,24 @@ const text = {
     ],
     child: 'Arka',
     dad: 'Dad',
+    // Wulan files things her own way (milk with the baby's things, detergent
+    // under laundry), so the receipt's items follow her entries. The receipt
+    // is printed in Indonesian, so she keeps the product names.
+    household: 'Household, October',
+    householdEntries: [
+      [1, '2026-09-01', 'income', 'income', 'Salary', 6_500_000],
+      [2, '2026-09-02', 'expense', 'groceries', 'Monthly shop, Superindo', 1_150_000],
+      [3, '2026-09-02', 'expense', 'family', 'Nappies for Kirana', 92_000],
+      [4, '2026-09-02', 'expense', 'laundry', 'Deterjen and softener', 61_000],
+      [5, '2026-09-03', 'expense', 'bills', 'PLN token', 200_000],
+      [6, '2026-09-10', 'expense', 'family', 'Formula milk for Kirana', 145_000],
+      [7, '2026-09-14', 'expense', 'tools', 'Sabun mandi and shampoo', 48_000],
+      [8, '2026-09-20', 'expense', 'bills', 'Water bill', 85_000],
+      [9, '2026-10-01', 'income', 'income', 'Salary', 6_500_000],
+      [10, '2026-10-03', 'expense', 'bills', 'PLN token', 200_000],
+      [11, '2026-10-05', 'expense', 'groceries', 'Vegetables at the market', 64_000],
+      [12, '2026-10-09', 'expense', 'fnb', 'Bakso next door', 30_000, 2],
+    ],
   },
   id: {
     groceries: 'Belanja',
@@ -122,6 +141,21 @@ const text = {
     ],
     child: 'Arka',
     dad: 'Bapak',
+    household: 'Rumah tangga, Oktober',
+    householdEntries: [
+      [1, '2026-09-01', 'income', 'income', 'Gaji', 6_500_000],
+      [2, '2026-09-02', 'expense', 'groceries', 'Belanja bulanan Superindo', 1_150_000],
+      [3, '2026-09-02', 'expense', 'family', 'Popok Kirana', 92_000],
+      [4, '2026-09-02', 'expense', 'laundry', 'Deterjen dan pewangi', 61_000],
+      [5, '2026-09-03', 'expense', 'bills', 'Token PLN', 200_000],
+      [6, '2026-09-10', 'expense', 'family', 'Susu formula Kirana', 145_000],
+      [7, '2026-09-14', 'expense', 'tools', 'Sabun mandi dan sampo', 48_000],
+      [8, '2026-09-20', 'expense', 'bills', 'Air PDAM', 85_000],
+      [9, '2026-10-01', 'income', 'income', 'Gaji', 6_500_000],
+      [10, '2026-10-03', 'expense', 'bills', 'Token PLN', 200_000],
+      [11, '2026-10-05', 'expense', 'groceries', 'Sayur di pasar', 64_000],
+      [12, '2026-10-09', 'expense', 'fnb', 'Bakso depan rumah', 30_000, 2],
+    ],
   },
 }
 
@@ -231,7 +265,42 @@ export const content = (lang) => {
         },
       ],
     },
+    wulan: {
+      finances: [
+        {
+          title: t.household,
+          pinned: true,
+          currency: currency.IDR,
+          content: t.householdEntries.map((row) => entry(row)),
+        },
+      ],
+    },
     typed: t.typed,
     ticked: t.ticked,
+  }
+}
+
+// Gemini's answer to Wulan's monthly-shop receipt, faked as the e2e tests
+// do (capture-stories.mjs): printed text, the same in both languages, dated
+// the day of capture (the app uses the real date).
+export const wulanReceipt = () => {
+  const items = [
+    { description: 'BERAS PANDAN 5KG', quantity: 1, unitPrice: 72_500, discount: 0 },
+    { description: 'MINYAK GORENG 2L', quantity: 1, unitPrice: 38_900, discount: 0 },
+    { description: 'GULA PASIR 1KG', quantity: 1, unitPrice: 17_500, discount: 0 },
+    { description: 'TELUR AYAM 1KG', quantity: 1, unitPrice: 28_500, discount: 0 },
+    { description: 'SUSU UHT 1L', quantity: 4, unitPrice: 19_900, discount: 6000 },
+    { description: 'POPOK BAYI M', quantity: 1, unitPrice: 89_900, discount: 0 },
+    { description: 'DETERJEN 1.8KG', quantity: 1, unitPrice: 45_900, discount: 0 },
+    { description: 'SABUN CUCI PIRING', quantity: 1, unitPrice: 15_900, discount: 0 },
+  ]
+  return {
+    merchant: 'SUPERINDO',
+    date: daysAgo(0),
+    currency: 'IDR',
+    items,
+    charges: [],
+    discount: 0,
+    total: items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
   }
 }
