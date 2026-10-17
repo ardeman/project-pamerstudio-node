@@ -150,7 +150,7 @@
   }
   let people = 0
   // The head, in a 400 × 400 box with the neck at (200, 300): the faces in
-  // circles and the puppets in places share it.
+  // circles share it.
   const headParts = (look) => {
     const hairColor = look.hairColor ?? '#2b1d16'
     const hijab = look.hair === 'hijab'
@@ -265,153 +265,32 @@
     }
   }
 
-  // A whole person, standing in a place (`places`): the same head on a body
-  // with jointed arms and legs, posed each frame by an act (`acts`). Units are
-  // the place's; the feet are at (0, 0).
-  const BODY = { shoulder: [86, -598], upper: 125, fore: 115, hip: [40, -330], thigh: 165, shin: 165, head: 0.72 }
-  // Two-bone reach: the arm's angles that put the hand at (dx, dy) from the
-  // shoulder, the elbow bent away from the body (side −1 left, 1 right).
-  // SVG's rotate(a) turns straight down into (−sin a, cos a).
-  const deg = 180 / Math.PI
-  const reach = ([dx, dy], side) => {
-    const { upper: a, fore: b } = BODY
-    const d = clamp(Math.hypot(dx, dy), Math.abs(a - b) + 1, a + b - 0.5)
-    const toward = Math.atan2(-dx, dy)
-    const bend = Math.acos(clamp((a * a + d * d - b * b) / (2 * a * d), -1, 1))
-    const upper = toward + side * bend
-    const ex = -Math.sin(upper) * a, ey = Math.cos(upper) * a
-    const k = d / Math.max(1, Math.hypot(dx, dy))
-    const fore = Math.atan2(-(dx * k - ex), dy * k - ey)
-    return [upper * deg, (fore - upper) * deg]
-  }
-  const puppet = (parent, look) => {
-    const g = document.createElementNS(SVG, 'g')
-    const { behind, neck, drape, head } = headParts(look)
-    const [sx, sy] = BODY.shoulder, [hx, hy] = BODY.hip, k = BODY.head
-    const headAt = `translate(${-200 * k} ${sy - 40 - 300 * k}) scale(${k})`
-    const sleeve = look.top, skin = look.skin
-    const leg = (side) => `
-      <g class="leg-${side}" transform="translate(${side * hx} ${hy})">
-        <line x2="0" y2="${BODY.thigh}" stroke="${look.bottom}" stroke-width="52" stroke-linecap="round"/>
-        <g class="shin" transform="translate(0 ${BODY.thigh})">
-          <line x2="0" y2="${BODY.shin - 12}" stroke="${shade(look.bottom, -0.06)}" stroke-width="46" stroke-linecap="round"/>
-          <ellipse class="shoe" cx="${side * 8}" cy="${BODY.shin - 4}" rx="34" ry="15" fill="${look.shoe}"/>
-        </g>
-      </g>`
-    const arm = (side) => `
-      <g class="arm-${side}" transform="translate(${side * sx} ${sy})">
-        <line x2="0" y2="${BODY.upper}" stroke="${shade(sleeve, -0.07)}" stroke-width="40" stroke-linecap="round"/>
-        <g class="fore" transform="translate(0 ${BODY.upper})">
-          <line x2="0" y2="${BODY.fore - 6}" stroke="${shade(sleeve, -0.12)}" stroke-width="34" stroke-linecap="round"/>
-          <g class="hold" transform="translate(0 ${BODY.fore + 10})"></g>
-          <ellipse cx="${-side * 13}" cy="${BODY.fore + 2}" rx="8" ry="12" fill="${shade(skin, -0.08)}" transform="rotate(${side * 25} ${-side * 13} ${BODY.fore + 2})"/>
-          <ellipse cy="${BODY.fore + 12}" rx="16" ry="22" fill="${skin}"/>
-        </g>
-      </g>`
-    g.innerHTML = `
-      ${leg(-1)}${leg(1)}
-      <g class="upper">
-        <g transform="${headAt}">${behind}${neck}</g>
-        <g class="arms-back"></g>
-        <g class="torso">
-        <path d="M-70 -632 Q0 -644 70 -632 Q100 -620 100 -580 Q88 -470 92 -420 L110 -292 Q0 -278 -110 -292 L-92 -420 Q-88 -470 -100 -580 Q-100 -620 -70 -632 Z" fill="${look.top}"/>
-        <path d="M-104 -318 Q0 -304 104 -318" fill="none" stroke="${shade(look.top, -0.18)}" stroke-width="6" opacity="0.6"/>
-        </g>
-        <g transform="${headAt}">${drape}${head}</g>
-        <g class="arms-front">${arm(-1)}${arm(1)}</g>
-      </g>`
-    parent.appendChild(g)
-    const q = (sel) => g.querySelector(sel)
-    const parts = {
-      upper: q('.upper'),
-      torso: q('.torso'),
-      back: q('.arms-back'),
-      front: q('.arms-front'),
-      legs: [-1, 1].map((side) => ({ side, node: q(`.leg-${side}`), shin: q(`.leg-${side} .shin`), shoe: q(`.leg-${side} .shoe`) })),
-      arms: [-1, 1].map((side) => ({ side, node: q(`.arm-${side}`), fore: q(`.arm-${side} .fore`), hold: q(`.arm-${side} .hold`), item: null })),
-    }
-    const face = animateHead(g, people++ * 1.7)
-    return (t, level, pose) => {
-      const walk = pose.walk ?? 0
-      // Feet don't slide: the stride follows how far the body has moved.
-      const phase = (pose.x / 150) * Math.PI
-      const bob = -Math.abs(Math.cos(phase)) * 9 * walk + Math.sin(t * 1.8) * 1.5
-      g.setAttribute('transform', `translate(${pose.x} ${pose.y + bob}) scale(${pose.flip ? -1 : 1} 1)`)
-      // Turned (`turn`, −1 left to 1 right), the body narrows: hips and
-      // shoulders close up, the far arm goes behind it, the feet point ahead.
-      const turn = pose.turn ?? 0, narrow = Math.abs(turn)
-      parts.torso.setAttribute('transform', `scale(${1 - 0.28 * narrow} 1)`)
-      parts.legs.forEach(({ side, node, shin, shoe }) => {
-        const swing = Math.sin(phase) * 24 * walk * side
-        node.setAttribute('transform', `translate(${side * hx * (1 - 0.6 * narrow)} ${hy}) rotate(${swing})`)
-        shoe.setAttribute('cx', side * 8 * (1 - narrow) + turn * 18)
-        shin.setAttribute('transform', `translate(0 ${BODY.thigh}) rotate(${Math.max(0, -Math.sin(phase) * side) * 28 * walk})`)
-      })
-      const lean = pose.lean ?? 0
-      parts.upper.setAttribute('transform', `rotate(${lean} 0 ${hy}) translate(0 ${-(pose.shrug ?? 0) * 10})`)
-      parts.arms.forEach((a) => {
-        let [dx, dy] = a.side < 0 ? pose.L : pose.R
-        // Hands reach the same spots however she's turned.
-        const ax = a.side * sx * (1 - 0.5 * narrow) + turn * 6
-        dx += a.side * sx - ax
-        const slot = a.side * turn < -0.15 ? parts.back : parts.front
-        if (a.node.parentNode !== slot) slot.appendChild(a.node)
-        // Arms swing as she walks, against the legs.
-        dx += Math.sin(phase) * 34 * walk * (pose.carry ? 0.3 : 1)
-        const [up, fore] = reach([dx, dy], a.side)
-        a.node.setAttribute('transform', `translate(${ax} ${sy}) rotate(${up})`)
-        a.fore.setAttribute('transform', `translate(0 ${BODY.upper}) rotate(${fore})`)
-        const item = a.side < 0 ? pose.lHold : pose.rHold
-        if (item !== a.item) { a.hold.innerHTML = item ? props[item.split(':')[0]](item) : ''; a.item = item }
-        // What's held hangs straight down, whatever the arm does.
-        a.hold.setAttribute('transform', `translate(0 ${BODY.fore + 10}) rotate(${-(up + fore + lean)})`)
-        const receipt = a.hold.querySelector('.length')
-        if (receipt) receipt.setAttribute('height', pose.receipt ?? 40)
-      })
-      face(t, level, pose.tilt ?? 0, turn)
-    }
-  }
-
-  // Things people carry, put down or put away, drawn around where the hand
-  // holds them. A name can carry a variant after a colon (`bag:green`).
-  const props = {
-    bag: (name) => {
-      const color = name.endsWith('green') ? '#4f9a74' : '#e6cfa6'
-      return `
-        <path d="M-60 36 L-6 4 M60 36 L6 4" stroke="${shade(color, -0.35)}" stroke-width="7" stroke-linecap="round" fill="none"/>
-        <rect x="-44" y="-30" width="20" height="78" rx="6" fill="#7cb85a" transform="rotate(-12 -34 40)"/>
-        <rect x="18" y="-6" width="26" height="54" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
-        <rect x="18" y="-14" width="26" height="12" rx="3" fill="#3b82f6"/>
-        <circle cx="-4" cy="26" r="20" fill="#ef6f4c"/>
-        <path d="M-64 34 L64 34 L57 170 Q0 178 -57 170 Z" fill="${color}"/>
-        <path d="M-64 34 L64 34 L63 50 L-63 50 Z" fill="${shade(color, -0.12)}"/>`
-    },
-    receipt: () => `
-      <rect class="length" x="-26" y="0" width="52" height="40" fill="url(#receipt-lines)" stroke="#d6d3d1" stroke-width="2"/>
-      <rect x="-26" y="0" width="52" height="16" fill="#fff"/>`,
-    phone: () => `
-      <g transform="translate(0 -40)">
-        <rect x="-27" y="-50" width="54" height="100" rx="10" fill="#1f1d1b"/>
-        <circle cx="-12" cy="-36" r="6" fill="#57534e"/><circle cx="-12" cy="-36" r="2.5" fill="#a8a29e"/>
-      </g>`,
-    item: (name) => grocery[name.split(':')[1]],
-  }
+  // A shopping bag, full, standing on its bottom at y 174.
+  const shoppingBag = (color) => `
+    <path d="M-60 36 L-6 4 M60 36 L6 4" stroke="${shade(color, -0.35)}" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <rect x="-44" y="-30" width="20" height="78" rx="6" fill="#7cb85a" transform="rotate(-12 -34 40)"/>
+    <rect x="18" y="-6" width="26" height="54" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+    <rect x="18" y="-14" width="26" height="12" rx="3" fill="#3b82f6"/>
+    <circle cx="-4" cy="26" r="20" fill="#ef6f4c"/>
+    <path d="M-64 34 L64 34 L57 170 Q0 178 -57 170 Z" fill="${color}"/>
+    <path d="M-64 34 L64 34 L63 50 L-63 50 Z" fill="${shade(color, -0.12)}"/>`
   // Groceries, standing on the bottom of their box.
   const grocery = {
     milk: '<path d="M-22 0 L-22 -70 L-12 -88 L12 -88 L22 -70 L22 0 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/><rect x="-22" y="-52" width="44" height="22" fill="#60a5fa"/>',
     rice: '<path d="M-32 0 Q-36 -50 -26 -84 L26 -84 Q36 -50 32 0 Z" fill="#fef3c7" stroke="#e5c97a" stroke-width="3"/><rect x="-22" y="-56" width="44" height="22" rx="4" fill="#dc2626"/>',
     oil: '<rect x="-16" y="-80" width="32" height="80" rx="9" fill="#facc15" opacity="0.9"/><rect x="-7" y="-96" width="14" height="18" rx="3" fill="#16a34a"/>',
     eggs: '<rect x="-40" y="-34" width="80" height="34" rx="6" fill="#d6b98c"/><circle cx="-22" cy="-36" r="11" fill="#fff7ed"/><circle cx="0" cy="-38" r="11" fill="#fff7ed"/><circle cx="22" cy="-36" r="11" fill="#fff7ed"/>',
-    jar: '<rect x="-24" y="-62" width="48" height="62" rx="10" fill="#fca5a5" opacity="0.85"/><rect x="-26" y="-74" width="52" height="14" rx="4" fill="#b45309"/>',
+    noodles: '<rect x="-30" y="-46" width="60" height="46" rx="5" fill="#fde047"/><rect x="-30" y="-30" width="60" height="12" fill="#dc2626"/>',
+    veg: '<ellipse cx="0" cy="-16" rx="30" ry="16" fill="#65a30d"/><path d="M-6 -30 Q0 -58 10 -64" stroke="#3f6212" stroke-width="6" fill="none" stroke-linecap="round"/>',
   }
 
-  // Places a story happens in, in a 1600 × 1240 world (the floor where
-  // people stand at y 1150). `full` and `strip` are the views of it: the
-  // opening scene, and the band over the app's screens after it.
+  // Places a story happens in, in a 1600 × 1240 world. `full` and `strip`
+  // are the views of it: the opening scene, and the band over the app's
+  // screens after it.
   const places = {
     kitchen: {
-      full: '330 150 960 1092',
-      strip: '0 318 1600 853',
+      full: '640 300 700 796',
+      strip: '640 345 760 405',
       draw: () => {
         const tiles = Array.from({ length: 9 }, (_, i) => `<line x1="${700 + i * 75}" y1="470" x2="${700 + i * 75}" y2="690"/>`).join('') +
           [545, 620].map((y) => `<line x1="700" y1="${y}" x2="1300" y2="${y}"/>`).join('')
@@ -452,141 +331,142 @@
           <rect x="860" y="770" width="10" height="60" rx="5" fill="#f5f5f4"/><rect x="930" y="770" width="10" height="60" rx="5" fill="#f5f5f4"/><rect x="1130" y="770" width="10" height="60" rx="5" fill="#f5f5f4"/>
           <rect x="700" y="1040" width="600" height="20" fill="#6e9686"/>
           <!-- rice cooker -->
-          <rect x="1150" y="606" width="120" height="84" rx="30" fill="#fafaf9" stroke="#d6d3d1" stroke-width="4"/>
-          <rect x="1196" y="636" width="28" height="16" rx="4" fill="#f87171"/>
+          <rect x="1196" y="606" width="104" height="84" rx="30" fill="#fafaf9" stroke="#d6d3d1" stroke-width="4"/>
+          <rect x="1234" y="636" width="28" height="16" rx="4" fill="#f87171"/>
           <!-- fridge -->
           <rect x="1316" y="330" width="230" height="730" rx="22" fill="#eef1f2" stroke="#d5dadc" stroke-width="5"/>
           <path d="M1316 560 L1546 560" stroke="#d5dadc" stroke-width="5"/>
           <rect x="1340" y="430" width="12" height="90" rx="6" fill="#b8c0c4"/><rect x="1340" y="600" width="12" height="120" rx="6" fill="#b8c0c4"/>
           <rect x="1420" y="380" width="70" height="50" rx="6" fill="#fde68a" transform="rotate(4 1455 405)"/>
-          <g class="shelf"></g>
-          <g class="counter"></g>
-          <g class="person"></g>
+          <g class="fx"></g>
           <circle class="flash" cx="0" cy="0" r="160" fill="url(#flash)" opacity="0"/>
           <defs><radialGradient id="flash"><stop offset="0" stop-color="#fff"/><stop offset="0.4" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`
       },
-      // Where things end up: on the counter (`bags`, `receipt`), on the shelf.
-      counter: { bags: [[880, 520, 'bag'], [760, 520, 'bag:green']], shelf: [[770, 462], [850, 462], [935, 462], [1020, 462]] },
     },
   }
 
-  // Each act poses its person over time: keyframes [t, changes], each one
-  // keeping what earlier frames set, eased in between. Hands (L, R) are
-  // where they reach, from the shoulder; `bags` and `shelf` say what's been
-  // put down. What isn't a number switches at its frame.
-  const HANG = { L: [-14, 236], R: [14, 236] }
-  const keyframes = (frames) => {
-    let carried = { x: 600, y: 1150, talk: 0, turn: 0, ...HANG }
-    const full = frames.map(([at, change]) => [at, (carried = { ...carried, ...change })])
-    return (t) => {
-      const i = Math.max(0, full.findLastIndex(([at]) => at <= t))
-      const [a, from] = full[i]
-      if (i === full.length - 1) return from
-      const [b, to] = full[i + 1]
-      const p = easeInOut((t - a) / (b - a))
-      const mix = (u, v) => (typeof u === 'number' && typeof v === 'number' ? u + (v - u) * p : Array.isArray(u) ? u.map((n, j) => mix(n, v[j])) : u)
-      return Object.fromEntries(Object.keys(to).map((key) => [key, mix(from[key] ?? to[key], to[key])]))
-    }
+  // What happens in a place, drawn in it and moved each frame. A place's
+  // own things (`fx`) act out the story; the person is their face, in a
+  // corner of the place, talking.
+  const KITCHEN = {
+    // The bag stands on the counter (y 690), its opening at y 480.
+    bag: [960, 690, 1.5],
+    // Where the shopping lands on the counter, then on the shelf.
+    items: [['milk', 715, 690], ['rice', 790, 690], ['eggs', 870, 690], ['veg', 870, 652], ['oil', 1058, 690], ['noodles', 1124, 690]],
+    shelf: [745, 815, 885, 955, 1025, 1095].map((x) => [x, 462]),
   }
-  const acts = {
-    // Walks in with two shopping bags, puts them on the counter, pulls out
-    // a very long receipt and shrugs.
-    arrive: keyframes([
-      [0, { x: 160, walk: 1, carry: true, rHold: 'bag', lHold: 'bag:green', bags: 0, turn: 0.85 }],
-      [1.55, { x: 600, walk: 0.15 }],
-      [1.75, { walk: 0, R: [160, 120], turn: 0.55 }],
-      [2.05, { R: [202, -25], lean: 2 }],
-      [2.1, { rHold: '', bags: 1, R: [190, -10] }],
-      [2.35, { R: [60, 200], L: [80, 150], lean: 4 }],
-      [2.7, { L: [238, -25], lean: 6 }],
-      [2.75, { lHold: '', bags: 2, L: [220, -10] }],
-      [3.05, { L: [-20, 230], R: [200, -20], lean: 1, turn: 0.4 }],
-      [3.15, { rHold: 'receipt', receipt: 40 }],
-      // Holds it up, elbow down, and looks at how long it is.
-      [3.7, { R: [64, -20], receipt: 430, tilt: -5, turn: 0.1 }],
-      [3.95, { L: [-30, 228] }],
-      // A shrug: shoulders up, elbow at her side, the forearm out, palm up.
-      [4.3, { L: [-128, 146], shrug: 1, tilt: 7, turn: 0 }],
-      [4.6, {}],
-      [5, { L: [-36, 222], shrug: 0.15, tilt: 2 }],
-    ]),
-    // Photographs the receipt on the counter, then checks the phone.
-    snap: keyframes([
-      [0, { bags: 2, counterReceipt: true, rHold: 'phone', R: [60, 140], L: [-20, 230], flash: 0, turn: 0.2 }],
-      [0.7, { R: [160, -40], lean: 3, tilt: 4, turn: 0.6 }],
-      [1.2, { flash: 0, talk: 1 }],
-      [1.3, { flash: 1 }],
-      [1.65, { flash: 0 }],
-      // Brings the phone in to check what it read.
-      [1.9, { turn: 0.5 }],
-      [2.4, { R: [40, 30], lean: 0, tilt: 8, turn: 0.1 }],
-      [3, { tilt: 3 }],
-    ]),
-    // Puts the groceries away on the shelf, then turns to the viewer with
-    // an open hand.
-    unpack: keyframes([
-      [0, { bags: 2, counterReceipt: true, shelf: 0, R: [60, 200], turn: 0.1 }],
-      [0.5, { talk: 1 }],
-      ...['milk', 'rice', 'oil'].flatMap((name, i) => {
-        const at = 0.25 + i * 0.85
-        return [
-          [at, { R: [150, 30], lean: 2, turn: 0.5 }],
-          [at + 0.25, { rHold: `item:${name}` }],
-          [at + 0.6, { R: [places.kitchen.counter.shelf[i][0] - 680, -60], lean: 3 }],
-          [at + 0.65, { rHold: '', shelf: i + 1 }],
-        ]
-      }),
-      [2.9, { talk: 0 }],
-      // Turns to the viewer: the hand open, out at her side, as if to say "see?".
-      [3.3, { R: [30, 222], lean: 0, L: [-118, 168], tilt: -4, turn: 0 }],
-      [3.8, { L: [-110, 160] }],
-    ]),
+  // A hop along an arc from one spot to another; lands with a squash.
+  const hop = (node, t, start, [x0, y0], [x1, y1], { length = 0.45, height = 170, spin = 0 } = {}) => {
+    const p = clamp((t - start) / length)
+    node.style.opacity = t < start ? 0 : 1
+    const x = x0 + (x1 - x0) * p
+    const y = y0 + (y1 - y0) * p - Math.sin(p * Math.PI) * height
+    const land = ramp(t, start + length, 0.18)
+    const squash = land > 0 && land < 1 ? 1 - Math.sin(land * Math.PI) * 0.16 : 1
+    node.setAttribute('transform', `translate(${x} ${y}) rotate(${(1 - p) * spin}) scale(${2 - squash} ${squash})`)
   }
-  // While they talk (`talk`, 0 to 1, when the left hand is free), that hand
-  // rests in front of the belly and opens out a little with the stressed words:
-  // the voice's loudness over the last third of a second, so it moves on
-  // the beat of the speech instead of twitching with every syllable.
-  const gesture = (pose, t, speak) => {
-    const w = pose.talk ?? 0
-    if (!w) return pose
-    let g = 0
-    for (let k = 0; k < 6; k++) g += speak(k * 0.06)
-    g = Math.min(1, (g / 6) * 2.4)
-    const beat = [34 - 70 * g + Math.sin(t * 1.3) * 6, 150 - 36 * g + Math.sin(t * 2.1) * 5]
-    return { ...pose, L: pose.L.map((v, i) => v + (beat[i] - v) * w), lean: (pose.lean ?? 0) - 1.5 * g * w }
+  const svgEl = (parent, html) => {
+    const g = document.createElementNS(SVG, 'g')
+    g.innerHTML = html
+    parent.appendChild(g)
+    return g
+  }
+  const fx = {
+    // The bag drops onto the counter and the shopping tumbles out, item
+    // after item; then the receipt comes out, and keeps unrolling.
+    arrive: (layer) => {
+      const [bx, by, bs] = KITCHEN.bag
+      const bag = svgEl(layer, shoppingBag('#e6cfa6'))
+      const items = KITCHEN.items.map(([name]) => svgEl(layer, grocery[name]))
+      const receipt = svgEl(layer, '<rect class="strip" x="-32" y="0" width="64" height="20" fill="url(#receipt-lines)" stroke="#d6d3d1" stroke-width="2"/><ellipse class="curl" cx="0" cy="20" rx="34" ry="9" fill="#f5f5f4" stroke="#d6d3d1" stroke-width="2"/>')
+      const strip = receipt.querySelector('.strip'), curl = receipt.querySelector('.curl')
+      return (t) => {
+        const drop = back(ramp(t, 0, 0.45))
+        bag.setAttribute('transform', `translate(${bx} ${by - 174 * bs - (1 - drop) * 520}) scale(${bs})`)
+        items.forEach((node, i) => {
+          const [, x, y] = KITCHEN.items[i]
+          hop(node, t, 0.55 + i * 0.27, [bx, by - 200], [x, y], { spin: i % 2 ? 40 : -40 })
+        })
+        // Pops out of the bag, then unrolls down the front of the counter
+        // and off the bottom.
+        const pop = back(ramp(t, 2.35, 0.3)), unroll = easeOut(ramp(t, 2.6, 1.9))
+        const length = 20 + pop * 30 + unroll * 720
+        receipt.style.opacity = t < 2.35 ? 0 : 1
+        receipt.setAttribute('transform', `translate(${bx} ${by - 216 - pop * 40}) rotate(${Math.sin(t * 2.4) * 1.5 * unroll})`)
+        strip.setAttribute('height', length)
+        curl.setAttribute('cy', length)
+      }
+    },
+    // A phone comes in over the receipt and takes a photo; the receipt's
+    // lines fly up out of it, read.
+    snap: (layer, svg) => {
+      const [bx, by, bs] = KITCHEN.bag
+      svgEl(layer, `<g transform="translate(${bx} ${by - 174 * bs}) scale(${bs})">${shoppingBag('#e6cfa6')}</g>`)
+      KITCHEN.items.forEach(([name, x, y]) => svgEl(layer, `<g transform="translate(${x} ${y})">${grocery[name]}</g>`))
+      svgEl(layer, `<g transform="translate(${bx} ${by - 256})"><rect x="-32" y="0" width="64" height="770" fill="url(#receipt-lines)" stroke="#d6d3d1" stroke-width="2"/></g>`)
+      const lines = Array.from({ length: 8 }, () => svgEl(layer, '<rect x="-26" y="-4" width="52" height="8" rx="4" fill="#facc15"/>'))
+      const phone = svgEl(layer, `
+        <rect x="-80" y="-150" width="160" height="300" rx="28" fill="#1f1d1b"/>
+        <rect x="-50" y="-126" width="54" height="54" rx="14" fill="#2f2c2a"/><circle cx="-23" cy="-99" r="15" fill="#57534e"/><circle cx="-23" cy="-99" r="6" fill="#a8a29e"/>`)
+      const flash = svg.querySelector('.flash')
+      return (t) => {
+        const p = back(ramp(t, 0.25, 0.6))
+        // Beside the receipt, so it stays in sight.
+        phone.setAttribute('transform', `translate(${1440 - (1440 - 1150) * p} ${570 + Math.sin(t * 1.6) * 6}) rotate(${(1 - p) * 14 - 10}) scale(0.8)`)
+        const f = ramp(t, 1.1, 0.08) * (1 - ramp(t, 1.2, 0.45))
+        flash.setAttribute('opacity', f)
+        flash.setAttribute('cx', 1118)
+        flash.setAttribute('cy', 495)
+        lines.forEach((node, i) => {
+          const start = 1.3 + i * 0.1, q = easeInOut(ramp(t, start, 0.7))
+          node.style.opacity = t < start ? 0 : 1 - ramp(t, start + 0.5, 0.2)
+          node.setAttribute('transform', `translate(${bx + Math.sin(i * 2.1) * 40 * q} ${by - 150 + i * 34 - q * 480}) scale(${1 - q * 0.4})`)
+        })
+      }
+    },
+    // The shopping hops off the counter onto the shelf, one after another.
+    unpack: (layer) => {
+      const [bx, by, bs] = KITCHEN.bag
+      svgEl(layer, `<g transform="translate(${bx} ${by - 174 * bs}) scale(${bs})">${shoppingBag('#e6cfa6')}</g>`)
+      svgEl(layer, `<g transform="translate(${bx} ${by - 256})"><rect x="-32" y="0" width="64" height="770" fill="url(#receipt-lines)" stroke="#d6d3d1" stroke-width="2"/></g>`)
+      const items = KITCHEN.items.map(([name]) => svgEl(layer, grocery[name]))
+      return (t) => {
+        items.forEach((node, i) => {
+          const [, x, y] = KITCHEN.items[i]
+          const start = 0.35 + i * 0.32
+          hop(node, t, start, [x, y], KITCHEN.shelf[i], { height: 120, length: 0.5 })
+          if (t < start) { node.style.opacity = 1; node.setAttribute('transform', `translate(${x} ${y})`) }
+        })
+      }
+    },
   }
 
-  // A place with its person acting; returns the svg and update(t, speak),
-  // speak(dt) being the voice's loudness dt seconds ago.
-  const placeView = (parent, s, view) => {
+  // A place with its story acted out, and the speaker's face in its top
+  // corner; returns the svg and update(t, level).
+  let views = 0
+  const placeView = (parent, s, view, faceSize) => {
     const place = places[s.place]
     const svg = document.createElementNS(SVG, 'svg')
     svg.setAttribute('viewBox', place[view])
     svg.setAttribute('preserveAspectRatio', 'xMidYMid slice')
     svg.innerHTML = place.draw()
     parent.appendChild(svg)
-    const counter = svg.querySelector('.counter'), shelf = svg.querySelector('.shelf'), flash = svg.querySelector('.flash')
-    const person = puppet(svg.querySelector('.person'), s.cast[s.lines[0].who].look)
-    const act = acts[s.act]
-    let shown
+    const act = fx[s.act](svg.querySelector('.fx'), svg)
+    // Every scene draws the place again: its patterns and gradients get ids
+    // of their own, or the fills would point at a hidden scene's and vanish.
+    const n = views++
+    svg.querySelectorAll('[id]').forEach((node) => { node.id = `${node.id}-${n}` })
+    svg.querySelectorAll('[fill^="url(#"]').forEach((node) => node.setAttribute('fill', node.getAttribute('fill').replace(')', `-${n})`)))
+    const corner = el(parent, 'abs', { left: px(faceSize * 0.22), top: px(faceSize * 0.22) })
+    const face = character(corner, s.cast[s.lines[0].who].look, faceSize)
+    face.svg.style.filter = 'drop-shadow(0 12px 24px rgba(41, 37, 36, 0.22))'
     return {
       svg,
-      update(t, speak) {
-        const level = speak(0)
-        const pose = gesture(act(t), t, speak)
-        const key = `${pose.bags}|${pose.shelf}|${pose.counterReceipt}`
-        if (key !== shown) {
-          shown = key
-          counter.innerHTML = place.counter.bags.slice(0, pose.bags ?? 0).map(([x, y, name]) => `<g transform="translate(${x} ${y})">${props.bag(name)}</g>`).join('') +
-            (pose.counterReceipt ? '<path d="M960 688 L1130 680 L1136 690 L966 698 Z" fill="#fff" stroke="#d6d3d1" stroke-width="2"/><path d="M1130 690 Q1150 700 1146 760 L1120 900 L1100 896 L1122 760 Q1124 708 1110 694 Z" fill="#fff" stroke="#d6d3d1" stroke-width="2"/>' : '')
-          shelf.innerHTML = place.counter.shelf.slice(0, pose.shelf ?? 0).map(([x, y], i) => `<g transform="translate(${x} ${y})">${grocery[['milk', 'rice', 'oil', 'jar'][i]]}</g>`).join('') +
-            `<g transform="translate(1060 462)">${grocery.jar}</g>`
-        }
-        person(t, level, pose)
-        // The flash goes off at the phone, just past the right hand.
-        flash.setAttribute('opacity', pose.flash ?? 0)
-        flash.setAttribute('cx', pose.x + BODY.shoulder[0] + pose.R[0] + 20)
-        flash.setAttribute('cy', pose.y + BODY.shoulder[1] + pose.R[1] - 30)
+      update(t, level) {
+        act(t)
+        const p = back(ramp(t, 0.15, 0.5))
+        set(face.svg, { s: 0.5 + 0.5 * p, o: clamp(p * 2) })
+        face.update(t, level)
       },
     }
   }
@@ -612,7 +492,7 @@
   // A place fills the top of the frame and fades into the page below it.
   const placeBand = (root, s, view, height) => {
     const band = el(root, 'abs', { left: 0, top: 0, width: px(W), height: px(height), overflow: 'hidden' })
-    const scene = placeView(band, s, view)
+    const scene = placeView(band, s, view, Math.round(height * (view === 'full' ? 0.2 : 0.3)))
     scene.svg.setAttribute('width', W)
     scene.svg.setAttribute('height', height)
     el(band, 'abs', { left: 0, right: 0, bottom: 0, height: px(height * 0.16), background: 'linear-gradient(rgba(251, 250, 247, 0), #fbfaf7)' })
@@ -746,7 +626,7 @@
       const cap = placeCaption(root, s, { x: 70, y: height + 10, w: W - 140, size: orient === 'portrait' ? 60 : 50, sub: 40 })
       const who = s.lines[0].who
       return (t) => {
-        scene.update(t, (dt) => levelOf(s.lines, who, t - s.lead - dt))
+        scene.update(t, levelOf(s.lines, who, t - s.lead))
         cap.update(t)
       }
     },
@@ -797,7 +677,7 @@
       })
       return (t, d) => {
         cap.update(t)
-        if (scene) scene.update(t, (dt) => levelOf(s.lines, s.lines[0].who, t - s.lead - dt))
+        if (scene) scene.update(t, levelOf(s.lines, s.lines[0].who, t - s.lead))
         const p = easeOut(ramp(t, 0.05, 0.7))
         set(phone.node, { y: (1 - p) * 160 - t * 6, o: clamp(p * 1.5), s: 1 + t * 0.006, r: orient === 'landscape' ? 0 : (1 - p) * 4 })
         if (browser) { const b = easeOut(ramp(t, 0, 0.7)); set(browser, { x: (1 - b) * 120, o: b, s: 1 + t * 0.004 }) }

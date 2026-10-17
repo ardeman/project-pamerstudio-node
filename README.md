@@ -32,13 +32,13 @@ Any render that goes through `eleven.mjs` also takes `--dry-run`: it buys nothin
 Two videos, each in English and Indonesian:
 
 - **Promo** (`render.mjs`): a tour of the features, with one narrator. The vertical cut (Reels, Shorts) opens on a fast cut of the real screens under a spoken hook, not a title card.
-- **Stories** (`render-stories.mjs`): stories of people using the app in their own lives (Rina, a new mum; Sari and Dimas, a couple; Adit, a freelancer in Tokyo; Maya, caring for her dad; Nadia, tracking her period; Wulan, scanning her grocery receipt). Each is an illustrated character speaking in their own ElevenLabs voice, with their mouth moving to it, next to the app's real screens. There is a full video of the first four, and a short one per story. Nadia's short has no introduction: it opens on the problem, said over the real screen (`full: false` keeps it out of the full video). Wulan's story happens in a place (`place` in `stories.mjs`): it opens on her whole, drawn in her kitchen and acting it out (walking in, unpacking, photographing the receipt; `acts` in `stage.html`), and the place stays on as a band over the app's screens.
+- **Stories** (`render-stories.mjs`): stories of people using the app in their own lives (Rina, a new mum; Sari and Dimas, a couple; Adit, a freelancer in Tokyo; Maya, caring for her dad; Nadia, tracking her period; Wulan, scanning her grocery receipt). Each is an illustrated character speaking in their own ElevenLabs voice, with their mouth moving to it, next to the app's real screens. There is a full video of the first four, and a short one per story. Nadia's short has no introduction: it opens on the problem, said over the real screen (`full: false` keeps it out of the full video). Wulan's story happens in a place (`place` in `stories.mjs`): it opens in her kitchen, where the things act it out (the shopping tumbles out of the bag, the receipt unrolls off the screen, a phone photographs it; `fx` in `stage.html`) with her face in the corner, talking, and the place stays on as a band over the app's screens. People aren't drawn whole: hand-made body movement looked stiff.
 
 ### Layout
 
 | Path | What |
 | --- | --- |
-| `catatsaja/scripts/stage.html` | The animated stage both videos render from (scenes, phones, cards, the illustrated people, and the places with jointed puppets and what they do in them). |
+| `catatsaja/scripts/stage.html` | The animated stage both videos render from (scenes, phones, cards, the illustrated people, and the places stories happen in, with what happens there). |
 | `catatsaja/scripts/video.mjs` | Shared: recording frames into ffmpeg, mixing voices over music, voice loudness per frame. |
 | `catatsaja/scripts/copy.mjs`, `narration.mjs` | Promo: on-screen text and voice-over. |
 | `catatsaja/scripts/stories.mjs` | Stories: the cast (looks, voices) and what each person says, with the screens for each line. |
