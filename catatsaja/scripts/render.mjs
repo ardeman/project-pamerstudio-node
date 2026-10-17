@@ -37,7 +37,7 @@ const formats = {
       s('phone', 'notes', 3, { shots: ['notes'], crops: [{ shot: 'crop-note', at: 1.0 }] }),
       s('phone', 'tasks', 3, { shots: ['task'], crops: [{ shot: 'crop-task', at: 1.0, r: 2 }] }),
       s('phone', 'money', 3.2, { shots: ['finance'], crops: [{ shot: 'crop-balance', at: 1.0 }] }),
-      s('phone', 'smart', 3.3, { shots: ['entry-suggest'], crops: [{ shot: 'crop-entry', at: 1.1, r: 1.5 }] }),
+      s('phone', 'receipt', 3.3, { shots: ['receipt'], crops: [{ shot: 'crop-receipt', at: 1.1 }] }),
       s('phone', 'health', 3.2, { shots: ['health-me'], crops: [{ shot: 'crop-weight', at: 1.0 }] }),
       s('phone', 'growth', 3, { shots: ['health-child-body'], crops: [{ shot: 'crop-growth', at: 1.0, r: 1.5 }] }),
       s('phone', 'private', 3.5, { shots: ['unlock'], crops: [{ shot: 'crop-security', at: 1.1 }] }),

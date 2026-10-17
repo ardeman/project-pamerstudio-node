@@ -20,6 +20,7 @@ import {
   uidOf,
 } from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
+import { bookSeed } from './book-seed.mjs'
 import { demo } from './demo-data.mjs'
 
 const lang = process.argv[2] ?? 'en'
@@ -54,7 +55,8 @@ const ids = {}
 let minutes = 0
 
 const add = async (collection, item, me, partner) => {
-  const { shared, pinned, ...data } = item
+  const { shared, pinned, ...fields } = item
+  const { data, months } = collection === 'finances' ? bookSeed(fields) : { data: fields, months: [] }
   const readers = shared ? [me, partner] : [me]
   minutes += 37
   const created = new Date(Date.parse('2026-10-11T09:00:00Z') - minutes * 60_000)
@@ -75,6 +77,14 @@ const add = async (collection, item, me, partner) => {
   if (!response.ok) throw new Error(JSON.stringify(json))
   const id = json.name.split('/').pop()
   ;(ids[collection] ??= []).push(id)
+  for (const { month, content } of months) {
+    const monthResponse = await fetch(`${DATABASE}/finances/${id}/months?documentId=${month}`, {
+      method: 'POST',
+      headers: ADMIN,
+      body: JSON.stringify({ fields: toValue({ month, content }).mapValue.fields }),
+    })
+    if (!monthResponse.ok) throw new Error(await monthResponse.text())
+  }
   return id
 }
 
@@ -195,7 +205,15 @@ try {
     const shotPage = await deviceFor(width)
     await shotPage.setViewportSize({ width, height })
     await shotPage.emulateMedia({ colorScheme: scheme })
+    // An unsaved entry (entry-suggest) is kept as a draft and would reopen
+    // on the next shot of that book; each shot starts without one.
+    await shotPage.evaluate(() => {
+      for (const storage of [localStorage, sessionStorage])
+        for (const key of Object.keys(storage)) if (key.startsWith('catatsaja-draft:')) storage.removeItem(key)
+    })
     await shotPage.goto(`${APP}${path}`)
+    // Past the start-up screen, which the first page of a device can take a while on.
+    await shotPage.getByRole('navigation').first().waitFor({ timeout: 60_000 })
     await shotPage.waitForTimeout(3500)
     await shotPage.evaluate((dark) => document.documentElement.classList.toggle('dark', dark), scheme === 'dark')
     if (act) await act(shotPage)
@@ -209,8 +227,8 @@ try {
   }
 
   const L = {
-    en: { analysis: 'Analysis', body: 'Body', share: 'Share', add: 'Add entry', security: 'Security', unlock: 'Unlock your data', typed: 'Grab to the airport', scan: 'Scan receipt', review: 'Check the receipt' },
-    id: { analysis: 'Analisis', body: 'Tubuh', share: 'Bagikan', add: 'Tambah entri', security: 'Keamanan', unlock: 'Buka datamu', typed: 'Grab ke bandara', scan: 'Pindai struk', review: 'Periksa struk' },
+    en: { analysis: 'Analysis', body: 'Body', share: 'Share', add: 'Add entry', security: 'Security', unlock: 'Unlock your data', typed: 'Grab to the airport', scan: 'Scan receipt', review: 'Check the receipt', receiptTotal: 'Total of 4 items' },
+    id: { analysis: 'Analisis', body: 'Tubuh', share: 'Bagikan', add: 'Tambah entri', security: 'Keamanan', unlock: 'Buka datamu', typed: 'Grab ke bandara', scan: 'Pindai struk', review: 'Periksa struk', receiptTotal: 'Total 4 barang' },
   }[lang]
   const scroll = async (shotPage, y) => {
     await shotPage.mouse.move(195, 420)
@@ -232,13 +250,6 @@ try {
     { name: 'finance-analysis', path: `/finances/${ids.finances[0]}`, act: async (p) => { await tab(L.analysis)(p); await scroll(p, 520) } },
     { name: 'finance-analysis-2', path: `/finances/${ids.finances[0]}`, act: async (p) => { await tab(L.analysis)(p); await scroll(p, 1250) } },
     { name: 'receipt', path: `/finances/${ids.finances[0]}`, act: async (p) => {
-      // entry-suggest leaves its entry open as a draft, which hides the Gemini button.
-      await p.evaluate(() => {
-        for (const storage of [localStorage, sessionStorage])
-          for (const key of Object.keys(storage)) if (key.startsWith('catatsaja-draft:')) storage.removeItem(key)
-      })
-      await p.reload()
-      await p.waitForTimeout(3500)
       await p.getByRole('button', { name: 'Gemini', exact: true }).click()
       const chooser = p.waitForEvent('filechooser')
       await p.getByRole('button', { name: L.scan }).click()
@@ -312,7 +323,12 @@ try {
     { name: 'crop-balance', path: `/finances/${ids.finances[0]}`, card: cardOf(text(L2.balance)) },
     { name: 'crop-categories', path: `/finances/${ids.finances[0]}`, act: tab(L.analysis), card: cardOf(text(L2.categories)) },
     { name: 'crop-cashflow', path: `/finances/${ids.finances[0]}`, act: tab(L.analysis), card: cardOf(text(L2.cashFlow)) },
-    { name: 'crop-receipt', path: `/finances/${ids.finances[0]}`, act: shots.find((x) => x.name === 'receipt').act, card: async (p) => p.getByRole('dialog').boundingBox() },
+    { name: 'crop-receipt', path: `/finances/${ids.finances[0]}`, act: shots.find((x) => x.name === 'receipt').act, card: async (p) => {
+      // The Gemini card down to the receipt's total, without the hint below it.
+      const box = await cardOf(text(L.review))(p)
+      const total = await p.getByText(L.receiptTotal, { exact: true }).boundingBox()
+      return { ...box, height: total.y + total.height + 18 - box.y }
+    } },
     { name: 'crop-entry', path: `/finances/${ids.finances[0]}`, act: shots.find((x) => x.name === 'entry-suggest').act, card: cardOf((p) => p.locator('input[name=description]')) },
     { name: 'crop-health-me', path: '/health', card: cardOf(text(data2.people.me)) },
     { name: 'crop-weight', path: `/health/${ids.healthLogs[0]}`, act: tab(L.body), card: cardOf(text(L2.weight)) },
