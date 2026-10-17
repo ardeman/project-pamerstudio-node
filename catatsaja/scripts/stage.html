@@ -559,6 +559,8 @@
   // A place with its story acted out, and the speaker's face in its top
   // corner; returns the svg and update(t, level).
   let views = 0
+  // Pictures setup() waits for that aren't in the page (an avatar's frames).
+  const loading = []
   const placeView = (parent, s, view, faceSize) => {
     const place = places[s.place]
     const svg = document.createElementNS(SVG, 'svg')
@@ -572,6 +574,35 @@
     const n = views++
     svg.querySelectorAll('[id]').forEach((node) => { node.id = `${node.id}-${n}` })
     svg.querySelectorAll('[fill^="url(#"]').forEach((node) => node.setAttribute('fill', node.getAttribute('fill').replace(')', `-${n})`)))
+    // `avatar`: the person talking in their place, an AI video made from this
+    // view's first frame (avatar.mjs). Its frames are drawn over the place,
+    // frame 0 with the line's first word; its own sound is not used.
+    if (s.avatar && view === 'full') {
+      svg.style.visibility = 'hidden'
+      const canvas = document.createElement('canvas')
+      Object.assign(canvas.style, { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' })
+      parent.appendChild(canvas)
+      const ctx = canvas.getContext('2d')
+      const { url, frames, fps } = s.avatar
+      const images = Array.from({ length: frames }, (_, i) => {
+        const image = new Image()
+        image.src = `${url}${String(i + 1).padStart(4, '0')}.jpg`
+        loading.push(image.decode().catch(() => {}))
+        return image
+      })
+      const line = s.lines[0]
+      return {
+        svg,
+        update(t) {
+          const image = images[clamp(Math.round((t - s.lead - line.at) * fps), 0, frames - 1)]
+          const w = canvas.clientWidth
+          const h = canvas.clientHeight
+          if (canvas.width !== w || canvas.height !== h) Object.assign(canvas, { width: w, height: h })
+          const k = Math.max(w / image.naturalWidth, h / image.naturalHeight)
+          ctx.drawImage(image, (w - image.naturalWidth * k) / 2, (h - image.naturalHeight * k) / 2, image.naturalWidth * k, image.naturalHeight * k)
+        },
+      }
+    }
     const look = s.cast[s.lines[0].who].look
     // `figure`: they stand in the place (behind the counter, which hides
     // their body), and no face in the corner.
@@ -919,6 +950,7 @@
     scenes.bg = bg
     await document.fonts.ready
     await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = r; i.onerror = r }))))
+    await Promise.all(loading)
     fitters.forEach((fit) => fit())
     return start
   }

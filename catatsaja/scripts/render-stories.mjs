@@ -8,7 +8,8 @@
 // length, so stills cost no credits). --meta writes what the upload forms
 // take (subtitles, chapters, covers) without rendering.
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 
 import { chromium } from 'playwright'
@@ -17,7 +18,7 @@ import { copy } from './copy.mjs'
 import { dryRun, estimate, music, speak } from '../../shared/eleven.mjs'
 import { spoken } from './narration.mjs'
 import { cast, cta, hook, stories } from './stories.mjs'
-import { audioArgs, envelope, record } from './video.mjs'
+import { FPS, audioArgs, envelope, record } from './video.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
 const OUT = `${ROOT}out/stories/`
@@ -95,6 +96,25 @@ const say = async (lang, name, [who, en, id]) => {
   return { who, text, d: clip.length, file: clip.file, levels: clip.file && envelope(clip.file) }
 }
 
+// A scene's person talking in their place (avatar.mjs, the newest clip if it
+// was remade), as frames the stage draws in place of the drawn scene. Its lips
+// follow the Indonesian line, so other languages keep the drawn scene.
+const avatarOf = (key, lang) => {
+  const clips = existsSync(`${ROOT}art`) ? readdirSync(`${ROOT}art`).filter((file) => file.startsWith(`${key}-avatar-`) && file.endsWith('.mp4')) : []
+  if (lang !== 'id' || !clips.length) return undefined
+  const clip = clips.sort((a, b) => statSync(`${ROOT}art/${b}`).mtimeMs - statSync(`${ROOT}art/${a}`).mtimeMs)[0]
+  const dir = `${OUT}avatar-frames/${clip.replace(/\.mp4$/, '')}/`
+  if (!existsSync(dir)) {
+    // Into a temporary folder first, so a stopped run leaves no half set.
+    const part = dir.replace(/\/$/, '.part/')
+    rmSync(part, { recursive: true, force: true })
+    mkdirSync(part, { recursive: true })
+    execFileSync('ffmpeg', ['-loglevel', 'error', '-i', `${ROOT}art/${clip}`, '-vf', `fps=${FPS}`, '-q:v', '2', `${part}%04d.jpg`])
+    renameSync(part, dir)
+  }
+  return { url: `file://${dir}`, frames: readdirSync(dir).length, fps: FPS }
+}
+
 // Lines one after another; a scene lasts until its last line ends.
 const timed = async (lang, scene) => {
   const lines = []
@@ -107,6 +127,7 @@ const timed = async (lang, scene) => {
   const end = at - GAP + TAIL + (scene.type === 'cta' ? 0.6 : 0)
   return {
     ...scene,
+    avatar: scene.type === 'place' ? avatarOf(scene.key, lang) : undefined,
     lines,
     d: Math.max(scene.d, end),
     role: scene.role?.[lang],
