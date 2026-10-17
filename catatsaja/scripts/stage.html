@@ -284,6 +284,22 @@
     veg: '<ellipse cx="0" cy="-16" rx="30" ry="16" fill="#65a30d"/><path d="M-6 -30 Q0 -58 10 -64" stroke="#3f6212" stroke-width="6" fill="none" stroke-linecap="round"/>',
   }
 
+  // A cardboard box from a supplier, standing on its bottom.
+  const box = '<rect x="-75" y="-110" width="150" height="110" rx="6" fill="#c99a66"/><rect x="-75" y="-110" width="150" height="18" rx="6" fill="#b07a4f" opacity="0.45"/><rect x="-13" y="-110" width="26" height="110" fill="#e7c9a0" opacity="0.85"/>'
+  // A receipt pushed onto a spike, resting on its bottom edge.
+  const slip = '<rect x="-32" y="-46" width="64" height="46" fill="url(#receipt-lines)" stroke="#d6d3d1" stroke-width="2"/>'
+
+  // What every place has: receipt paper, the layer `fx` draws in, and a
+  // camera flash over it.
+  const receiptPaper = `
+    <pattern id="receipt-lines" width="52" height="18" patternUnits="userSpaceOnUse">
+      <rect width="52" height="18" fill="#fff"/><line x1="8" y1="11" x2="30" y2="11" stroke="#a8a29e" stroke-width="3"/><line x1="36" y1="11" x2="46" y2="11" stroke="#a8a29e" stroke-width="3"/>
+    </pattern>`
+  const stageTop = `
+    <g class="fx"></g>
+    <circle class="flash" cx="0" cy="0" r="160" fill="url(#flash)" opacity="0"/>
+    <defs><radialGradient id="flash"><stop offset="0" stop-color="#fff"/><stop offset="0.4" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`
+
   // Places a story happens in, in a 1600 × 1240 world. `full` and `strip`
   // are the views of it: the opening scene, and the band over the app's
   // screens after it.
@@ -297,9 +313,7 @@
         const planks = Array.from({ length: 12 }, (_, i) => `<line x1="${i * 140}" y1="1060" x2="${i * 140 - 60}" y2="1240"/>`).join('')
         return `
           <defs>
-            <pattern id="receipt-lines" width="52" height="18" patternUnits="userSpaceOnUse">
-              <rect width="52" height="18" fill="#fff"/><line x1="8" y1="11" x2="${30}" y2="11" stroke="#a8a29e" stroke-width="3"/><line x1="36" y1="11" x2="46" y2="11" stroke="#a8a29e" stroke-width="3"/>
-            </pattern>
+            ${receiptPaper}
             <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f7"/><stop offset="1" stop-color="#e8f6fd"/></linearGradient>
           </defs>
           <rect width="1600" height="1240" fill="#fbeedb"/>
@@ -338,10 +352,18 @@
           <path d="M1316 560 L1546 560" stroke="#d5dadc" stroke-width="5"/>
           <rect x="1340" y="430" width="12" height="90" rx="6" fill="#b8c0c4"/><rect x="1340" y="600" width="12" height="120" rx="6" fill="#b8c0c4"/>
           <rect x="1420" y="380" width="70" height="50" rx="6" fill="#fde68a" transform="rotate(4 1455 405)"/>
-          <g class="fx"></g>
-          <circle class="flash" cx="0" cy="0" r="160" fill="url(#flash)" opacity="0"/>
-          <defs><radialGradient id="flash"><stop offset="0" stop-color="#fff"/><stop offset="0.4" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`
+          ${stageTop}`
       },
+    },
+    // Pak Hendra's toko kelontong, drawn by Recraft (places-art.mjs, passed
+    // in as `art`): 2048 × 1536, filling the world's height.
+    shop: {
+      full: '740 150 700 796',
+      strip: '700 380 760 405',
+      draw: () => `
+        <defs>${receiptPaper}</defs>
+        ${config.art.shop.replace(/<svg[^>]*>/, '<svg viewBox="0 0 2048 1536" x="-27" width="1654" height="1240">')}
+        ${stageTop}`,
     },
   }
 
@@ -354,6 +376,19 @@
     // Where the shopping lands on the counter, then on the shelf.
     items: [['milk', 715, 690], ['rice', 790, 690], ['eggs', 870, 690], ['veg', 870, 652], ['oil', 1058, 690], ['noodles', 1124, 690]],
     shelf: [745, 815, 885, 955, 1025, 1095].map((x) => [x, 462]),
+  }
+  const SHOP = {
+    // The supplier boxes, stacked on the counter (y 680) where Recraft had
+    // drawn a crate (its dip in the counter is under them).
+    boxes: [[1170, 686], [1330, 686], [1250, 576]],
+    // A receipt spike on the counter, and where each receipt rests on it.
+    spike: [880, 680],
+    slips: Array.from({ length: 10 }, (_, i) => [880 + Math.sin(i * 2.7) * 7, 664 - i * 9, Math.sin(i * 1.9) * 9]),
+  }
+  // The spike, drawn under its receipts: its tip shows above the pile.
+  const spike = (layer) => {
+    const [x, y] = SHOP.spike
+    svgEl(layer, `<g transform="translate(${x} ${y})"><rect x="-3" y="-250" width="6" height="240" rx="3" fill="#78716c"/><rect x="-40" y="-16" width="80" height="16" rx="6" fill="#5e8f86"/></g>`)
   }
   // A hop along an arc from one spot to another; lands with a squash.
   const hop = (node, t, start, [x0, y0], [x1, y1], { length = 0.45, height = 170, spin = 0 } = {}) => {
@@ -397,40 +432,13 @@
         curl.setAttribute('cy', length)
       }
     },
-    // A phone comes up in front of the receipt, screen to us and camera to
-    // the receipt, which fills its viewfinder; it takes the photo and the
-    // receipt's lines fly up out of it, read.
+    // A phone photographs the receipt (camera).
     snap: (layer, svg) => {
       const [bx, by, bs] = KITCHEN.bag
       svgEl(layer, `<g transform="translate(${bx} ${by - 174 * bs}) scale(${bs})">${shoppingBag('#e6cfa6')}</g>`)
       KITCHEN.items.forEach(([name, x, y]) => svgEl(layer, `<g transform="translate(${x} ${y})">${grocery[name]}</g>`))
       svgEl(layer, `<g transform="translate(${bx} ${by - 256})"><rect x="-32" y="0" width="64" height="770" fill="url(#receipt-lines)" stroke="#d6d3d1" stroke-width="2"/></g>`)
-      const lines = Array.from({ length: 8 }, () => svgEl(layer, '<rect x="-26" y="-4" width="52" height="8" rx="4" fill="#facc15"/>'))
-      const phone = svgEl(layer, `
-        <rect x="-80" y="-150" width="160" height="300" rx="28" fill="#1f1d1b"/>
-        <rect x="-70" y="-138" width="140" height="276" rx="20" fill="#3f3b38"/>
-        <rect x="-30" y="-120" width="60" height="230" fill="url(#receipt-lines)"/>
-        <path d="M-56 -100 v-22 h22 M56 -100 v-22 h-22 M-56 90 v22 h22 M56 90 v22 h-22" stroke="#facc15" stroke-width="6" fill="none" stroke-linecap="round"/>
-        <circle cy="124" r="11" fill="none" stroke="#fff" stroke-width="4"/>
-        <rect class="shutter" x="-70" y="-138" width="140" height="276" rx="20" fill="#fff" opacity="0"/>`)
-      const shutter = phone.querySelector('.shutter')
-      const flash = svg.querySelector('.flash')
-      return (t) => {
-        const p = back(ramp(t, 0.25, 0.6))
-        // Held a little in front of the receipt, which shows above and below it.
-        phone.setAttribute('transform', `translate(${1440 - (1440 - 985) * p} ${600 + Math.sin(t * 1.6) * 5}) rotate(${(1 - p) * 14 - 4}) scale(0.78)`)
-        // The flash lights up the receipt; the screen blinks like a shutter.
-        const f = ramp(t, 1.1, 0.08) * (1 - ramp(t, 1.2, 0.45))
-        flash.setAttribute('opacity', f * 0.9)
-        flash.setAttribute('cx', bx)
-        flash.setAttribute('cy', 560)
-        shutter.setAttribute('opacity', f)
-        lines.forEach((node, i) => {
-          const start = 1.3 + i * 0.1, q = easeInOut(ramp(t, start, 0.7))
-          node.style.opacity = t < start ? 0 : 1 - ramp(t, start + 0.5, 0.2)
-          node.setAttribute('transform', `translate(${bx + Math.sin(i * 2.1) * 40 * q} ${by - 150 + i * 34 - q * 480}) scale(${1 - q * 0.4})`)
-        })
-      }
+      return camera(layer, svg, { at: [985, 600], flash: [bx, 560], lines: [bx, by - 150] })
     },
     // The shopping hops off the counter onto the shelf, one after another.
     unpack: (layer) => {
@@ -447,6 +455,87 @@
         })
       }
     },
+    // The supplier boxes drop onto the counter one after another, each with
+    // its receipt, which goes onto the spike; then the rest of the week's
+    // receipts flutter down onto the pile.
+    restock: (layer) => {
+      const boxes = SHOP.boxes.map(() => svgEl(layer, box))
+      spike(layer)
+      const slips = SHOP.slips.map(([, , r]) => svgEl(layer, `<g transform="rotate(${r})">${slip}</g>`))
+      return (t) => {
+        boxes.forEach((node, i) => {
+          const [x, y] = SHOP.boxes[i]
+          hop(node, t, 0.1 + i * 0.45, [x, y - 700], [x, y], { height: 0, length: 0.4 })
+        })
+        slips.forEach((node, i) => {
+          const [x, y] = SHOP.slips[i]
+          if (i < SHOP.boxes.length) {
+            // Out of its box as it lands, over onto the spike.
+            const [bx, by] = SHOP.boxes[i]
+            hop(node, t, 0.55 + i * 0.45, [bx, by - 110], [x, y], { height: 160, spin: i % 2 ? 50 : -50 })
+          } else {
+            hop(node, t, 1.9 + (i - SHOP.boxes.length) * 0.3, [x + (i % 2 ? 60 : -60), 300], [x, y], { height: 0, length: 0.5, spin: i % 2 ? -30 : 30 })
+          }
+        })
+      }
+    },
+    // A phone photographs the pile of receipts (camera).
+    scan: (layer, svg) => {
+      SHOP.boxes.forEach(([x, y]) => svgEl(layer, `<g transform="translate(${x} ${y})">${box}</g>`))
+      spike(layer)
+      SHOP.slips.forEach(([x, y, r]) => svgEl(layer, `<g transform="translate(${x} ${y}) rotate(${r})">${slip}</g>`))
+      const [sx, sy] = SHOP.spike
+      return camera(layer, svg, { at: [1030, 520], flash: [sx, sy - 70], lines: [sx, sy - 90], gap: 10 })
+    },
+    // Read, the receipts come off the spike one by one, top first, and fly
+    // up out of the place: filed.
+    file: (layer) => {
+      SHOP.boxes.forEach(([x, y]) => svgEl(layer, `<g transform="translate(${x} ${y})">${box}</g>`))
+      spike(layer)
+      const slips = SHOP.slips.map(([, , r]) => svgEl(layer, `<g transform="rotate(${r})">${slip}</g>`))
+      return (t) => {
+        slips.forEach((node, i) => {
+          const [x, y] = SHOP.slips[i]
+          const q = easeInOut(ramp(t, 0.35 + (slips.length - 1 - i) * 0.2, 0.7))
+          node.style.opacity = 1 - ramp(q, 0.6, 0.4)
+          node.setAttribute('transform', `translate(${x + Math.sin(i * 2.1) * 90 * q} ${y - q * 520}) rotate(${q * (i % 2 ? 30 : -30)}) scale(${1 - q * 0.4})`)
+        })
+      }
+    },
+  }
+
+  // A phone comes up in front of a receipt, screen to us and camera to the
+  // receipt, which fills its viewfinder; it takes the photo and the
+  // receipt's lines fly up out of it, read. `at` is where the phone is held,
+  // `flash` where it lights up, `lines` where the read lines start, `gap`
+  // apart.
+  const camera = (layer, svg, { at: [px0, py0], flash: [fx0, fy0], lines: [lx, ly], gap = 34 }) => {
+    const lines = Array.from({ length: 8 }, () => svgEl(layer, '<rect x="-26" y="-4" width="52" height="8" rx="4" fill="#facc15"/>'))
+    const phone = svgEl(layer, `
+      <rect x="-80" y="-150" width="160" height="300" rx="28" fill="#1f1d1b"/>
+      <rect x="-70" y="-138" width="140" height="276" rx="20" fill="#3f3b38"/>
+      <rect x="-30" y="-120" width="60" height="230" fill="url(#receipt-lines)"/>
+      <path d="M-56 -100 v-22 h22 M56 -100 v-22 h-22 M-56 90 v22 h22 M56 90 v22 h-22" stroke="#facc15" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <circle cy="124" r="11" fill="none" stroke="#fff" stroke-width="4"/>
+      <rect class="shutter" x="-70" y="-138" width="140" height="276" rx="20" fill="#fff" opacity="0"/>`)
+    const shutter = phone.querySelector('.shutter')
+    const flash = svg.querySelector('.flash')
+    return (t) => {
+      const p = back(ramp(t, 0.25, 0.6))
+      // Held a little in front of the receipt, which shows around it.
+      phone.setAttribute('transform', `translate(${1440 - (1440 - px0) * p} ${py0 + Math.sin(t * 1.6) * 5}) rotate(${(1 - p) * 14 - 4}) scale(0.78)`)
+      // The flash lights up the receipt; the screen blinks like a shutter.
+      const f = ramp(t, 1.1, 0.08) * (1 - ramp(t, 1.2, 0.45))
+      flash.setAttribute('opacity', f * 0.9)
+      flash.setAttribute('cx', fx0)
+      flash.setAttribute('cy', fy0)
+      shutter.setAttribute('opacity', f)
+      lines.forEach((node, i) => {
+        const start = 1.3 + i * 0.1, q = easeInOut(ramp(t, start, 0.7))
+        node.style.opacity = t < start ? 0 : 1 - ramp(t, start + 0.5, 0.2)
+        node.setAttribute('transform', `translate(${lx + Math.sin(i * 2.1) * 40 * q} ${ly + i * gap - q * 480}) scale(${1 - q * 0.4})`)
+      })
+    }
   }
 
   // A place with its story acted out, and the speaker's face in its top

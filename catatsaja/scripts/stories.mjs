@@ -43,6 +43,12 @@ export const cast = {
     look: { skin: '#c68d66', hair: 'hijab', cloth: '#4f7fa8', top: '#f2a65a', bottom: '#5b4636', shoe: '#3b2f2a', bg: '#fde2c4' },
     voice: { en: 'pFZP5JQG7iQjIQuC4Bku', id: 'yLyL4E4r0QfLyYpCwPir' }, // Lily; Sikedewo
   },
+  // Runs a toko kelontong. His voices are chosen before his lines are voiced.
+  hendra: {
+    name: 'Hendra',
+    look: { skin: '#b9825c', hair: 'short', hairColor: '#4a4440', top: '#5e8f86', stubble: true, bg: '#fde68a' },
+    voice: {},
+  },
 }
 
 // A line: [who, English, Indonesian].
@@ -203,6 +209,34 @@ export const stories = {
         lines: [['wulan', 'Categories come from my own entries, so I can see where the money went.', 'Kategorinya dari catatanku sendiri, jadi kelihatan uangnya ke mana aja.']],
         shots: ['wulan-added'],
         crops: [{ shot: 'wulan-crop-categories' }],
+      },
+    ],
+  },
+  // Draft lines, over the promo's screens (`../`) until his own are captured.
+  hendra: {
+    people: ['hendra'],
+    full: false,
+    place: 'shop',
+    scenes: [
+      {
+        act: 'restock',
+        d: 5.2,
+        tag: { en: 'Supplier receipts 🧾', id: 'Nota supplier 🧾' },
+        lines: [['hendra', 'Every delivery from a supplier comes with a receipt. By the weekend, it’s a pile.', 'Tiap barang datang dari supplier, ada notanya. Akhir minggu, udah numpuk.']],
+      },
+      {
+        act: 'scan',
+        tag: { en: 'Gemini reads it, you check ✅', id: 'Gemini yang baca, kamu cek ✅' },
+        lines: [['hendra', 'Now I snap each one. Gemini reads the items, and I check before adding.', 'Sekarang tinggal kufoto satu-satu. Gemini yang baca barangnya, aku cek dulu sebelum ditambah.']],
+        shots: ['../receipt'],
+        crops: [{ shot: '../crop-receipt', at: 1.6 }],
+      },
+      {
+        act: 'file',
+        tag: { en: 'Income and expenses, per week 📊', id: 'Pemasukan dan pengeluaran per minggu 📊' },
+        lines: [['hendra', 'Every week I see what came in, what went out, and how much I kept.', 'Tiap minggu kelihatan yang masuk, yang keluar, dan berapa yang tersisa.']],
+        shots: ['../finance-analysis'],
+        crops: [{ shot: '../crop-cashflow' }],
       },
     ],
   },

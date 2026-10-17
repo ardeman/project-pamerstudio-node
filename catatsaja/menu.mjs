@@ -5,7 +5,7 @@
 const lang = { title: 'Language', options: ['all', 'en', 'id'] }
 const promo = [{ title: 'Format', options: ['all', 'vertical', 'whatsapp', 'linkedin', 'youtube'] }, lang]
 const stories = [
-  { title: 'Video', options: ['all', 'full', 'rina', 'couple', 'adit', 'maya', 'nadia', 'wulan'] },
+  { title: 'Video', options: ['all', 'full', 'rina', 'couple', 'adit', 'maya', 'nadia', 'wulan', 'hendra'] },
   { title: 'Format', options: ['all', 'vertical', 'linkedin', 'youtube'] },
   { title: 'Language', options: [{ label: 'where it’s posted', value: null }, 'all', 'en', 'id'] },
 ]
@@ -16,4 +16,5 @@ export const menu = [
   { label: 'Stories · preview stills (free)', script: 'scripts/render-stories.mjs', pick: stories, flags: ['--stills', '--silent'] },
   { label: 'Stories · render video', script: 'scripts/render-stories.mjs', pick: stories, paid: true },
   { label: 'Stories · subtitles, covers, chapters', script: 'scripts/render-stories.mjs', pick: stories, flags: ['--meta'] },
+  { label: 'Places · drawings (fal.ai)', script: 'scripts/places-art.mjs', paid: true },
 ]

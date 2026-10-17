@@ -114,11 +114,12 @@ const act = async (project, action) => {
     stdout.write(`\x1b[2J\x1b[H${dim('Checking what this would buy (free)…')}\n`)
     const dry = run([...command, '--dry-run'], true)
     if (dry.status !== 0) return pause(yellow('The dry run failed.'))
-    const cost = dry.stdout.match(/~(\d+)(\+?) credits for (\d+) new/)
+    // ElevenLabs costs credits (eleven.mjs), fal.ai dollars (fal.mjs).
+    const cost = dry.stdout.match(/~(\d+)(\+?) credits for (\d+) new/) ?? dry.stdout.match(/~(\$[\d.]+)(\+?) for (\d+) new/)
     if (cost) {
       stdout.write(`\x1b[2J\x1b[H${dry.stdout}`)
       stdin.setRawMode(true)
-      if (!(await confirm(`${dry.stdout.trim().split('\n').pop()}\nBuy ~${cost[1]}${cost[2]} credits and render?`))) return
+      if (!(await confirm(`${dry.stdout.trim().split('\n').pop()}\nBuy ~${cost[1]}${cost[2]}${cost[1].startsWith('$') ? '' : ' credits'} and render?`))) return
     }
   }
   const result = run(command)
