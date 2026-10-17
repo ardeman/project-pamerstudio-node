@@ -5,7 +5,7 @@
 const lang = { title: 'Language', options: ['all', 'en', 'id'] }
 const promo = [{ title: 'Format', options: ['all', 'vertical', 'whatsapp', 'linkedin', 'youtube'] }, lang]
 const stories = [
-  { title: 'Video', options: ['all', 'full', 'rina', 'couple', 'adit', 'maya'] },
+  { title: 'Video', options: ['all', 'full', 'rina', 'couple', 'adit', 'maya', 'nadia'] },
   { title: 'Format', options: ['all', 'vertical', 'linkedin', 'youtube'] },
   { title: 'Language', options: [{ label: 'where it’s posted', value: null }, 'all', 'en', 'id'] },
 ]

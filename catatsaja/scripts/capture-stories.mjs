@@ -20,6 +20,7 @@ import {
   uidOf,
 } from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
+import { bookSeed } from './book-seed.mjs'
 import { accounts, content, passphraseOf } from './stories-data.mjs'
 
 const lang = process.argv[2] ?? 'en'
@@ -58,7 +59,8 @@ const ids = {}
 let minutes = 0
 
 const add = async (collection, owner, item) => {
-  const { with: shared = {}, pinned, ...data } = item
+  const { with: shared = {}, pinned, ...fields } = item
+  const { data, months } = collection === 'finances' ? bookSeed(fields) : { data: fields, months: [] }
   const people = Object.keys(shared)
   minutes += 37
   const created = new Date(Date.parse('2026-10-12T02:00:00Z') - minutes * 60_000)
@@ -80,7 +82,16 @@ const add = async (collection, owner, item) => {
   })
   const json = await response.json()
   if (!response.ok) throw new Error(JSON.stringify(json))
-  ids[`${owner}.${collection}`] = json.name.split('/').pop()
+  const id = json.name.split('/').pop()
+  ids[`${owner}.${collection}`] = id
+  for (const { month, content } of months) {
+    const monthResponse = await fetch(`${DATABASE}/finances/${id}/months?documentId=${month}`, {
+      method: 'POST',
+      headers: ADMIN,
+      body: JSON.stringify({ fields: toValue({ month, content }).mapValue.fields }),
+    })
+    if (!monthResponse.ok) throw new Error(await monthResponse.text())
+  }
 }
 
 await mkdir(OUT, { recursive: true })
@@ -136,7 +147,7 @@ try {
     devices[name] = page
     return page
   }
-  for (const owner of ['rina', 'sari', 'adit', 'maya']) {
+  for (const owner of ['rina', 'sari', 'adit', 'maya', 'nadia']) {
     const page = await deviceOf(owner)
     await page.waitForTimeout(8000)
   }
@@ -177,6 +188,12 @@ try {
     })
   }
   const text = (value) => (page) => page.getByText(value, { exact: true })
+  // The top of a card, down to an element in it (a long card's first part).
+  const cardTo = (locate, until) => async (page) => {
+    const box = await cardOf(locate)(page)
+    const end = await until(page).first().boundingBox()
+    return { ...box, height: end.y + end.height + 20 - box.y }
+  }
   // The email field and the person's row, down to their email.
   const shareCard = (key) => async (page) => {
     const dialog = page.getByRole('dialog')
@@ -187,7 +204,14 @@ try {
 
   const shoot = async ({ name, who, path, desk, full, act, card }) => {
     const page = await deviceOf(who, desk)
+    // An unsaved entry is kept as a draft and would reopen on the next shot.
+    await page.evaluate(() => {
+      for (const storage of [localStorage, sessionStorage])
+        for (const key of Object.keys(storage)) if (key.startsWith('catatsaja-draft:')) storage.removeItem(key)
+    })
     await page.goto(`${APP}${path}`)
+    // Past the start-up screen, which the first page of a device can take a while on.
+    await page.getByRole('navigation').first().waitFor({ timeout: 60_000 })
     await page.waitForTimeout(3500)
     if (act) await act(page)
     await page.waitForTimeout(300)
@@ -208,6 +232,7 @@ try {
   const home = `/finances/${ids['sari.finances']}`
   const trip = `/finances/${ids['adit.finances']}`
   const dad = `/health/${ids['maya.healthLogs']}`
+  const cycle = `/health/${ids['nadia.healthLogs']}`
   const typeEntry = async (page) => {
     await page.getByRole('button', { name: t.finances.entry.add }).first().click()
     await page.waitForTimeout(1200)
@@ -253,6 +278,12 @@ try {
     { name: 'maya-crop-reminders', who: 'maya', path: dad, card: cardOf(text(t.health.reminders.title)) },
     { name: 'maya-crop-share', who: 'maya', path: dad, act: share, card: shareCard('andi') },
     { name: 'maya-desk-dad', who: 'maya', path: dad, desk: true, act: tab(t.health.kinds.glucose) },
+    // Nadia: her period calendar, the reminder before it, and encryption on.
+    { name: 'nadia-calendar', who: 'nadia', path: cycle, act: async (page) => { await tab(t.health.kinds.period)(page); await scroll(page, 460) } },
+    { name: 'nadia-crop-next', who: 'nadia', path: cycle, act: tab(t.health.kinds.period), card: cardTo(text(t.health.period.next), (page) => page.getByText(t.health.period.disclaimer.split(':')[0], { exact: false })) },
+    { name: 'nadia-overview', who: 'nadia', path: cycle },
+    { name: 'nadia-crop-reminders', who: 'nadia', path: cycle, card: cardTo(text(t.health.reminders.title), text(t.health.reminders.periodBefore_other.replace('{{count}}', 3))) },
+    { name: 'nadia-crop-encryption', who: 'nadia', path: '/settings/account', card: cardTo(text(t.encryption.settings.on), text(t.encryption.settings.on)) },
   ]
   const only = process.env.ONLY?.split(',')
   for (const shot of shots) {

@@ -1,7 +1,7 @@
-// Renders the stories videos (stories.mjs): the full one with all five
-// people, and a short one per story. Usage:
+// Renders the stories videos (stories.mjs): the full one, and a short one
+// per story. Usage:
 //   node scripts/render-stories.mjs [video|all] [format|all] [en|id|all] [--stills] [--silent] [--dry-run] [--force] [--meta]
-// video: full, rina, couple, adit or maya. The full video is made in every
+// video: full, rina, couple, adit, maya or nadia. The full video is made in every
 // format; the short ones only vertically. Without a language, each format is
 // made in the languages it is posted in (`formats`). --stills writes a frame per scene
 // to out/stories/stills; --silent skips ElevenLabs (lines get an estimated
@@ -42,7 +42,7 @@ const formats = {
 const storyScenes = (key, landscape) => {
   const story = stories[key]
   return [
-    { type: 'person', key: `${key}-intro`, people: story.people, role: story.role, lines: story.intro, d: 3.5 },
+    ...(story.intro ? [{ type: 'person', key: `${key}-intro`, people: story.people, role: story.role, lines: story.intro, d: 3.5 }] : []),
     ...story.scenes.map((scene, index) => ({
       type: scene.type ?? 'phone',
       key: `${key}-${index + 1}`,
@@ -59,7 +59,7 @@ const storyScenes = (key, landscape) => {
 const videos = {
   full: { formats: Object.keys(formats), scenes: (landscape) => [
     { type: 'title', key: 'hook', text: hook.text, lines: hook.lines, d: 3 },
-    ...Object.keys(stories).flatMap((key) => storyScenes(key, landscape)),
+    ...Object.keys(stories).filter((key) => stories[key].full !== false).flatMap((key) => storyScenes(key, landscape)),
     { type: 'cta', key: 'cta', lines: cta.lines, d: 4.5 },
   ] },
   ...Object.fromEntries(Object.keys(stories).map((key) => [key, { formats: ['vertical'], scenes: (landscape) => [
@@ -126,7 +126,8 @@ for (const video of videoNames) {
 
 // --meta: what the upload forms take, from the same timings as the videos,
 // so nothing is rendered: subtitles (.srt), chapters (meta.json) and a cover
-// frame from the rendered video (a person's introduction, all words in).
+// frame from the rendered video (a person's introduction, or the hook of a
+// story without one, all words in).
 const pad = (n, size = 2) => String(n).padStart(size, '0')
 const srtTime = (t) => {
   const ms = Math.round(t * 1000)
@@ -173,6 +174,8 @@ if (process.argv.includes('--meta')) {
       }
       start += scene.d
     }
+    // No introduction: the hook, all words in, over its screen.
+    cover ??= scenes[0].d - 0.4
     writeFileSync(`${OUT}catatsaja-stories-${label}.srt`, lines.map((cue, i) => `${i + 1}\n${srtTime(cue.from)} --> ${srtTime(cue.to)}\n${cue.text}\n`).join('\n'))
     const mp4 = `${OUT}catatsaja-stories-${label}.mp4`
     if (existsSync(mp4)) execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-ss', cover.toFixed(2), '-i', mp4, '-frames:v', '1', '-q:v', '2', `${OUT}catatsaja-stories-${label}-cover.jpg`])

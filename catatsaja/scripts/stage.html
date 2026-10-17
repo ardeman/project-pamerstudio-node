@@ -164,12 +164,15 @@
       messy: [[140, 160, 30], [160, 128, 32], [196, 112, 36], [236, 120, 33], [264, 150, 30], [124, 186, 18], [278, 182, 18]]
         .map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${hairColor}"/>`).join(''),
       bun: `<path d="M122 210 C 110 122 158 96 200 98 C 246 96 292 122 278 210 C 274 168 250 136 204 134 C 160 136 128 160 122 210 Z" fill="${hairColor}"/>`,
+      // Parted to one side.
+      long: `<path d="M120 214 C 108 124 156 94 206 96 C 250 98 292 124 280 214 C 270 166 246 132 188 136 C 150 142 128 170 120 214 Z" fill="${hairColor}"/>`,
     }
     svg.innerHTML = `
       <defs><clipPath id="${id}"><circle cx="200" cy="200" r="200"/></clipPath></defs>
       <g clip-path="url(#${id})">
         <circle cx="200" cy="200" r="200" fill="${look.bg}"/>
         <g class="sway">
+          ${look.hair === 'long' ? `<path d="M104 210 C 96 116 150 86 200 86 C 250 86 304 116 296 210 L 306 348 C 262 362 138 362 94 348 Z" fill="${hairColor}"/>` : ''}
           ${look.hair === 'bun' ? `<circle cx="200" cy="84" r="38" fill="${hairColor}"/><ellipse cx="200" cy="200" rx="96" ry="104" fill="${hairColor}"/>` : ''}
           ${hijab ? '' : `<rect x="170" y="250" width="60" height="90" rx="24" fill="${shade(look.skin, -0.12)}"/>`}
           <path d="M30 420 C 40 338 110 316 200 316 C 290 316 360 338 370 420 Z" fill="${look.top}"/>

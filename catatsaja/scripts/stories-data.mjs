@@ -20,6 +20,9 @@ const entry = ([id, date, type, category, description, amount, quantity = 1, cod
   rate,
 })
 
+// A date this many days before today (YYYY-MM-DD).
+const daysAgo = (days) => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+
 // Everyone signs up with this password and passphrase (`<name> demo
 // passphrase`, lower case).
 export const accounts = {
@@ -30,6 +33,7 @@ export const accounts = {
   adit: { name: 'Adit', email: 'adit@example.com' },
   maya: { name: 'Maya', email: 'maya@example.com' },
   andi: { name: 'Andi', email: 'andi@example.com' },
+  nadia: { name: 'Nadia', email: 'nadia@example.com' },
 }
 export const passphraseOf = (key) => `${key} demo passphrase`
 
@@ -202,6 +206,28 @@ export const content = (lang) => {
           ],
           // Every Sunday morning: due today.
           reminders: [{ id: 'r1', kind: 'glucose', everyDays: 7, time: '07:00' }],
+        },
+      ],
+    },
+    nadia: {
+      healthLogs: [
+        {
+          name: 'Nadia',
+          birthDate: '2002-05-08',
+          sex: 'female',
+          calorieTarget: null,
+          pinned: true,
+          // 28-day cycles, counted from the day of capture (the app uses the
+          // real date): the next is expected in two days.
+          content: [[4, 5, 'medium'], [3, 6, 'heavy'], [2, 5, 'medium'], [1, 6, 'medium']].map(([back, days, flow], index) => ({
+            id: `p${index + 1}`,
+            kind: 'period',
+            date: daysAgo(back * 28 - 2),
+            end: daysAgo(back * 28 - 2 - days + 1),
+            flow,
+          })),
+          // Three days before the expected period: due since yesterday.
+          reminders: [{ id: 'r1', kind: 'period', daysBefore: 3 }],
         },
       ],
     },

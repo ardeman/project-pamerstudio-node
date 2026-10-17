@@ -1,4 +1,4 @@
-// The stories videos: four stories, five people using Catat Saja in their own lives, each
+// The stories videos: five stories, six people using Catat Saja in their own lives, each
 // telling it in their own voice. Their accounts and data are in
 // stories-data.mjs, their screens in shots/<lang>/stories/ (capture-stories.mjs).
 
@@ -32,6 +32,11 @@ export const cast = {
     look: { skin: '#bf8661', hair: 'hijab', cloth: '#7fa68a', top: '#8a5a83', glasses: true, bg: '#d9ead3' },
     voice: { en: 'XrExE9yKIg1WjnnlVkGX', id: 'U3dExJoUNcmTY5H6GMuG' }, // Matilda; Maya
   },
+  nadia: {
+    name: 'Nadia',
+    look: { skin: '#cf9670', hair: 'long', hairColor: '#2a1c15', top: '#d9667b', earrings: true, bg: '#f9d3dc' },
+    voice: { en: 'Xb7hH8MSUJpSbSDYk0k2', id: 'ffTJE9l3Kt2ipEM32UOc' }, // Alice; Aita
+  },
 }
 
 // A line: [who, English, Indonesian].
@@ -54,6 +59,9 @@ export const cta = {
 }
 
 // Each story: who is in it, an introduction, then two scenes in the app.
+// A story without an introduction opens on its first scene, the problem
+// said over the real screen, so the first second is a reason to stay;
+// `full: false` keeps it to its own short.
 // A scene has a tag (what the app does), lines, a phone screen (`shots`),
 // cards that pop up over it (`crops`) and, for 16:9, a laptop screen (`desk`).
 export const stories = {
@@ -138,6 +146,29 @@ export const stories = {
         lines: [['maya', 'My brother Andi can see it too. And it’s end-to-end encrypted, so it stays in the family.', 'Adikku Andi juga bisa lihat. Terenkripsi end-to-end, jadi tetap urusan keluarga.']],
         shots: ['maya-overview'],
         crops: [{ shot: 'maya-crop-share', r: 2 }],
+      },
+    ],
+  },
+  nadia: {
+    people: ['nadia'],
+    full: false,
+    scenes: [
+      {
+        tag: { en: 'Period calendar 📅', id: 'Kalender haid 📅' },
+        lines: [['nadia', 'My period always caught me off guard.', 'Haid-ku sering datang tiba-tiba. Panik terus.']],
+        shots: ['nadia-calendar'],
+      },
+      {
+        tag: { en: 'When the next one’s likely 🗓️', id: 'Kira-kira kapan berikutnya 🗓️' },
+        lines: [['nadia', 'Now I log it, and the calendar shows when the next one’s likely to start.', 'Sekarang aku catat, kalendernya kasih tahu kira-kira kapan haid berikutnya.']],
+        shots: ['nadia-calendar'],
+        crops: [{ shot: 'nadia-crop-next', r: 1.5 }],
+      },
+      {
+        tag: { en: 'A reminder, end-to-end encrypted 🔒', id: 'Ada pengingat, terenkripsi 🔒' },
+        lines: [['nadia', 'I get a reminder three days before. And it’s end-to-end encrypted, so it’s just mine.', 'Tiga hari sebelumnya ada pengingat. Terenkripsi end-to-end, jadi cuma aku yang bisa baca.']],
+        shots: ['nadia-overview'],
+        crops: [{ shot: 'nadia-crop-reminders' }, { shot: 'nadia-crop-encryption', at: 2.6, dy: 420, r: 2 }],
       },
     ],
   },
