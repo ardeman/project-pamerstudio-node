@@ -238,7 +238,7 @@ try {
       width,
       height,
       shots: `file://${ROOT}shots/${lang}/stories/`,
-      logo: `file://${ROOT}../../project-catatsaja-reactrouter/public/apple-touch-icon.png`,
+      logo: `file://${ROOT}../../../github/project-catatsaja-reactrouter/public/apple-touch-icon.png`,
       // The places Recraft drew (places-art.mjs), inlined: an <image> would
       // still be loading when the first frame is taken.
       art: Object.fromEntries(readdirSync(`${ROOT}places`).map((file) => [file.replace(/\.svg$/, ''), readFileSync(`${ROOT}places/${file}`, 'utf8')])),

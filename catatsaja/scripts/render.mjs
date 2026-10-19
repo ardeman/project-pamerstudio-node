@@ -158,7 +158,7 @@ try {
         width: format.width,
         height: format.height,
         shots: `file://${ROOT}shots/${lang}/`,
-        logo: `file://${ROOT}../../project-catatsaja-reactrouter/public/apple-touch-icon.png`,
+        logo: `file://${ROOT}../../../github/project-catatsaja-reactrouter/public/apple-touch-icon.png`,
         scenes: format.scenes.map((scene) => ({ ...scene, text: copy[lang][scene.key] })),
       })
       const label = `${name}-${lang}`

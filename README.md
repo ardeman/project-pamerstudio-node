@@ -5,8 +5,8 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 | Folder | What |
 | --- | --- |
 | `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`) and instrumental music (`music`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl` (not on the dashboard, which counts ElevenLabs credits). `dashboard.mjs`: a local page with the credits, the spending and every project's stills and videos. |
-| `catatsaja/` | Catat Saja promo videos (app repo: `../project-catatsaja-reactrouter`). |
-| `cobalagi/` | Coba Lagi promo videos (app repo: `../project_cobalagi_flutter`). |
+| `catatsaja/` | Catat Saja promo videos (app repo: `../../github/project-catatsaja-reactrouter`). |
+| `cobalagi/` | Coba Lagi promo videos (app repo: `../../github/project_cobalagi_flutter`). |
 
 ## Setup
 
@@ -101,7 +101,7 @@ Two promo videos, each in Indonesian and English, showing real gameplay from the
 
 Both end with "Coming soon to Google Play" until they are rendered with `live` (`STORE=live`) once the app is public, which also gives the short its store end card and puts the Play link in the descriptions. Cards are HTML shot by headless Chrome in a taller window and cropped, because its page is now and then a little short and left a strip at the bottom.
 
-The scripts work from the app repo (`COBALAGI_APP`, `../project_cobalagi_flutter` by default), which has what they show: `website/screenshots/`, the voice clips and music in `assets/audio/`, the words in `lib/app/l10n/`, the robot art and the version in `pubspec.yaml`. Only the videos are written here.
+The scripts work from the app repo (`COBALAGI_APP`, `../../github/project_cobalagi_flutter` by default), which has what they show: `website/screenshots/`, the voice clips and music in `assets/audio/`, the words in `lib/app/l10n/`, the robot art and the version in `pubspec.yaml`. Only the videos are written here.
 
 ### Layout
 

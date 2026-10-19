@@ -20,7 +20,7 @@ import {
   startApp,
   stopApp,
   uidOf,
-} from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
+} from '../../../../github/project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
 import { bookSeed } from './book-seed.mjs'
 import { accounts, content, hendraReceipt, passphraseOf, wulanReceipt } from './stories-data.mjs'
@@ -34,7 +34,7 @@ const DATABASE =
 const ADMIN = { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }
 // The app's own words, so the shots find the same labels it shows.
 const t = JSON.parse(
-  readFileSync(new URL(`../../../project-catatsaja-reactrouter/app/localization/locales/${lang}/common.json`, import.meta.url), 'utf8'),
+  readFileSync(new URL(`../../../../github/project-catatsaja-reactrouter/app/localization/locales/${lang}/common.json`, import.meta.url), 'utf8'),
 )
 
 const toValue = (value) => {

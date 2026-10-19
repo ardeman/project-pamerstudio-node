@@ -6,11 +6,11 @@
 #   VIDEO_FRAMES=1 flutter test tool/screenshots --update-goldens \
 #     --plain-name 'video frames'
 # Source this after setting HERE (the cobalagi folder) and W, H (video size).
-# It works from the app repo (COBALAGI_APP, ../project_cobalagi_flutter by
+# It works from the app repo (COBALAGI_APP, ../../github/project_cobalagi_flutter by
 # default), which has the screenshots, voices, music and art.
 set -euo pipefail
 
-ROOT="$(cd "${COBALAGI_APP:-$HERE/../../project_cobalagi_flutter}" && pwd)"
+ROOT="$(cd "${COBALAGI_APP:-$HERE/../../../github/project_cobalagi_flutter}" && pwd)"
 export COBALAGI_APP="$ROOT"
 cd "$ROOT"
 OUT="$HERE/out"

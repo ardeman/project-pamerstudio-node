@@ -18,7 +18,7 @@ import {
   startApp,
   stopApp,
   uidOf,
-} from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
+} from '../../../../github/project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
 import { bookSeed } from './book-seed.mjs'
 import { demo } from './demo-data.mjs'
