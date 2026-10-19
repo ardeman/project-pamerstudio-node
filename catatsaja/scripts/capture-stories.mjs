@@ -1,7 +1,7 @@
 // Seeds one demo account per person in the stories videos on the local
 // emulators, and captures their screens into shots/<lang>/stories/. Run it
 // from the app repo, with `pnpm emulators` running there:
-//   node ../ai-generated-content/catatsaja/scripts/capture-stories.mjs <en|id>
+//   node ../../assets/ai-generated-content/catatsaja/scripts/capture-stories.mjs <en|id>
 // ONLY=name,name captures just those shots (the accounts are seeded anyway).
 
 import { readFileSync } from 'node:fs'

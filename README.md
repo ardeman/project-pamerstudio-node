@@ -59,8 +59,8 @@ Two videos, each in English and Indonesian:
 Capture screens, from the app repo with `pnpm emulators` running there:
 
 ```sh
-node ../ai-generated-content/catatsaja/scripts/capture.mjs <en|id>
-node ../ai-generated-content/catatsaja/scripts/capture-stories.mjs <en|id>   # ONLY=shot,shot for a few
+node ../../assets/ai-generated-content/catatsaja/scripts/capture.mjs <en|id>
+node ../../assets/ai-generated-content/catatsaja/scripts/capture-stories.mjs <en|id>   # ONLY=shot,shot for a few
 ```
 
 Render, from this folder:
