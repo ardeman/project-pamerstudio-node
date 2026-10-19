@@ -6,6 +6,7 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 | --- | --- |
 | `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`) and instrumental music (`music`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl` (not on the dashboard, which counts ElevenLabs credits). `dashboard.mjs`: a local page with the credits, the spending and every project's stills and videos. |
 | `catatsaja/` | Catat Saja promo videos (app repo: `../project-catatsaja-reactrouter`). |
+| `cobalagi/` | Coba Lagi promo videos (app repo: `../project_cobalagi_flutter`). |
 
 ## Setup
 
@@ -90,3 +91,52 @@ const track = await music({ dir: 'audio', name: 'main', prompt: 'calm lo-fi, no 
 ```
 
 `speak` picks the newest model that speaks the language and uses `voice`, else `VOICE_<LANG>` from `.env`, else Jessica.
+
+## Coba Lagi
+
+Two promo videos, each in Indonesian and English, showing real gameplay from the app's "Watch me!" demos with the app's own narration clips and music (no paid calls):
+
+- **Short** (`short-video.sh`): vertical, 1080 × 1920, about 30 seconds, for YouTube Shorts, Instagram Reels and Stories, TikTok and WhatsApp status. Words and the phone stay clear of those apps' own buttons and captions (the top 250 px, the bottom 380 px and the right 140 px).
+- **Promo** (`promo-video.sh`): landscape, 1920 × 1080, about 50 seconds, for YouTube and the Play listing's video, with a `thumbnail-<lang>.jpg` for YouTube.
+
+Both end with "Coming soon to Google Play" until they are rendered with `live` (`STORE=live`) once the app is public, which also gives the short its store end card and puts the Play link in the descriptions. Cards are HTML shot by headless Chrome in a taller window and cropped, because its page is now and then a little short and left a strip at the bottom.
+
+The scripts work from the app repo (`COBALAGI_APP`, `../project_cobalagi_flutter` by default), which has what they show: `website/screenshots/`, the voice clips and music in `assets/audio/`, the words in `lib/app/l10n/`, the robot art and the version in `pubspec.yaml`. Only the videos are written here.
+
+### Layout
+
+| Path | What |
+| --- | --- |
+| `cobalagi/scripts/lib.sh` | Shared: cards, the device bezel, gameplay segments, cross-fades with music and narration. |
+| `cobalagi/scripts/short-video.sh`, `promo-video.sh` | The two videos. |
+| `cobalagi/scripts/render.mjs` | Runs them (for `npm start`). |
+| `cobalagi/scripts/subtitles.mjs` | Each video's subtitles (`<video>.srt`): the ARB words of each clip, at the time it plays. |
+| `cobalagi/scripts/youtube-text.mjs`, `youtube.json` | Each video's YouTube text (below). |
+| `cobalagi/out/` | The videos with their `.srt`, `.youtube.txt` and thumbnails. |
+
+### Commands
+
+Record the gameplay frames in the app repo (about 15 minutes; again whenever the demos look different). They land in its `tool/screenshots/out/video/`:
+
+```sh
+VIDEO_FRAMES=1 flutter test tool/screenshots --update-goldens --plain-name 'video frames'
+```
+
+Render, from this folder:
+
+```sh
+node cobalagi/scripts/render.mjs [short|promo|all] [soon|live]
+node cobalagi/scripts/youtube-text.mjs --check    # YouTube's limits, for every video
+```
+
+### YouTube uploads
+
+Rendering a video also writes `out/<video>.youtube.txt`, with the title, the description and every upload setting, ready to paste. Never edit those files: change `youtube.json` and render again, or run `node cobalagi/scripts/youtube-text.mjs <video> cobalagi/out/<video>.youtube.txt` for the text alone.
+
+- **Titles carry the app's version** at the time the video is made (`{version}`, the version name in the app's `pubspec.yaml`), so an upload always says which app it shows. A title without `{version}` is refused.
+- **The store line** (`{store}` in descriptions) says "Coming soon to Google Play" until the app is public; then render with `live`.
+- **Claims stay true** for the released app, as in its store listing, and both languages say the same.
+- `youtube-text.mjs` refuses to write while any video breaks YouTube's limits (title 100, description 5,000 characters, no angle brackets) or leaves a `{…}` unfilled; `--check` runs just that.
+- Settings: category Education, comments moderated Strict, AI use No (no realistic synthetic content), "Made for Kids" left to the channel owner (recommended No: the videos speak to parents).
+
+YouTube can't replace a video's file: to update a video, delete it and upload the new one. Then update the links where it is shown: the app repo's website promo video (its video ids and title cards in `website/video/`) and, for the landscape promo, the Play listing's Video field.

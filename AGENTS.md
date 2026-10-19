@@ -20,6 +20,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 - Show only what the app really does, on its real screens: capture them from the demo data on the emulators (`capture*.mjs`), never mock up a screen. Generated pictures are only for the places stories happen in: never an app screen, text or a brand. Generated video may move a story's made-up person, drawn in the stories' flat style from a frame we drew (`first-frame.mjs`), never photoreal and never a real person. Check a claim against the app repo (its `README.md`, `AGENTS.md` and code) before a line says it.
 - Stories are about people the demo data makes up. Don't present them as real customers or testimonials, and don't draw or name real people.
 - Health lines describe what is logged and shown; never a diagnosis or a medical promise.
+- Coba Lagi's videos show only the app's own gameplay (frames recorded from its demos), screenshots, words, voices and music; they follow its store listing's rules (the app repo's `AGENTS.md` → Store listing): true for the released app, both languages saying the same, and "Coming soon" until the app is public. Every title carries the app's version.
 
 ## Both languages
 
@@ -34,7 +35,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 
 ## Conventions
 
-- Scripts are Node ES modules (`.mjs`) with no dependencies beyond Playwright (linked from the app repo) and ffmpeg. Keep comments short and about why.
+- Scripts are Node ES modules (`.mjs`) with no dependencies beyond Playwright (linked from the app repo) and ffmpeg. Keep comments short and about why. Coba Lagi's renders are bash with headless Chrome and ffmpeg, run through `render.mjs`.
 - One folder per project; helpers more than one project can use go in `shared/`.
 - The app repo stays clean: no media, keys or promo scripts go into it.
 - Never write the API key anywhere but `.env`, and never print it.
