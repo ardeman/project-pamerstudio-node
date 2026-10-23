@@ -14,6 +14,8 @@ import { app } from './app.mjs'
 // YouTube's limits.
 const titleLimit = 100
 const descriptionLimit = 5000
+// The shortest caption limit among the other apps (Threads).
+const captionLimit = 500
 
 const copy = JSON.parse(readFileSync(new URL('youtube.json', import.meta.url), 'utf8'))
 
@@ -43,7 +45,7 @@ function descriptionOf(video, live) {
 }
 
 function youtubeText(video, { version, live }) {
-  const kind = video.split('-')[0] // promo or short
+  const kind = video.split('-')[0] // promo or short (short-koba too)
   const fill = (text) => text
     .replaceAll('{lang}', langOf(video))
     .replaceAll('{video}', video)
@@ -70,13 +72,26 @@ DESCRIPTION
 ${descriptionOf(video, live)}
 
 SETTINGS
-${settings}`
+${settings}${kind === 'short' ? otherPlatforms(video, live) : ''}`
+}
+
+// The same vertical short on other apps, each with its caption.
+function otherPlatforms(video, live) {
+  const store = copy.store[live ? 'live' : 'soon'][langOf(video)]
+  return `
+OTHER PLATFORMS
+Upload the same ${video}.mp4 (1080 x 1920). Most play muted, so turn on
+captions where the app offers them, or upload ${video}.srt.
+${copy.social.platforms.map((p) => `
+${p.name}
+${p[langOf(video)].replaceAll('{store}', store)}
+`).join('')}`
 }
 
 // What YouTube refuses or would show unfilled, for every video either way.
 function check(version) {
   const problems = []
-  const expected = ['promo-en', 'promo-id', 'short-en', 'short-id']
+  const expected = ['promo-en', 'promo-id', 'short-en', 'short-id', 'short-koba-en', 'short-koba-id']
   const videos = Object.keys(copy.videos)
   if (videos.sort().join() !== expected.join()) problems.push(`videos are ${videos}, expected ${expected}`)
   for (const video of videos) {
@@ -92,6 +107,13 @@ function check(version) {
       if (/[<>]/.test(description)) problems.push(`${video} (${which}): description has angle brackets`)
       // The store link only once the app is public.
       if (description.includes('play.google.com') !== live) problems.push(`${video} (${which}): store link ${live ? 'missing' : 'too early'}`)
+    }
+    for (const p of copy.social.platforms) {
+      for (const live of [false, true]) {
+        const caption = p[langOf(video)]?.replaceAll('{store}', copy.store[live ? 'live' : 'soon'][langOf(video)])
+        if (caption == null) problems.push(`${p.name}: no ${langOf(video)} caption`)
+        else if (caption.length > captionLimit) problems.push(`${p.name} (${langOf(video)}): caption is ${caption.length} characters (max ${captionLimit})`)
+      }
     }
     const text = youtubeText(video, { version, live: false })
     if (text.includes('{')) problems.push(`${video}: settings have an unfilled {…}`)

@@ -2,12 +2,12 @@
   "_comment": "YouTube text for the promo videos. youtube-text.mjs turns it into cobalagi/out/<video>.youtube.txt whenever a video is rendered. In titles, {version} is the app's version name from pubspec.yaml (every title needs it); in descriptions, {store} is the store line for the current STORE setting. Keep every claim true for the released app, as in the store listing.",
   "store": {
     "soon": {
-      "en": "Coming soon to Google Play.",
-      "id": "Segera di Google Play."
+      "en": "On the App Store for iPhone, iPad and Mac: https://apps.apple.com/app/id6823508005 Soon on Google Play.",
+      "id": "Ada di App Store untuk iPhone, iPad, dan Mac: https://apps.apple.com/app/id6823508005 Segera di Google Play."
     },
     "live": {
-      "en": "Get it on Google Play: https://play.google.com/store/apps/details?id=com.ardeman.cobalagi",
-      "id": "Unduh di Google Play: https://play.google.com/store/apps/details?id=com.ardeman.cobalagi"
+      "en": "App Store (iPhone, iPad, Mac): https://apps.apple.com/app/id6823508005 Google Play: https://play.google.com/store/apps/details?id=com.ardeman.cobalagi",
+      "id": "App Store (iPhone, iPad, Mac): https://apps.apple.com/app/id6823508005 Google Play: https://play.google.com/store/apps/details?id=com.ardeman.cobalagi"
     }
   },
   "tags": "Coba Lagi, cobalagi, coding for kids, learn to code, block coding, kids coding app, belajar coding anak",
@@ -16,15 +16,25 @@
       "setting": "Thumbnail",
       "promo": "Upload thumbnail-{lang}.jpg (needs a verified channel)",
       "short": "Select from video: the first frame",
-      "why": { "promo": "The title card", "short": "The short's hook" }
+      "why": {
+        "promo": "The title card",
+        "short": "The short's hook"
+      }
     },
     {
       "setting": "Made for Kids",
       "all": "The channel owner's legal call. Recommended: No",
       "why": "The videos speak to parents (\"Free · No ads\", the store line); YouTube may reclassify them because they show a children's game"
     },
-    { "setting": "Age restriction", "all": "No" },
-    { "setting": "Paid promotion", "all": "No", "why": "Our own app" },
+    {
+      "setting": "Age restriction",
+      "all": "No"
+    },
+    {
+      "setting": "Paid promotion",
+      "all": "No",
+      "why": "Our own app"
+    },
     {
       "setting": "AI use",
       "all": "No",
@@ -35,8 +45,15 @@
       "all": "Off",
       "why": "Under a minute; no places"
     },
-    { "setting": "Tags", "all": "{tags}", "why": "Catches \"cobalagi\" written as one word" },
-    { "setting": "Video language", "all": "{language}" },
+    {
+      "setting": "Tags",
+      "all": "{tags}",
+      "why": "Catches \"cobalagi\" written as one word"
+    },
+    {
+      "setting": "Video language",
+      "all": "{language}"
+    },
     {
       "setting": "Caption certification",
       "all": "This content has never aired on television in the US"
@@ -46,7 +63,10 @@
       "all": "Standard YouTube licence; allow embedding",
       "why": "The Play listing and the website embed it"
     },
-    { "setting": "Shorts remixing", "all": "Allow video and audio" },
+    {
+      "setting": "Shorts remixing",
+      "all": "Allow video and audio"
+    },
     {
       "setting": "Category",
       "all": "Education; Type, Problems, Academic system, Level and Exam left empty",
@@ -93,6 +113,51 @@
       "language": "Indonesian",
       "title": "Anak bisa belajar coding, bahkan sebelum bisa membaca | Coba Lagi {version} #Shorts",
       "description": "Coba Lagi: blok bergambar, Koba si robot kecil, dan sembilan planet untuk dijelajahi. Gratis, tanpa iklan, bisa tanpa internet, dalam Bahasa Indonesia dan English. {store}\nhttps://cobalagi.ardeman.com\n#Shorts #coding #anak"
+    },
+    "short-koba-en": {
+      "language": "English",
+      "title": "Hi, I'm Koba! Will you help me find my stars? | Coba Lagi {version} #Shorts",
+      "description": "Koba's star ship lost its stars to a space wind. Children help it collect them on nine coding planets by snapping picture blocks together. Free, no ads, works offline, in Bahasa Indonesia and English. {store}\nhttps://cobalagi.ardeman.com\n#Shorts #coding #kids"
+    },
+    "short-koba-id": {
+      "language": "Indonesian",
+      "title": "Halo, aku Koba! Maukah kamu membantuku mencari bintang? | Coba Lagi {version} #Shorts",
+      "description": "Bintang kapal Koba tertiup angin antariksa. Anak membantunya mengumpulkan bintang di sembilan planet coding dengan menyusun blok bergambar. Gratis, tanpa iklan, bisa offline, dalam Bahasa Indonesia dan English. {store}\nhttps://cobalagi.ardeman.com\n#Shorts #codinganak #belajarcoding"
     }
+  },
+  "social": {
+    "_comment": "Captions for the vertical shorts on other apps, written into each short's .youtube.txt under OTHER PLATFORMS. {store} as in descriptions. Threads allows 500 characters, so every caption stays under it.",
+    "platforms": [
+      {
+        "name": "Instagram (Reels and Stories)",
+        "en": "Kids can learn to code through play, even before they can read. Coba Lagi: picture blocks, Koba the robot and nine planets. Free, no ads, works offline. {store} Link: cobalagi.ardeman.com\n#codingforkids #learntocode #kidsapp #parenting",
+        "id": "Anak bisa belajar coding sambil bermain, bahkan sebelum bisa membaca. Coba Lagi: blok bergambar, robot Koba, dan sembilan planet. Gratis, tanpa iklan, bisa offline. {store} Tautan: cobalagi.ardeman.com\n#codinganak #belajarcoding #aplikasianak #parenting"
+      },
+      {
+        "name": "Facebook (Reels)",
+        "en": "Kids can learn to code through play, even before they can read. Coba Lagi has picture blocks, Koba the little robot and nine planets to explore. Free, no ads, works offline, in Bahasa Indonesia and English. {store}\nhttps://cobalagi.ardeman.com",
+        "id": "Anak bisa belajar coding sambil bermain, bahkan sebelum bisa membaca. Coba Lagi punya blok bergambar, robot kecil Koba, dan sembilan planet untuk dijelajahi. Gratis, tanpa iklan, bisa offline, dalam Bahasa Indonesia dan English. {store}\nhttps://cobalagi.ardeman.com"
+      },
+      {
+        "name": "WhatsApp (Status, up to 60 seconds)",
+        "en": "Coba Lagi: kids learn to code through play. Free, no ads. cobalagi.ardeman.com",
+        "id": "Coba Lagi: anak belajar coding sambil bermain. Gratis, tanpa iklan. cobalagi.ardeman.com"
+      },
+      {
+        "name": "Threads",
+        "en": "Coba Lagi helps kids learn to code before they can read: picture blocks, a robot called Koba and nine planets. Free, no ads, works offline. {store} cobalagi.ardeman.com",
+        "id": "Coba Lagi membantu anak belajar coding sebelum bisa membaca: blok bergambar, robot bernama Koba, dan sembilan planet. Gratis, tanpa iklan, bisa offline. {store} cobalagi.ardeman.com"
+      },
+      {
+        "name": "LinkedIn",
+        "en": "I built Coba Lagi, a coding app for young children. Kids snap picture blocks together to guide Koba the robot, learning loops, conditions and debugging before they can read, in Bahasa Indonesia and English. No ads, no accounts, no tracking. {store}\nhttps://cobalagi.ardeman.com\n#EdTech #CodingForKids #ComputationalThinking",
+        "id": "Saya membuat Coba Lagi, aplikasi coding untuk anak kecil. Anak menyusun blok bergambar untuk menuntun robot Koba, belajar perulangan, kondisi, dan membetulkan kesalahan sebelum bisa membaca, dalam Bahasa Indonesia dan English. Tanpa iklan, tanpa akun, tanpa pelacakan. {store}\nhttps://cobalagi.ardeman.com\n#EdTech #CodingAnak #BerpikirKomputasional"
+      },
+      {
+        "name": "TikTok",
+        "en": "Kids can learn to code before they can read Coba Lagi: free, no ads, works offline. {store} Link: cobalagi.ardeman.com #codingforkids #learntocode #parentsoftiktok",
+        "id": "Anak bisa belajar coding sebelum bisa membaca Coba Lagi: gratis, tanpa iklan, bisa offline. {store} Tautan: cobalagi.ardeman.com #codinganak #belajarcoding #parenting"
+      }
+    ]
   }
 }

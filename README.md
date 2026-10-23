@@ -94,12 +94,14 @@ const track = await music({ dir: 'audio', name: 'main', prompt: 'calm lo-fi, no 
 
 ## Coba Lagi
 
-Two promo videos, each in Indonesian and English, showing real gameplay from the app's "Watch me!" demos with the app's own narration clips and music (no paid calls):
+Promo videos, each in Indonesian and English, showing real gameplay from the app's "Watch me!" demos with the app's own narration clips and music (no paid calls):
 
-- **Short** (`short-video.sh`): vertical, 1080 × 1920, about 30 seconds, for YouTube Shorts, Instagram Reels and Stories, TikTok and WhatsApp status. Words and the phone stay clear of those apps' own buttons and captions (the top 250 px, the bottom 380 px and the right 140 px).
+- **Short** (`short-video.sh`): vertical, 1080 × 1920, about 24 seconds, for TikTok, YouTube Shorts, Instagram Reels and Stories and WhatsApp status. Made to hold attention: gameplay moves from the first frame (no title card), big captions are burned in for viewers with the sound off, a new shot comes every 1 to 3 seconds, and the end card fades back into the opening frame so the video loops. It opens on Koba bumping a rock ("Can your child find the mistake?"), punches in on the orange ring and the one block changed, then cuts through loops, the Magic Block, typed code, until the flag, the warm-up games and the map, with the app's sound effects under the music and no narration. Words and the phone stay clear of those apps' own buttons and captions (the top 250 px, the bottom 380 px and the right 140 px).
+- **Koba's short** (`short-video.sh` too, `short-koba-<lang>`, about 30 seconds): the Star fuel story in Koba's own voice, captioned with its words: the wind blows the ship's stars away, three planets each open on their arrival scene's board and end on a solve while a star tank on the left fills, and the ship takes off with a full tank. Story shots show only the scene's pictures, cropped from the app's frames, in a card. `short-video.sh short` or `koba` renders just one kind.
 - **Promo** (`promo-video.sh`): landscape, 1920 × 1080, about 50 seconds, for YouTube and the Play listing's video, with a `thumbnail-<lang>.jpg` for YouTube.
+- **App Store header and search result** (`app-store-video.sh`, `app-store-header-<lang>.mp4` and `app-store-search-<lang>.mp4`): the moving versions of the app's still `header.png` and `search_result.png`, 13 seconds at 30 fps, at Apple's sizes (3840 × 1646, 21:9, and 3840 × 2560, 3:2; 5 to 30 seconds). Koba and the tagline sit with an iPhone 17 and an iPad Pro playing the demos, in Apple's product bezels with their status bars, read from the app repo's `store/bezels/` (its `tool/fetch_bezels.sh`; their license allows them only in App Store material, so they are never copied here) and drawn by its `store/device.mjs`. Each screen is filled with the app's light top colour, measured in Chrome and keyed out, so the gameplay shows through with the status bar over it. Apple loops them and starts them muted (search results can't be unmuted), so nothing depends on sound; the header has the music for viewers who unmute it. Upload them in App Store Connect under Header and Search Results, as the app repo's README says for the stills.
 
-Both end with "Coming soon to Google Play" until they are rendered with `live` (`STORE=live`) once the app is public, which also gives the short its store end card and puts the Play link in the descriptions. Cards are HTML shot by headless Chrome in a taller window and cropped, because its page is now and then a little short and left a strip at the bottom.
+The short and the promo end with "Coming soon to Google Play" until they are rendered with `live` (`STORE=live`) once the app is public, which also gives the short its store end card and puts the Play link in the descriptions. Cards are HTML shot by headless Chrome in a taller window and cropped, because its page is now and then a little short and left a strip at the bottom.
 
 The scripts work from the app repo (`COBALAGI_APP`, `../../github/project_cobalagi_flutter` by default), which has what they show: `website/screenshots/`, the voice clips and music in `assets/audio/`, the words in `lib/app/l10n/`, the robot art and the version in `pubspec.yaml`. Only the videos are written here.
 
@@ -108,7 +110,7 @@ The scripts work from the app repo (`COBALAGI_APP`, `../../github/project_cobala
 | Path | What |
 | --- | --- |
 | `cobalagi/scripts/lib.sh` | Shared: cards, the device bezel, gameplay segments, cross-fades with music and narration. |
-| `cobalagi/scripts/short-video.sh`, `promo-video.sh` | The two videos. |
+| `cobalagi/scripts/short-video.sh`, `promo-video.sh`, `app-store-video.sh` | The videos. |
 | `cobalagi/scripts/render.mjs` | Runs them (for `npm start`). |
 | `cobalagi/scripts/subtitles.mjs` | Each video's subtitles (`<video>.srt`): the ARB words of each clip, at the time it plays. |
 | `cobalagi/scripts/youtube-text.mjs`, `youtube.json` | Each video's YouTube text (below). |
@@ -116,7 +118,7 @@ The scripts work from the app repo (`COBALAGI_APP`, `../../github/project_cobala
 
 ### Commands
 
-Record the gameplay frames in the app repo (about 15 minutes; again whenever the demos look different). They land in its `tool/screenshots/out/video/`:
+Record the gameplay frames in the app repo (about 40 minutes; again whenever the demos or story scenes look different): the demos, the story scenes and a bump being fixed at phone size, and the demos on the iPhone and iPad. They land in its `tool/screenshots/out/video/`:
 
 ```sh
 VIDEO_FRAMES=1 flutter test tool/screenshots --update-goldens --plain-name 'video frames'
@@ -125,7 +127,7 @@ VIDEO_FRAMES=1 flutter test tool/screenshots --update-goldens --plain-name 'vide
 Render, from this folder:
 
 ```sh
-node cobalagi/scripts/render.mjs [short|promo|all] [soon|live]
+node cobalagi/scripts/render.mjs [short|promo|app-store|all] [soon|live]
 node cobalagi/scripts/youtube-text.mjs --check    # YouTube's limits, for every video
 ```
 
@@ -133,6 +135,7 @@ node cobalagi/scripts/youtube-text.mjs --check    # YouTube's limits, for every 
 
 Rendering a video also writes `out/<video>.youtube.txt`, with the title, the description and every upload setting, ready to paste. Never edit those files: change `youtube.json` and render again, or run `node cobalagi/scripts/youtube-text.mjs <video> cobalagi/out/<video>.youtube.txt` for the text alone.
 
+- **Other platforms:** each short's `.youtube.txt` ends with OTHER PLATFORMS, a caption per app (Instagram, Facebook, WhatsApp Status, Threads, LinkedIn, TikTok) from `social` in `youtube.json`; the same vertical file goes to all of them. Captions stay under Threads' 500 characters (checked).
 - **Titles carry the app's version** at the time the video is made (`{version}`, the version name in the app's `pubspec.yaml`), so an upload always says which app it shows. A title without `{version}` is refused.
 - **The store line** (`{store}` in descriptions) says "Coming soon to Google Play" until the app is public; then render with `live`.
 - **Claims stay true** for the released app, as in its store listing, and both languages say the same.

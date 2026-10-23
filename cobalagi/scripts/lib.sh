@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Shared helpers for the promo videos (short-video.sh, promo-video.sh).
 # Cards are HTML rendered by headless Chrome; gameplay comes from the frames
-# that the app repo's tool/screenshots records of the "Watch me!" demos (run
-# there):
+# that the app repo's tool/screenshots records of the "Watch me!" demos, the
+# story scenes and a bump being fixed (run there):
 #   VIDEO_FRAMES=1 flutter test tool/screenshots --update-goldens \
 #     --plain-name 'video frames'
 # Source this after setting HERE (the cobalagi folder) and W, H (video size).
@@ -65,8 +65,12 @@ bezel() {
 
 SEGMENTS=()
 DURATIONS=()
-# Narration: "<file>|<segment index>" entries, mixed over the music.
+# Narration: "<file>|<segment index>[|<delay>]" entries, mixed over the
+# music <delay> seconds (0.6 by default) into their segment.
 VOICES=()
+# Sound effects, "<file>|<segment index>|<delay>": like VOICES, but softer
+# and left out of the subtitles.
+SFX=()
 
 # still <png> <seconds>: a card that slowly zooms in.
 still() {
@@ -114,12 +118,13 @@ finish() {
   inputs+=(-stream_loop -1 -i assets/audio/music/theme.mp3)
   local music=$n mix="[music]" k=0
   filters+="[$music:a]atrim=0:$total,volume=0.45,afade=t=in:d=1,afade=t=out:st=$(echo "$total - 1.5" | bc):d=1.5[music];"
-  for v in "${VOICES[@]}"; do
-    local file="${v%%|*}" seg="${v##*|}"
+  for v in ${VOICES[@]+"${VOICES[@]/#/1.6|}"} ${SFX[@]+"${SFX[@]/#/0.7|}"}; do
+    local volume file seg after
+    IFS='|' read -r volume file seg after <<<"$v"
     inputs+=(-i "$file")
     local delay
-    delay=$(echo "(${starts[$seg]} + 0.6) * 1000 / 1" | bc)
-    filters+="[$((music + 1 + k)):a]adelay=${delay}|${delay},volume=1.6[v$k];"
+    delay=$(echo "(${starts[$seg]} + ${after:-0.6}) * 1000 / 1" | bc)
+    filters+="[$((music + 1 + k)):a]adelay=${delay}|${delay},volume=$volume[v$k];"
     mix+="[v$k]"
     k=$((k + 1))
   done
@@ -129,14 +134,15 @@ finish() {
     -r $FPS -c:a aac -b:a 192k -movflags +faststart -t "$total" "$1"
   # Subtitles for the narration, next to the video (out.mp4 → out.srt).
   local subs=()
-  for v in "${VOICES[@]}"; do
-    local file="${v%%|*}" seg="${v##*|}" lang clip len
+  for v in ${VOICES[@]+"${VOICES[@]}"}; do
+    local file seg after lang clip len
+    IFS='|' read -r file seg after <<<"$v"
     lang="$(basename "$(dirname "$file")")"
     clip="$(basename "$file" .mp3)"
     len="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$file")"
-    subs+=("$(echo "${starts[$seg]} + 0.6" | bc)|$len|$lang|$clip")
+    subs+=("$(echo "${starts[$seg]} + ${after:-0.6}" | bc)|$len|$lang|$clip")
   done
-  node "$HERE/scripts/subtitles.mjs" "${1%.mp4}.srt" "${subs[@]}" >/dev/null
+  node "$HERE/scripts/subtitles.mjs" "${1%.mp4}.srt" ${subs[@]+"${subs[@]}"} >/dev/null
   # Its YouTube title (with the app's version), description and settings.
   node "$HERE/scripts/youtube-text.mjs" "$(basename "${1%.mp4}")" \
     "${1%.mp4}.youtube.txt"
@@ -144,4 +150,5 @@ finish() {
   SEGMENTS=()
   DURATIONS=()
   VOICES=()
+  SFX=()
 }
