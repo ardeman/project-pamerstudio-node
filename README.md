@@ -4,7 +4,8 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 
 | Folder | What |
 | --- | --- |
-| `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`) and instrumental music (`music`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl` (not on the dashboard, which counts ElevenLabs credits). `dashboard.mjs`: a local page with the credits, the spending and every project's stills and videos. |
+| `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`), instrumental music (`music`) and sound effects (`sfx`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl` (not on the dashboard, which counts ElevenLabs credits). `dashboard.mjs`: a local page with the credits, the spending and every project's stills and videos. |
+| `bedug/` | Bedug's notification sounds (app repo: `../../github/project_bedug_flutter`). |
 | `catatsaja/` | Catat Saja promo videos (app repo: `../../github/project-catatsaja-reactrouter`). |
 | `cobalagi/` | Coba Lagi promo videos (app repo: `../../github/project_cobalagi_flutter`). |
 
@@ -27,6 +28,16 @@ npm run dashboard        # or: node shared/dashboard.mjs [--no-open]
 It writes `dashboard.html` here and opens it in the browser: the ElevenLabs credits left and when they reset, the last paid calls from `usage.jsonl` (estimate, what was charged, what was left), and every project's stills and videos, filterable by language. The credits are read when you run it, on this machine, so the key never goes in the page; run it again to refresh. Both files are local and not committed. Speech to text (`check-voice.mjs`) isn't logged, but it shows in the balance.
 
 Any render that goes through `eleven.mjs` also takes `--dry-run`: it buys nothing, lists the clips and tracks that aren't cached with their estimated credits (one per character; music at the rate earlier tracks cost, once one is logged), and compares the total with the balance. Without it, a clip that needs more credits than are left stops the render, unless you pass `--force`. `fal.mjs` takes `--dry-run` too, with the price in dollars; it can't read the fal balance, so check that in fal's dashboard.
+
+## Bedug
+
+Two notification sounds for the app: a mosque bedug (three clacks of the stick on the drum's wooden body, then five booms, three at a medium pace and two slow) and a Ramadan siren. `bedug/scripts/sounds.mjs` holds the ElevenLabs sound-effect takes that were chosen (cached in `bedug/audio/`, with the other takes tried). The bedug is put together from one clack and one boom, since the model can't count strikes. `bedug/scripts/export.mjs` builds the pattern, levels both sounds and writes `bedug/out/<name>.caf` (IMA4, for iOS and macOS) and `<name>.wav` (Android).
+
+```sh
+node bedug/scripts/export.mjs [--dry-run]   # free while every take is cached
+```
+
+The timing of the bedug's hits is at the top of `export.mjs`; changing it costs nothing. A changed prompt buys a new take.
 
 ## Catat Saja
 

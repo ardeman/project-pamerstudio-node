@@ -1,7 +1,7 @@
-// ElevenLabs helpers shared by every project in this folder: voice-over lines
-// and instrumental music, cached in the caller's folder so a re-render costs
-// no credits (a file is named after what made it, so a changed line or prompt
-// is regenerated). Settings come from ../.env:
+// ElevenLabs helpers shared by every project in this folder: voice-over lines,
+// instrumental music and sound effects, cached in the caller's folder so a
+// re-render costs no credits (a file is named after what made it, so a
+// changed line or prompt is regenerated). Settings come from ../.env:
 //   ELEVENLABS_API_KEY  required
 //   VOICE_<LANG>        a voice id per language (VOICE_EN, VOICE_ID, ...)
 //   TTS_MODEL           a model id; otherwise the newest one for the language
@@ -60,11 +60,16 @@ export const usage = () =>
     ? readFileSync(usageFile, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     : []
 
-// Credits per second of music, from what earlier tracks really cost.
-const musicRate = () => {
-  const tracks = usage().filter((u) => u.kind === 'music' && u.credits > 0)
-  return tracks.length ? tracks.reduce((sum, u) => sum + u.credits, 0) / tracks.reduce((sum, u) => sum + u.seconds, 0) : undefined
+// Credits per second of music or sound effects, from what earlier ones
+// really cost.
+const rateOf = (kind) => {
+  const made = usage().filter((u) => u.kind === kind && u.credits > 0)
+  return made.length ? made.reduce((sum, u) => sum + u.credits, 0) / made.reduce((sum, u) => sum + u.seconds, 0) : undefined
 }
+const musicRate = () => rateOf('music')
+// ElevenLabs' help pages give 11 or 20 credits per API second; assume the
+// higher until a sound effect is logged.
+const sfxRate = () => rateOf('sfx') ?? 20
 
 // Voice credits are about one per character; the log keeps what was charged.
 const pending = []
@@ -86,7 +91,7 @@ export const estimate = async () => {
   const account = await subscription()
   const left = account.limit - account.used
   const rate = musicRate()
-  for (const p of pending) p.estimate = p.kind === 'voice' ? p.chars : rate && p.seconds * rate
+  for (const p of pending) p.estimate = p.kind === 'voice' ? p.chars : p.kind === 'sfx' ? p.seconds * sfxRate() : rate && p.seconds * rate
   for (const p of pending) console.log(p.kind, p.lang ?? '', p.name, p.chars ? `${p.chars} chars` : `${p.seconds} s`, p.estimate ? `~${Math.round(p.estimate)} credits` : 'cost unknown')
   const total = pending.reduce((sum, p) => sum + (p.estimate ?? 0), 0)
   const unknown = pending.some((p) => !p.estimate)
@@ -165,6 +170,30 @@ export const music = async ({ dir, name, prompt, seconds }) => {
       await writeFile(file, Buffer.from(await response.arrayBuffer()))
     })
     console.log('music', name, length, 's')
+  }
+  return file
+}
+
+// A sound effect `seconds` long (0.5 to 30), saved in `dir`; `take` makes
+// another version of the same prompt, `model` picks a sound model.
+export const sfx = async ({ dir, name, prompt, seconds, take = 1, influence = 0.5, model }) => {
+  const file = `${dir}/${name}-${hash(model ? [prompt, seconds, influence, take, model] : [prompt, seconds, influence, take])}.mp3`
+  if (!existsSync(file)) {
+    if (dryRun) {
+      pending.push({ kind: 'sfx', name: `${name} #${take}`, seconds })
+      return null
+    }
+    await mkdir(dir, { recursive: true })
+    await buy({ kind: 'sfx', dir, name, seconds }, sfxRate() * seconds, async () => {
+      const response = await call('/v1/sound-generation?output_format=mp3_44100_128', {
+        text: prompt,
+        duration_seconds: seconds,
+        prompt_influence: influence,
+        ...(model && { model_id: model }),
+      })
+      await writeFile(file, Buffer.from(await response.arrayBuffer()))
+    })
+    console.log('sfx', name, take, seconds, 's')
   }
   return file
 }
