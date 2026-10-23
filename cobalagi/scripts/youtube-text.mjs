@@ -45,7 +45,7 @@ function descriptionOf(video, live) {
 }
 
 function youtubeText(video, { version, live }) {
-  const kind = video.split('-')[0] // promo or short (short-koba too)
+  const kind = video.split('-')[0] // promo or short
   const fill = (text) => text
     .replaceAll('{lang}', langOf(video))
     .replaceAll('{video}', video)
@@ -91,7 +91,7 @@ ${p[langOf(video)].replaceAll('{store}', store)}
 // What YouTube refuses or would show unfilled, for every video either way.
 function check(version) {
   const problems = []
-  const expected = ['promo-en', 'promo-id', 'short-en', 'short-id', 'short-koba-en', 'short-koba-id']
+  const expected = ['promo-en', 'promo-id', 'short-en', 'short-id']
   const videos = Object.keys(copy.videos)
   if (videos.sort().join() !== expected.join()) problems.push(`videos are ${videos}, expected ${expected}`)
   for (const video of videos) {

@@ -3,7 +3,8 @@
 // Called by lib.sh when it finishes a video:
 //   node cobalagi/scripts/subtitles.mjs <out.srt> <start|seconds|lang|clipId>...
 // A clip id is snake_case and its words are under the camelCase ARB key
-// (tutorial_loops → tutorialLoops), as in the app's VoiceClips.
+// (tutorial_loops → tutorialLoops), as in the app's VoiceClips; Koba's lines
+// for the videos only are in koba-lines.json.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { app } from './app.mjs'
@@ -20,12 +21,20 @@ if (!out) {
 const cues = []
 for (const entry of entries) {
   const [start, seconds, lang, clip] = entry.split('|')
-  const arb = JSON.parse(readFileSync(resolve(app, `lib/app/l10n/app_${lang}.arb`), 'utf8'))
-  const key = clip.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
-  const text = arb[key]
-  if (text == null) throw new Error(`No "${key}" in app_${lang}.arb`)
+  const text = wordsOf(lang, clip)
   cues.push(...split(text, Number(start), Number(seconds)))
 }
+// koba-<line>-<hash>.even, from koba-voice.mjs, has its words in
+// koba-lines.json; any other clip is the app's.
+function wordsOf(lang, clip) {
+  const own = clip.match(/^koba-(\w+)-/)
+  if (own) return JSON.parse(readFileSync(new URL('koba-lines.json', import.meta.url), 'utf8'))[own[1]][lang]
+  const arb = JSON.parse(readFileSync(resolve(app, `lib/app/l10n/app_${lang}.arb`), 'utf8'))
+  const key = clip.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+  if (arb[key] == null) throw new Error(`No "${key}" in app_${lang}.arb`)
+  return arb[key]
+}
+
 writeFileSync(out, cues.map(([from, to, text], i) => `${i + 1}\n${time(from)} --> ${time(to)}\n${text}\n\n`).join(''))
 
 // Splits text into cues of at most two short lines, sharing the clip's

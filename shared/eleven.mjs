@@ -113,9 +113,10 @@ const modelFor = async (lang) => {
   )
 }
 
-// Speaks `text` in `lang` and saves it in `dir` as <name>-<hash>.mp3.
-export const speak = async ({ dir, lang, name, text, voice, settings }) => {
-  const model = await modelFor(lang)
+// Speaks `text` in `lang` and saves it in `dir` as <name>-<hash>.mp3, with
+// `model` if given (to match a voice made with it elsewhere).
+export const speak = async ({ dir, lang, name, text, voice, settings, model: wanted }) => {
+  const model = wanted ?? (await modelFor(lang))
   const voiceId = voice ?? env[`VOICE_${lang.toUpperCase()}`] ?? env.VOICE_EN ?? DEFAULT_VOICE
   const voiceSettings = { stability: 0.45, similarity_boost: 0.75, style: 0.35, speed: 1.05, ...settings }
   const file = `${dir}/${name}-${hash(settings ? [text, model, voiceId, voiceSettings] : [text, model, voiceId])}.mp3`

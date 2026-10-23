@@ -1,10 +1,11 @@
 // What shared/cli.mjs offers for this project. Each pick becomes a command
-// argument in order. Nothing here is paid: the videos use the app's own
-// voice clips and music.
+// argument in order. The videos use the app's own voice clips and music;
+// only the short's few lines of Koba's own (koba-voice.mjs) are bought, once,
+// and cached in cobalagi/audio/.
 
 export const menu = [
   {
-    label: 'Promo · render videos (free)',
+    label: 'Promo · render videos (free once Koba\'s lines are cached)',
     script: 'scripts/render.mjs',
     pick: [
       { title: 'Video', options: ['all', 'short', 'promo'] },
