@@ -30,7 +30,7 @@ const env = Object.fromEntries(
 )
 const key = env.FAL_API_KEY ?? process.env.FAL_API_KEY
 const headers = () => {
-  if (!key) throw new Error('FAL_API_KEY is missing from ai-generated-content/.env')
+  if (!key) throw new Error('FAL_API_KEY is missing from project-pamer-node/.env')
   return { Authorization: `Key ${key}`, 'Content-Type': 'application/json' }
 }
 

@@ -1,7 +1,7 @@
 // Seeds a demo account on the local emulators and captures the app's
 // screens for the promo videos. Run it from the app repo, with
 // `pnpm emulators` running there:
-//   node ../../assets/ai-generated-content/catatsaja/scripts/capture.mjs <en|id> [explore]
+//   node ../project-pamer-node/catatsaja/scripts/capture.mjs <en|id> [explore]
 
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -18,7 +18,7 @@ import {
   startApp,
   stopApp,
   uidOf,
-} from '../../../../github/project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
+} from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
 import { bookSeed } from './book-seed.mjs'
 import { demo } from './demo-data.mjs'

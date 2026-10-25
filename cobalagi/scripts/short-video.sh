@@ -3,7 +3,7 @@
 # Reels and Stories and WhatsApp status: the Star fuel story told by Koba in
 # its own voice, about 27 seconds, one per language (cobalagi/out/short-id.mp4,
 # out/short-en.mp4), with its subtitles (.srt, only Koba's lines) and YouTube
-# text. From ai-generated-content: cobalagi/scripts/short-video.sh
+# text. From project-pamer-node: cobalagi/scripts/short-video.sh
 #
 # Made to grab attention and keep it (see README → Short):
 # - It opens on the problem: the space wind blows the stars away and the

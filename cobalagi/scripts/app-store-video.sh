@@ -10,7 +10,7 @@
 # unmuted), so the words never depend on sound; the header carries the
 # app's music for viewers who unmute it. Like the still assets they show no
 # prices, URLs or other platforms.
-# From ai-generated-content: cobalagi/scripts/app-store-video.sh
+# From project-pamer-node: cobalagi/scripts/app-store-video.sh
 #
 # The devices are Apple's product bezels from the app repo's store/bezels/
 # (tool/fetch_bezels.sh there), drawn by its store/device.mjs with their

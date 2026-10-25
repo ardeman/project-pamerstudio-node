@@ -36,7 +36,7 @@ const env = Object.fromEntries(
 const key = env.ELEVENLABS_API_KEY ?? process.env.ELEVENLABS_API_KEY
 
 const call = async (path, body) => {
-  if (!key) throw new Error('ELEVENLABS_API_KEY is missing from ai-generated-content/.env')
+  if (!key) throw new Error('ELEVENLABS_API_KEY is missing from project-pamer-node/.env')
   const response = await fetch(`${API}${path}`, {
     method: body ? 'POST' : 'GET',
     headers: { 'xi-api-key': key, ...(body && { 'Content-Type': 'application/json' }) },

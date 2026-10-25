@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dryRun, estimate, speak } from '../../shared/eleven.mjs'
 
 const HERE = new URL('../', import.meta.url).pathname
-const app = process.env.COBALAGI_APP ?? `${HERE}../../../github/project_cobalagi_flutter`
+const app = process.env.COBALAGI_APP ?? `${HERE}../../project_cobalagi_flutter`
 const lines = JSON.parse(readFileSync(`${HERE}scripts/koba-lines.json`, 'utf8'))
 const config = JSON.parse(readFileSync(`${app}/tool/elevenlabs.json`, 'utf8'))
 const [lang, line] = process.argv.slice(2).filter((a) => !a.startsWith('--'))

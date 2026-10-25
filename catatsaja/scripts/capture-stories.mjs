@@ -1,7 +1,7 @@
 // Seeds one demo account per person in the stories videos on the local
 // emulators, and captures their screens into shots/<lang>/stories/. Run it
 // from the app repo, with `pnpm emulators` running there:
-//   node ../../assets/ai-generated-content/catatsaja/scripts/capture-stories.mjs <en|id>
+//   node ../project-pamer-node/catatsaja/scripts/capture-stories.mjs <en|id>
 // ONLY=name,name captures just those shots (the accounts are seeded anyway).
 
 import { readFileSync } from 'node:fs'
@@ -20,7 +20,7 @@ import {
   startApp,
   stopApp,
   uidOf,
-} from '../../../../github/project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
+} from '../../../project-catatsaja-reactrouter/tests/e2e/helpers.mjs'
 
 import { bookSeed } from './book-seed.mjs'
 import { accounts, content, hendraReceipt, passphraseOf, wulanReceipt } from './stories-data.mjs'
@@ -34,7 +34,7 @@ const DATABASE =
 const ADMIN = { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }
 // The app's own words, so the shots find the same labels it shows.
 const t = JSON.parse(
-  readFileSync(new URL(`../../../../github/project-catatsaja-reactrouter/app/localization/locales/${lang}/common.json`, import.meta.url), 'utf8'),
+  readFileSync(new URL(`../../../project-catatsaja-reactrouter/app/localization/locales/${lang}/common.json`, import.meta.url), 'utf8'),
 )
 
 const toValue = (value) => {

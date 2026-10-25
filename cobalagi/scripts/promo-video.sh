@@ -4,7 +4,7 @@
 # cards, with the app's music and narration. One per language:
 #   cobalagi/out/promo-id.mp4, out/promo-en.mp4, each with its
 #   subtitles (.srt) and a thumbnail-<lang>.jpg for YouTube
-# From ai-generated-content: cobalagi/scripts/promo-video.sh
+# From project-pamer-node: cobalagi/scripts/promo-video.sh
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 W=1920
 H=1080
