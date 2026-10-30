@@ -20,7 +20,7 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 
 ## 3. Editorial and directories
 
-- [ ] App Store featuring nomination (App Store Connect → Featuring): free, no ads, offline, coding before reading, regional languages of Indonesia.
+- [ ] App Store featuring nomination (App Store Connect → Featuring): drafted in `featuring-nomination.md` for 2.9.0 (free, no ads, offline, coding before reading); the user submits it. The regional languages get a second nomination once their version is ready.
 - [ ] Hour of Code (now Hour of AI) / CS Education Week, December: the activity submission window is closed (the last one ended Oct 1). Send the email in `hour-of-code.md` to ask about a late listing and the 2027 window.
 - [ ] Common Sense Media review request, Educational App Store, AlternativeTo.
 - [ ] Flathub (the Linux build in the Steam Deck's Discover store). The most work of these.
@@ -54,7 +54,7 @@ Reddit, Hacker News, Product Hunt, Facebook groups, WhatsApp, press and director
 
 | When | What |
 |---|---|
-| Week 1 | Campaign links and baseline, keywords, featuring nomination, Hour of Code submission |
+| Week 1 | Campaign links and baseline, keywords, featuring nomination, Hour of Code email |
 | Weeks 2–3 | Posting kit steps 1–3, launch posts, directory submissions |
 | Weeks 3–4 | Press pitches, first listing experiment |
 | December | Hour of Code week; read the campaign numbers, drop channels that bring nothing |
