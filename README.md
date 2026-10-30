@@ -37,8 +37,10 @@ https://pamer-studio.web.app shows each project's marketing plan (tick tasks or 
 ```sh
 node shared/cloud.mjs push [project...] [--dry-run] [--force]            # plan and media up
 node shared/cloud.mjs pull [project...] [--force]                         # plan edits made on the web back
-cd web && npx -y firebase-tools deploy                                    # the page and the rules
+cd web && npx -y firebase-tools deploy                                    # the page and the rules, by hand
 ```
+
+GitHub Actions (`.github/workflows/web.yml`) deploys the page and the rules whenever `web/` changes on `main`, or on demand from the Actions tab. It signs in without a key, through Workload Identity Federation, as the service account `github-deploy`, which may only deploy Hosting and rules; `web/setup-ci.sh` (run once, free) sets that up, and only this repo's workflows can use it.
 
 `cloud.mjs` signs in with the gcloud account (`gcloud auth login`), so no key is stored. It pushes each project's `marketing-plan.md` and, from `out/`, the `.mp4`, `.jpg`, `.wav`, `.srt`, `.txt` and `.md` files, skipping `stills/` and frame folders. Only files that changed are uploaded, and cloud files that are gone here (deleted, renamed, or no longer pushed) are deleted, so Storage holds only what `out/` has; `--dry-run` lists both first. A plan edited on the web isn't overwritten: `push` stops until you `pull`, and `pull` stops when the file here changed too. `--force` overrides either. Media links carry a download token, so anyone with a link can open that file; the list of links is only visible after signing in.
 

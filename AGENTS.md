@@ -38,7 +38,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 - Scripts are Node ES modules (`.mjs`) with no dependencies beyond Playwright (linked from the app repo) and ffmpeg. Keep comments short and about why. Coba Lagi's renders are bash with headless Chrome and ffmpeg, run through `render.mjs`.
 - One folder per project; helpers more than one project can use go in `shared/`.
 - The app repo stays clean: no media, keys or promo scripts go into it.
-- Marketing plans can be edited on the web: run `node shared/cloud.mjs pull` before changing a `marketing-plan.md`, and `push` after. Ask before a push that uploads media (it adds to Storage costs) or a `deploy`.
+- Marketing plans can be edited on the web: run `node shared/cloud.mjs pull` before changing a `marketing-plan.md`, and `push` after. Ask before a push that uploads media (it adds to Storage costs) or a `deploy`. A git push to `main` that changes `web/` deploys it through GitHub Actions, so it counts as a `deploy`.
 - Never write the API key anywhere but `.env`, and never print it.
 
 ## Keeping docs current
