@@ -116,7 +116,7 @@
     }
   },
   "social": {
-    "_comment": "Captions for the vertical shorts on other apps, written into each short's .youtube.txt under OTHER PLATFORMS. {store} as in descriptions. Threads allows 500 characters, so every caption stays under it.",
+    "_comment": "Captions for the vertical shorts on other apps, written into each short's .youtube.txt under OTHER PLATFORMS. {store} as in descriptions. Each caption is checked against its app's limits in posting.mjs.",
     "platforms": [
       {
         "name": "Instagram (Reels and Stories)",

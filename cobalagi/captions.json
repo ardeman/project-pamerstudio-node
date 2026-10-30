@@ -1,0 +1,4 @@
+{
+  "_comment": "Captions for the calendar's posts on apps with a caption: one per calendar id, with en and/or id as the entry's lang says, and title.en/title.id for YouTube. {play} and {appStore} become the entry's campaign links. The entry's draft must be captions.json. captions.mjs checks each against its app's limits (posting.mjs) and prints them ready to paste. Keep every claim true for the released app, as in the store listing.",
+  "posts": {}
+}

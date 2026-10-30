@@ -4,26 +4,13 @@
 //   node cobalagi/scripts/calendar.mjs --all            # everything
 //   node cobalagi/scripts/calendar.mjs --posted <id> [YYYY-MM-DD] [notes]
 //   node cobalagi/scripts/calendar.mjs --check          # links and drafts only
+// Captions for apps with one are in captions.json (captions.mjs checks them).
 // Links come from Results in marketing-plan.md, so they stay in one place.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { calendarFile, campaignLinks, readCalendar, readCaptions } from './posting.mjs'
 
 const root = new URL('../', import.meta.url)
-const calendarFile = new URL('calendar.json', root)
-const calendar = JSON.parse(readFileSync(calendarFile, 'utf8'))
-
-// utm_source → its Play and App Store links, from the campaign links table.
-function campaignLinks() {
-  const links = {}
-  const plan = readFileSync(new URL('marketing-plan.md', root), 'utf8')
-  for (const line of plan.split('\n')) {
-    const cells = line.split('|').map((cell) => cell.trim())
-    const play = cells.find((cell) => cell.startsWith('https://play.google.com/'))
-    const appStore = cells.find((cell) => cell.startsWith('https://apps.apple.com/'))
-    const source = play && new URL(play).searchParams.get('utm_source')
-    if (source && appStore) links[source] = { play, appStore }
-  }
-  return links
-}
+const calendar = readCalendar()
 
 const today = new Date().toISOString().slice(0, 10)
 const dateFormat = /^\d{4}-\d{2}-\d{2}$/
@@ -39,7 +26,9 @@ function check(links) {
     if (!dateFormat.test(entry.date)) problems.push(`${entry.id}: date ${entry.date} is not YYYY-MM-DD`)
     if (!links[entry.source]) problems.push(`${entry.id}: no campaign link for source "${entry.source}" in marketing-plan.md`)
     if (!['en', 'id', 'both'].includes(entry.lang)) problems.push(`${entry.id}: lang must be en, id or both`)
-    if (entry.draft) {
+    if (entry.draft === 'captions.json') {
+      if (!readCaptions().posts[entry.id]) problems.push(`${entry.id}: no captions in captions.json`)
+    } else if (entry.draft) {
       const file = new URL(entry.draft, root)
       if (!existsSync(file)) problems.push(`${entry.id}: no draft file ${entry.draft}`)
       else if (entry.section && !readFileSync(file, 'utf8').split('\n').some((line) => /^#+ /.test(line) && line.replace(/^#+ /, '') === entry.section)) {

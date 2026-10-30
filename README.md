@@ -143,6 +143,8 @@ The scripts work from the app repo (`COBALAGI_APP`, `../project_cobalagi_flutter
 | `cobalagi/out/` | The videos with their `.srt`, `.youtube.txt` and thumbnails. |
 | `cobalagi/marketing-plan.md` | The marketing plan: steps to tick off, the order, and results. |
 | `cobalagi/calendar.json`, `cobalagi/scripts/calendar.mjs` | The posting calendar: what goes out when, on which platform, and whether it is posted. The script adds each entry's campaign links from the plan's Results and refuses an unknown source or a missing draft. |
+| `cobalagi/captions.json`, `cobalagi/scripts/captions.mjs` | Each calendar post's caption per language for apps with one (X, Threads, Instagram, TikTok, LinkedIn, YouTube), filled with its campaign links and ready to paste. Refused when it breaks the app's limits. |
+| `cobalagi/scripts/posting.mjs` | What the posting scripts share: each app's caption limits and the campaign links. |
 
 ### Commands
 
@@ -159,13 +161,15 @@ node cobalagi/scripts/render.mjs [short|promo|app-store|all] [soon|live]
 node cobalagi/scripts/youtube-text.mjs --check    # YouTube's limits, for every video
 node cobalagi/scripts/calendar.mjs [--all]        # posting calendar: what is not posted yet, with links
 node cobalagi/scripts/calendar.mjs --posted <id> [YYYY-MM-DD] [notes]
+node cobalagi/scripts/captions.mjs [id...]      # captions not posted yet, filled and ready to paste
+node cobalagi/scripts/captions.mjs --check        # each app's limits, for every caption
 ```
 
 ### YouTube uploads
 
 Rendering a video also writes `out/<video>.youtube.txt`, with the title, the description and every upload setting, ready to paste. Never edit those files: change `youtube.json` and render again, or run `node cobalagi/scripts/youtube-text.mjs <video> cobalagi/out/<video>.youtube.txt` for the text alone.
 
-- **Other platforms:** each short's `.youtube.txt` ends with OTHER PLATFORMS, a caption per app (Instagram, Facebook, WhatsApp Status, Threads, LinkedIn, TikTok) from `social` in `youtube.json`; the same vertical file goes to all of them. Captions stay under Threads' 500 characters (checked).
+- **Other platforms:** each short's `.youtube.txt` ends with OTHER PLATFORMS, a caption per app (Instagram, Facebook, WhatsApp Status, Threads, LinkedIn, TikTok) from `social` in `youtube.json`; the same vertical file goes to all of them. Each caption is checked against its app's limits in `posting.mjs`.
 - **Titles carry the app's version** at the time the video is made (`{version}`, the version name in the app's `pubspec.yaml`), so an upload always says which app it shows. A title without `{version}` is refused.
 - **The store line** (`{store}` in descriptions) says "Coming soon to Google Play" until the app is public; then render with `live`.
 - **Claims stay true** for the released app, as in its store listing, and both languages say the same.

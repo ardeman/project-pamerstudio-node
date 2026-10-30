@@ -10,12 +10,11 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { app } from './app.mjs'
+import { captionProblems, platformOf } from './posting.mjs'
 
 // YouTube's limits.
 const titleLimit = 100
 const descriptionLimit = 5000
-// The shortest caption limit among the other apps (Threads).
-const captionLimit = 500
 
 const copy = JSON.parse(readFileSync(new URL('youtube.json', import.meta.url), 'utf8'))
 
@@ -111,8 +110,10 @@ function check(version) {
     for (const p of copy.social.platforms) {
       for (const live of [false, true]) {
         const caption = p[langOf(video)]?.replaceAll('{store}', copy.store[live ? 'live' : 'soon'][langOf(video)])
+        const limits = platformOf(p.name)
         if (caption == null) problems.push(`${p.name}: no ${langOf(video)} caption`)
-        else if (caption.length > captionLimit) problems.push(`${p.name} (${langOf(video)}): caption is ${caption.length} characters (max ${captionLimit})`)
+        else if (!limits) problems.push(`${p.name}: no limits in posting.mjs`)
+        else problems.push(...captionProblems(caption, limits).map((problem) => `${p.name} (${langOf(video)}): ${problem}`))
       }
     }
     const text = youtubeText(video, { version, live: false })
