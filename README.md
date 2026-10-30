@@ -179,3 +179,15 @@ Rendering a video also writes `out/<video>.youtube.txt`, with the title, the des
 - Settings: category Education, comments moderated Strict, AI use No (no realistic synthetic content), "Made for Kids" left to the channel owner (recommended No: the videos speak to parents).
 
 YouTube can't replace a video's file: to update a video, delete it and upload the new one. Then update the links where it is shown: the app repo's website promo video (its video ids and title cards in `website/video/`) and, for the landscape promo, the Play listing's Video field.
+
+## Roadmap
+
+### Rendering in the cloud
+
+Today rendering, voices and captures run only on the Mac (the web page says so in the Video lines tab). Plan to start renders from the web page:
+
+1. **Render image.** A container with Node 24, Chrome, ffmpeg and Playwright that runs the existing render scripts unchanged, as a Cloud Run Job in `pamer-studio` (asia-southeast2). The ElevenLabs and fal keys go in Secret Manager, not the image.
+2. **Caches and inputs in Storage.** `*/audio`, `catatsaja/art` and the captured screens and recorded frames the renders read are synced to Storage (by `cloud.mjs push`), and the job reads them and writes new clips back, so a cloud render buys nothing a Mac render already bought. Captures stay on the Mac: they need the app repo and its emulators, which don't go to the cloud.
+3. **Request, price, approve.** A Render button writes a request to Firestore (project, video, format, language). The job runs `--dry-run` and writes the clips to buy and their credits against the balance; the page shows that, and Approve is the go-ahead AGENTS.md asks for. Then it renders, writes the stills and the video to Storage, and the page shows them for review. No `--force` from the web.
+4. **Limits.** Only the owner can make requests (rules); one render at a time; a timeout on the job; the Rp 80.000 budget alert stays. Check the compute and Storage costs of one real render before turning it on for every project.
+5. **Docs.** README, AGENTS.md (the approve step, the keys in Secret Manager) and the note on the web page.
