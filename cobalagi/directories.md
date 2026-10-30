@@ -1,6 +1,6 @@
 # Coba Lagi: directory submissions
 
-Drafted 2026-10-30, for 2.9.0. The user submits each one. Each listing uses its own campaign link (Results in `marketing-plan.md`). Claims come from the app repo's store listing; Google Play and App Store links only once 2.9.0 is live there (the app repo's README still said the Play release was awaiting review).
+Drafted 2026-10-30, for 2.9.0. The user submits each one. Each listing uses its own campaign link (Results in `marketing-plan.md`). Claims come from the app repo's store listing. 2.9.0 went live on Google Play on 2026-10-30, so both store links work.
 
 Budget is none, so take only what is free: if a site asks for money, stop and note it here.
 

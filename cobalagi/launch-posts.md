@@ -4,8 +4,8 @@ Drafted 2026-10-30, for 2.9.0. The user posts each one by hand, over one week. E
 
 **Before posting:**
 
-- Google Play links only once 2.9.0 is live there (the app repo's README still says it's awaiting review). Until then, link the website.
-- App Store links need the `pt` token in place of `PT`, or use the plain link without `pt`/`ct` (it works but isn't counted).
+- Google Play: 2.9.0 went live in production on 2026-10-30 (Play Console), so the Play links work.
+- Copy each link from Results in `marketing-plan.md`: they carry the `pt` token now.
 - Read each community's rules first. Many subreddits allow self-promotion only in a weekly thread, or ask you to message the mods first. If a rule says no, skip it and note that under Done.
 - Post as yourself, the developer, and stay around for the first few hours to answer questions. Bring new comments here for reply drafts.
 - Not one post a day in many places: about one channel a day spreads the replies out.
