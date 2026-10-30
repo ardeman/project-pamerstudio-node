@@ -15,13 +15,13 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 ## 2. Store pages
 
 - [ ] Play store listing experiments (free A/B tests): short description first, then the first screenshot, one language at a time.
-- [ ] App Store keyword field (100 characters) in `id` and `en`: check against what parents search, such as "belajar koding anak", "coding for kids", "pre-reader".
+- [x] App Store keyword field (100 characters) in `id` and `en`: words from the name and subtitle dropped (Apple already searches them), "koding", "homeschool(ing)", "game"/"permainan" added. In the app repo's `store/app_store/`; goes live with the next version upload.
 - [ ] App change (app repo): a "Rate Coba Lagi" button in the Parent area, behind the parent gate.
 
 ## 3. Editorial and directories
 
 - [ ] App Store featuring nomination (App Store Connect → Featuring): free, no ads, offline, coding before reading, regional languages of Indonesia.
-- [ ] Hour of Code / CS Education Week, **Dec 7–13**: submit Coba Lagi as an activity on code.org. Most time-sensitive item.
+- [ ] Hour of Code (now Hour of AI) / CS Education Week, December: the activity submission window is closed (the last one ended Oct 1). Send the email in `hour-of-code.md` to ask about a late listing and the 2027 window.
 - [ ] Common Sense Media review request, Educational App Store, AlternativeTo.
 - [ ] Flathub (the Linux build in the Steam Deck's Discover store). The most work of these.
 
