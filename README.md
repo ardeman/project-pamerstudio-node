@@ -126,6 +126,7 @@ The scripts work from the app repo (`COBALAGI_APP`, `../project_cobalagi_flutter
 | `cobalagi/scripts/subtitles.mjs` | Each video's subtitles (`<video>.srt`): the ARB words of each clip, at the time it plays. |
 | `cobalagi/scripts/youtube-text.mjs`, `youtube.json` | Each video's YouTube text (below). |
 | `cobalagi/out/` | The videos with their `.srt`, `.youtube.txt` and thumbnails. |
+| `cobalagi/marketing-plan.md` | The marketing plan: steps to tick off, the order, and results. |
 
 ### Commands
 
