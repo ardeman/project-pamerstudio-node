@@ -2,6 +2,10 @@
 .env
 .env.*
 !.env.example
+*.p8
+*.pem
+*.key
+*service-account*.json
 
 # Dependencies and local system files.
 node_modules
