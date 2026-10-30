@@ -222,6 +222,34 @@ textarea {
   resize: vertical;
 }
 
+/* AI */
+.ask { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+.ask input, .ask textarea, .stack textarea, select {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  font: inherit;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.stack { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.stack .bar { margin: 0; }
+.field { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.field select { flex: none; }
+.note.error { color: var(--accent); }
+#planai { margin: 0 0 12px; }
+.messages { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.message.user { align-self: flex-end; max-width: 85%; background: var(--accent-soft); padding: 10px 14px; border-radius: 14px 14px 4px 14px; white-space: pre-wrap; }
+.message.model .doc > :first-child { margin-top: 16px; }
+.message.model .actions { display: flex; gap: 6px; margin-top: 6px; }
+#captions .item pre { height: auto; min-height: 120px; max-height: 360px; overflow-wrap: anywhere; }
+#captions .meta { flex-wrap: wrap; }
+#lines .bar { margin-top: 8px; }
+
 /* Media */
 #media .bar { margin-bottom: 8px; }
 #media h2 { display: flex; align-items: baseline; gap: 10px; font-size: 16px; margin: 28px 0 12px; }

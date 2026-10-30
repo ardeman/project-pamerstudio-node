@@ -41,6 +41,12 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 - Marketing plans can be edited on the web: run `node shared/cloud.mjs pull` before changing a `marketing-plan.md`, and `push` after. Ask before a push that uploads media (it adds to Storage costs) or a `deploy`. A git push to `main` that changes `web/` deploys it through GitHub Actions, so it counts as a `deploy`.
 - Never write the API key anywhere but `.env`, and never print it.
 
+## AI on the web
+
+- The AI tab on Pamer Studio makes drafts only. Treat what it writes (a `## Drafts` section in a plan, a caption, video lines) like any new line: check every claim against the app repo and keep the rules under Truthful content and Both languages before it goes into a video, caption or `captions.json`. Move a draft out of `## Drafts` once it is used or dropped.
+- Its prompts in `web/public/ai.js` carry those rules; when a rule here changes, change them too. Its caption limits are a copy of `cobalagi/scripts/posting.mjs`: change both together.
+- Calls are paid from the `pamer-studio` billing account. Don't call it from scripts, and don't turn off App Check enforcement for AI Logic.
+
 ## Keeping docs current
 
 When you change a command, the layout or the setup, update `README.md`; when you change a rule, update this file. `CLAUDE.md` contains only the import of this file.

@@ -23,7 +23,8 @@ export function campaignLinks() {
 }
 
 // Each app's limits, the strictest of what its app and its posting API allow.
-// `link` is what X counts for any link, however long.
+// `link` is what X counts for any link, however long. web/public/ai.js has a
+// copy for the AI tab: change both together.
 export const platforms = {
   X: { caption: 280, link: 23 },
   Threads: { caption: 500, hashtags: 1 },

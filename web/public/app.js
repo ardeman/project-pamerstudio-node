@@ -1,12 +1,13 @@
 // Pamer Studio on the web: each project's marketing plan (tick tasks, edit it)
 // and its media. shared/cloud.mjs pushes both from the Mac and pulls web edits.
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js'
 import {
   getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut,
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'
+} from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js'
 import {
   collection, doc, getFirestore, onSnapshot, serverTimestamp, updateDoc,
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js'
+} from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js'
+import { caption, captionProblems, changePlan, chat as startChat, platforms, videoLines } from './ai.js'
 
 // A web app's config is public; the rules are what keep the data private.
 const app = initializeApp({
@@ -31,6 +32,9 @@ let view = recall('view') || 'plan'
 let lang = recall('lang') || 'all'
 let editing = false
 let unsubscribe = null
+let aiMode = recall('aiMode') || 'chat'
+let aiShown = '' // the project and mode the AI view shows, so a snapshot doesn't wipe it
+const chats = new Map() // project id → { session, messages }
 
 $('google').onclick = () => signInWithPopup(auth, new GoogleAuthProvider())
 $('signout').onclick = () => signOut(auth)
@@ -75,15 +79,22 @@ function render() {
   for (const button of document.querySelectorAll('#views button')) button.classList.toggle('on', button.dataset.view === view)
   $('plan').hidden = view !== 'plan'
   $('media').hidden = view !== 'media'
+  $('ai').hidden = view !== 'ai'
   const project = projects.find((p) => p.id === current)
   if (!project) {
     $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
     $('media').innerHTML = ''
+    $('ai').innerHTML = ''
+    aiShown = ''
     return
   }
   if (!editing) renderPlan(project)
   renderMedia(project)
+  if (view === 'ai' && aiShown !== `${project.id}/${aiMode}`) renderAI(project)
 }
+
+// The current version of a project, after any snapshot since the view was drawn.
+const latest = (project) => projects.find((p) => p.id === project.id) ?? project
 
 // The plan
 
@@ -128,8 +139,26 @@ function editPlan(project) {
   $('plan').innerHTML = `
     <div class="bar"><span class="note">Markdown, as in the file on the Mac.</span>
       <button id="cancel">Cancel</button><button id="save" class="primary">Save</button></div>
+    <form id="askplan" class="ask"><input id="planask" placeholder="Ask AI to change the plan, e.g. add a task to post the trailer on Threads" autocomplete="off">
+      <button class="primary">Ask AI</button></form>
+    <p id="planai" class="note" hidden></p>
     <textarea id="text" spellcheck="false"></textarea>`
   $('text').value = project.plan
+  // The AI's plan only goes into the editor; it saves when Save is pressed.
+  $('askplan').onsubmit = (event) => {
+    event.preventDefault()
+    const ask = $('planask').value.trim()
+    if (!ask) return
+    const before = $('text').value
+    busy($('askplan'), $('planai'), async () => {
+      const answer = await changePlan(app, project, before, ask)
+      if (!answer.plan?.trim()) throw new Error('The answer came back empty; try again.')
+      $('text').value = answer.plan
+      $('planask').value = ''
+      $('planai').innerHTML = `${esc(answer.summary || 'Changed.')} Check it, then Save. <button class="small" id="undo">Undo</button>`
+      $('undo').onclick = () => { $('text').value = before; $('planai').hidden = true }
+    })
+  }
   $('cancel').onclick = () => { editing = false; render() }
   $('save').onclick = async () => {
     $('save').disabled = true
@@ -244,6 +273,15 @@ function renderMedia(project) {
   for (const button of $('media').querySelectorAll('button[data-text]')) {
     button.onclick = () => copy(button, media.find((m) => m.path === button.dataset.text).text)
   }
+  for (const button of $('media').querySelectorAll('button[data-rewrite]')) {
+    button.onclick = () => {
+      view = 'ai'
+      aiMode = 'caption'
+      aiShown = ''
+      render()
+      $('captionask').value = `Rewrite this caption:\n\n${media.find((m) => m.path === button.dataset.rewrite).text}`
+    }
+  }
 }
 
 function item(m) {
@@ -257,8 +295,169 @@ function item(m) {
   }[m.type] ?? ''
   const language = name.match(/[-_.](en|id)([-_.]|$)/)?.[1]
   const copyText = m.text != null ? `<button class="small" data-text="${esc(m.path)}">Copy text</button>` : ''
+  const rewrite = m.text != null && name.endsWith('.txt') ? `<button class="small" data-rewrite="${esc(m.path)}">Rewrite with AI</button>` : ''
   return `<div class="item"><div class="preview">${preview}</div><div class="info">
     <div><div class="name">${esc(name)}</div>
       <div class="meta">${language ? `<span class="lang">${language.toUpperCase()}</span>` : ''}<span>${m.type} · ${size}</span></div></div>
-    <div class="actions"><a class="button small" href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>${copyText}</div></div></div>`
+    <div class="actions"><a class="button small" href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>${copyText}${rewrite}</div></div></div>`
+}
+
+// AI: a chat about the project, captions and video lines. Answers are drafts:
+// copy them, or add them to the plan's Drafts section to reach the Mac on pull.
+
+async function busy(form, out, work) {
+  const buttons = form.querySelectorAll('button')
+  for (const button of buttons) button.disabled = true
+  out.hidden = false
+  out.classList.remove('error')
+  out.textContent = 'Thinking…'
+  try {
+    await work()
+  } catch (error) {
+    out.classList.add('error')
+    out.textContent = error.message
+  } finally {
+    for (const button of buttons) button.disabled = false
+  }
+}
+
+// Puts a draft at the end of the plan's Drafts section, making one if needed.
+function addDraft(project, title, body) {
+  const lines = (latest(project).plan ?? '').replace(/\s+$/, '').split('\n')
+  let at = lines.findIndex((line) => /^##\s+Drafts\s*$/.test(line))
+  if (at < 0) lines.push('', '## Drafts', '', 'Made with AI on the web: check every claim against the app before use.')
+  else {
+    const next = lines.findIndex((line, i) => i > at && /^##\s/.test(line))
+    at = next < 0 ? lines.length : next
+  }
+  const draft = ['', `### ${title} (${new Date().toLocaleDateString('en-GB', { dateStyle: 'medium' })})`, '', body.trim(), '']
+  if (at < 0) lines.push(...draft)
+  else lines.splice(at, 0, ...draft)
+  return savePlan(project, lines.join('\n').replace(/\n+$/, '\n'))
+}
+
+function draftButton(button, project, title, body) {
+  button.onclick = () => {
+    button.disabled = true
+    addDraft(project, title, body)
+      .then(() => { button.textContent = 'Added to Drafts' })
+      .catch((error) => { alert(error.message); button.disabled = false })
+  }
+}
+
+const fence = (text) => `\`\`\`\n${text.trim()}\n\`\`\``
+
+function renderAI(project) {
+  aiShown = `${project.id}/${aiMode}`
+  const modes = { chat: 'Chat', caption: 'Caption', lines: 'Video lines' }
+  $('ai').innerHTML = `
+    <div class="bar"><nav class="filters">${Object.entries(modes).map(([mode, label]) => `<button data-mode="${mode}" class="${mode === aiMode ? 'on' : ''}">${label}</button>`).join('')}</nav>
+      <span class="note">Knows this project's plan. Answers are drafts: check them before use.</span></div>
+    <div id="aibody"></div>`
+  for (const button of $('ai').querySelectorAll('button[data-mode]')) {
+    button.onclick = () => { aiMode = button.dataset.mode; remember('aiMode', aiMode); render() }
+  }
+  ;({ chat: renderChat, caption: renderCaption, lines: renderLines })[aiMode](project)
+}
+
+function renderChat(project) {
+  const chat = chats.get(project.id) ?? { session: null, messages: [] }
+  chats.set(project.id, chat)
+  $('aibody').innerHTML = `
+    <div id="messages" class="messages"></div>
+    <p id="chatout" class="note" hidden></p>
+    <form id="chatform" class="ask"><textarea id="chatask" rows="2" placeholder="Ask about ${esc(project.name || project.id)}"></textarea>
+      <button class="primary">Send</button></form>
+    <div class="bar"><span class="grow"></span><button id="newchat" class="small ghost">New chat</button></div>`
+  const show = () => {
+    $('messages').innerHTML = chat.messages.map((m, i) => `<div class="message ${m.role}">${m.role === 'model'
+      ? `<div class="doc">${markdown(m.text)}</div><div class="actions"><button class="small" data-copy="${i}">Copy</button><button class="small" data-draft="${i}">Add to Drafts</button></div>`
+      : esc(m.text)}</div>`).join('')
+    for (const button of $('messages').querySelectorAll('button[data-copy]')) button.onclick = () => copy(button, chat.messages[button.dataset.copy].text)
+    for (const button of $('messages').querySelectorAll('button[data-draft]')) {
+      const i = Number(button.dataset.draft)
+      draftButton(button, project, `Chat: ${chat.messages[i - 1]?.text.slice(0, 60) ?? 'answer'}`, chat.messages[i].text)
+    }
+  }
+  show()
+  $('chatask').onkeydown = (event) => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) $('chatform').requestSubmit() }
+  $('chatform').onsubmit = (event) => {
+    event.preventDefault()
+    const text = $('chatask').value.trim()
+    if (!text) return
+    busy($('chatform'), $('chatout'), async () => {
+      // The chat sees the plan as it was when it started; New chat picks up edits.
+      chat.session ??= await startChat(app, latest(project))
+      const result = await chat.session.sendMessage(text)
+      chat.messages.push({ role: 'user', text }, { role: 'model', text: result.response.text() })
+      $('chatask').value = ''
+      $('chatout').hidden = true
+      show()
+    })
+  }
+  $('newchat').onclick = () => { chats.delete(project.id); renderChat(project) }
+}
+
+function renderCaption(project) {
+  const platform = recall('platform') || 'Instagram'
+  $('aibody').innerHTML = `
+    <form id="captionform" class="stack">
+      <label class="field">App <select id="platform">${Object.keys(platforms).map((p) => `<option${p === platform ? ' selected' : ''}>${p}</option>`).join('')}</select></label>
+      <textarea id="captionask" rows="5" placeholder="What the post is for (a video, an update, a campaign), or paste a caption to rewrite"></textarea>
+      <div class="bar"><button class="primary">Write caption</button></div>
+    </form>
+    <p id="captionout" class="note" hidden></p>
+    <div id="captions" class="grid"></div>`
+  $('platform').onchange = () => remember('platform', $('platform').value)
+  $('captionform').onsubmit = (event) => {
+    event.preventDefault()
+    const ask = $('captionask').value.trim()
+    const name = $('platform').value
+    if (!ask) return
+    busy($('captionform'), $('captionout'), async () => {
+      const answer = await caption(app, latest(project), name, ask)
+      $('captionout').hidden = !answer.note
+      $('captionout').textContent = answer.note ?? ''
+      $('captions').innerHTML = ['en', 'id'].map((l) => {
+        const problems = captionProblems(answer[l] ?? '', platforms[name])
+        return `<div class="item"><pre>${esc(answer[l] ?? '')}</pre><div class="info">
+          <div class="meta"><span class="lang">${l.toUpperCase()}</span><span>${name}</span>${problems.length
+            ? `<span class="chip warn">${esc(problems.join(', '))}</span>`
+            : '<span class="chip ok">Fits</span>'}</div>
+          <div class="actions"><button class="small" data-copy="${l}">Copy</button><button class="small" data-draft="${l}">Add to Drafts</button></div></div></div>`
+      }).join('')
+      for (const button of $('captions').querySelectorAll('button[data-copy]')) button.onclick = () => copy(button, answer[button.dataset.copy])
+      for (const button of $('captions').querySelectorAll('button[data-draft]')) {
+        draftButton(button, project, `${name} caption, ${button.dataset.draft.toUpperCase()}`, fence(answer[button.dataset.draft]))
+      }
+    })
+  }
+}
+
+function renderLines(project) {
+  $('aibody').innerHTML = `
+    <form id="linesform" class="stack">
+      <textarea id="linesask" rows="5" placeholder="The video: who it's about, what happens, how long, e.g. a 20-second story of a made-up student who…"></textarea>
+      <div class="bar"><button class="primary">Draft lines</button><span class="note">Rendering and voices stay on the Mac.</span></div>
+    </form>
+    <p id="linesout" class="note" hidden></p>
+    <div id="lines"></div>`
+  $('linesform').onsubmit = (event) => {
+    event.preventDefault()
+    const ask = $('linesask').value.trim()
+    if (!ask) return
+    busy($('linesform'), $('linesout'), async () => {
+      const answer = await videoLines(app, latest(project), ask)
+      const en = answer.en ?? []
+      const id = answer.id ?? []
+      const body = `**EN**\n\n${en.map((l, i) => `${i + 1}. ${l}`).join('\n')}\n\n**ID**\n\n${id.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+      // An English narrator reads Indonesian "c" as "k": spoken() fixes it on the Mac.
+      $('linesout').hidden = !id.some((l) => /c/i.test(l))
+      $('linesout').textContent = 'An Indonesian line has a "c": if the narrator says it, check it with check-voice.mjs on the Mac.'
+      $('lines').innerHTML = `<article class="doc"><h3>${esc(answer.title || 'Video lines')}</h3>${markdown(body)}</article>
+        <div class="bar"><button class="small" id="copylines">Copy</button><button class="small" id="draftlines">Add to Drafts</button></div>`
+      $('copylines').onclick = () => copy($('copylines'), body.replace(/\*\*/g, ''))
+      draftButton($('draftlines'), project, `Video lines: ${answer.title || 'draft'}`, body)
+    })
+  }
 }
