@@ -97,11 +97,19 @@ function renderPlan(project) {
     $('plan').innerHTML = '<p class="note">This project has no marketing plan.</p>'
     return
   }
-  const state = project.editedOnWeb ? 'Changed here; pull it on the Mac.' : 'Same as on the Mac.'
+  const state = project.editedOnWeb
+    ? '<span class="chip warn" title="Run node shared/cloud.mjs pull on the Mac">Changed here: pull it on the Mac</span>'
+    : '<span class="chip ok">Same as on the Mac</span>'
+  const tasks = project.plan.match(/^\s*(-|\d+\.)\s+\[( |x)\]/gm) ?? []
+  const done = tasks.filter((t) => t.includes('[x]')).length
+  const progress = tasks.length
+    ? `<span class="progress"><span class="track"><span class="fill" style="width:${(100 * done) / tasks.length}%"></span></span>${done} of ${tasks.length} done</span>`
+    : ''
   $('plan').innerHTML = `
-    <div class="bar"><span class="note">Updated ${esc(when(project.updatedAt))}. ${state}</span><button id="edit">Edit</button></div>
-    ${markdown(project.plan)}`
+    <div class="bar">${state}${progress}<span class="grow"></span><span class="note">Updated ${esc(when(project.updatedAt))}</span><button id="edit">Edit</button></div>
+    <article class="doc">${markdown(project.plan)}</article>`
   $('edit').onclick = () => editPlan(project)
+  countTasks($('plan'))
   const lines = project.plan.split('\n')
   for (const box of $('plan').querySelectorAll('input[data-line]')) {
     box.onchange = () => {
@@ -133,6 +141,18 @@ function editPlan(project) {
       alert(error.message)
       $('save').disabled = false
     }
+  }
+}
+
+// Done / all tasks next to each section heading that has tasks.
+function countTasks(root) {
+  for (const h2 of root.querySelectorAll('h2')) {
+    let done = 0
+    let all = 0
+    for (let el = h2.nextElementSibling; el && el.tagName !== 'H2'; el = el.nextElementSibling) {
+      for (const box of el.querySelectorAll('input[type=checkbox]')) { all++; if (box.checked) done++ }
+    }
+    if (all) h2.insertAdjacentHTML('beforeend', `<span class="count${done === all ? ' all' : ''}">${done}/${all}</span>`)
   }
 }
 
@@ -212,10 +232,12 @@ function renderMedia(project) {
     return
   }
   const shown = media.filter((m) => lang === 'all' || new RegExp(`[-_.]${lang}([-_.]|$)`).test(m.path) || !/[-_.](en|id)([-_.]|$)/.test(m.path))
-  const groups = Map.groupBy(shown, (m) => m.path.replace(/\/[^/]+$/, ''))
+  // Paths start with out/; files right in it are the project's main media.
+  const groups = Map.groupBy(shown, (m) => m.path.replace(/\/?[^/]+$/, '').replace(/^out\/?/, '') || 'Main')
   $('media').innerHTML = `
-    <nav id="langs">${['all', 'en', 'id'].map((l) => `<button data-lang="${l}" class="${l === lang ? 'on' : ''}">${l === 'all' ? 'All' : l.toUpperCase()}</button>`).join('')}</nav>
-    ${[...groups].map(([folder, items]) => `<h2>${esc(folder)}</h2><div class="grid">${items.map(item).join('')}</div>`).join('')}`
+    <div class="bar"><nav class="filters">${['all', 'en', 'id'].map((l) => `<button data-lang="${l}" class="${l === lang ? 'on' : ''}">${l === 'all' ? 'All' : l.toUpperCase()}</button>`).join('')}</nav>
+      <span class="note">${shown.length} files</span></div>
+    ${[...groups].map(([folder, items]) => `<h2>${esc(folder)} <span class="note">${items.length}</span></h2><div class="grid">${items.map(item).join('')}</div>`).join('')}`
   for (const button of $('media').querySelectorAll('button[data-lang]')) {
     button.onclick = () => { lang = button.dataset.lang; remember('lang', lang); render() }
   }
@@ -233,7 +255,10 @@ function item(m) {
     audio: `<audio src="${esc(m.url)}" controls preload="none"></audio>`,
     text: m.text != null ? `<pre>${esc(m.text)}</pre>` : '',
   }[m.type] ?? ''
-  const copyText = m.text != null ? `<button data-text="${esc(m.path)}">Copy text</button>` : ''
-  return `<div class="item">${preview}<div class="name">${esc(name)} · ${size}</div>
-    <div class="actions"><a href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>${copyText}</div></div>`
+  const language = name.match(/[-_.](en|id)([-_.]|$)/)?.[1]
+  const copyText = m.text != null ? `<button class="small" data-text="${esc(m.path)}">Copy text</button>` : ''
+  return `<div class="item"><div class="preview">${preview}</div><div class="info">
+    <div><div class="name">${esc(name)}</div>
+      <div class="meta">${language ? `<span class="lang">${language.toUpperCase()}</span>` : ''}<span>${m.type} · ${size}</span></div></div>
+    <div class="actions"><a class="button small" href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>${copyText}</div></div></div>`
 }

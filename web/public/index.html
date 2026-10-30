@@ -3,28 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
   <title>Pamer Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c2410c'/%3E%3Cpath d='M12 9h6a5 5 0 0 1 0 10h-3v5h-3z' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <script type="module" src="app.js"></script>
 </head>
 <body>
   <header>
-    <h1>Pamer Studio</h1>
+    <div class="brand"><span class="mark">P</span><span>Pamer Studio</span></div>
     <span id="who"></span>
-    <button id="signout" hidden>Sign out</button>
+    <button id="signout" class="ghost" hidden>Sign out</button>
   </header>
   <main>
     <section id="signin" hidden>
-      <p>The marketing plans, campaign links and media for every project.</p>
-      <button id="google">Sign in with Google</button>
-      <p id="denied" class="note" hidden>This account has no access.</p>
+      <div class="card">
+        <span class="mark big">P</span>
+        <h1>Pamer Studio</h1>
+        <p>The marketing plans, campaign links and media for every project.</p>
+        <button id="google" class="primary">Sign in with Google</button>
+        <p id="denied" class="note" hidden>This account has no access.</p>
+      </div>
     </section>
     <section id="app" hidden>
-      <nav id="projects"></nav>
-      <nav id="views">
-        <button data-view="plan" class="on">Plan</button>
-        <button data-view="media">Media</button>
-      </nav>
+      <div class="toolbar">
+        <nav id="projects" class="tabs"></nav>
+        <nav id="views" class="segmented">
+          <button data-view="plan" class="on">Plan</button>
+          <button data-view="media">Media</button>
+        </nav>
+      </div>
       <div id="plan"></div>
       <div id="media" hidden></div>
     </section>
