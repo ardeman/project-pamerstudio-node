@@ -1,0 +1,8 @@
+# What `gcloud builds submit` uploads for the render image: never keys or the
+# paid caches (those come from Storage), nor the web page.
+#!include:.gitignore
+.git
+.github
+.gcloudignore
+web/
+*/node_modules

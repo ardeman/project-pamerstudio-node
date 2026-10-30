@@ -15,7 +15,7 @@ export COBALAGI_APP="$ROOT"
 cd "$ROOT"
 OUT="$HERE/out"
 FRAMES="tool/screenshots/out/video"
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 TMP="$(mktemp -d)"
 trap 'rm -rf -- "${TMP:?}"' EXIT
 mkdir -p "$OUT"
