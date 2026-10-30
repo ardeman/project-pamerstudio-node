@@ -51,8 +51,4 @@ Common Sense says no developer influences its ratings, and no developer form for
 
 ## Done
 
-| Directory | Submitted | Listed |
-|---|---|---|
-| AlternativeTo | | |
-| Educational App Store | | |
-| Common Sense Media | | |
+When each one is submitted, and when it is listed, go in `calendar.json`: `node cobalagi/scripts/calendar.mjs --posted <id> [date] [notes]`.

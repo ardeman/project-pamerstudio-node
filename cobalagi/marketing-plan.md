@@ -37,13 +37,13 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 ## 6. Weekly routine (about 1 hour a week)
 
 - [ ] One post a week from gameplay frames and story clips, drafted by Claude.
-- [ ] Post the short and the promos the user hasn't posted yet.
+- [x] Post the short and the promos the user hasn't posted yet.
 
 ## Posting kit
 
 The user posts by hand; this kit makes that copy and paste. Build it in small steps:
 
-1. [ ] **Calendar file:** what goes out when, on which platform, with which campaign link, and whether it is posted. Each session reads it and drafts the next batch.
+1. [x] **Calendar file:** what goes out when, on which platform, with which campaign link, and whether it is posted. Each session reads it and drafts the next batch. In `calendar.json`; `node cobalagi/scripts/calendar.mjs` lists what is not posted yet with its links, `--posted <id>` marks one.
 2. [ ] **Per-platform captions with limit checks:** one caption per app for every post, checked like `youtube-text.mjs` checks YouTube's limits (for example Threads 500, X 280, LinkedIn 3,000, TikTok and Instagram caption limits), refusing a caption that doesn't fit.
 3. [ ] **Preview page in `dashboard.html`:** each draft as it will look per app, with copy buttons and "mark as posted".
 4. [ ] **Reply drafts:** the user pastes new comments; Claude drafts replies in the right language, honest and never pushy.

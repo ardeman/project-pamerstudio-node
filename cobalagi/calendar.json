@@ -1,0 +1,23 @@
+{
+  "note": "What goes out when, where, and whether it is posted. One entry per platform. `source` is the campaign link's utm_source/ct (Results in marketing-plan.md). `draft` is the file and heading the text is in; null means it is still to be drafted. List and mark with cobalagi/scripts/calendar.mjs.",
+  "entries": [
+    { "id": "hour-of-code-email", "date": "2026-11-02", "platform": "Email (Code.org)", "source": "hourofcode", "lang": "en", "draft": "hour-of-code.md", "section": "Email draft (English; the user sends it)", "posted": null, "notes": "" },
+    { "id": "r-homeschool", "date": "2026-11-02", "platform": "Reddit r/homeschool", "source": "r-homeschool", "lang": "en", "draft": "launch-posts.md", "section": "2. r/homeschool", "posted": null, "notes": "" },
+    { "id": "show-hn", "date": "2026-11-03", "platform": "Hacker News", "source": "hn", "lang": "en", "draft": "launch-posts.md", "section": "1. Show HN (Hacker News)", "posted": null, "notes": "" },
+    { "id": "facebook-groups", "date": "2026-11-04", "platform": "Facebook groups", "source": "facebook", "lang": "id", "draft": "launch-posts.md", "section": "6. Grup Facebook parenting dan homeschooling", "posted": null, "notes": "" },
+    { "id": "product-hunt", "date": "2026-11-05", "platform": "Product Hunt", "source": "producthunt", "lang": "en", "draft": "launch-posts.md", "section": "5. Product Hunt", "posted": null, "notes": "" },
+    { "id": "r-steamdeck", "date": "2026-11-06", "platform": "Reddit r/SteamDeck", "source": "r-steamdeck", "lang": "en", "draft": "launch-posts.md", "section": "3. r/SteamDeck", "posted": null, "notes": "" },
+    { "id": "r-flutterdev", "date": "2026-11-07", "platform": "Reddit r/FlutterDev", "source": "r-flutterdev", "lang": "en", "draft": "launch-posts.md", "section": "4. r/FlutterDev and Flame", "posted": null, "notes": "" },
+    { "id": "flame-showcase", "date": "2026-11-07", "platform": "Flame showcase", "source": "r-flutterdev", "lang": "en", "draft": "launch-posts.md", "section": "4. r/FlutterDev and Flame", "posted": null, "notes": "" },
+    { "id": "teachers-whatsapp", "date": "2026-11-09", "platform": "Teacher communities, WhatsApp", "source": "whatsapp", "lang": "id", "draft": "launch-posts.md", "section": "7. Komunitas guru dan WhatsApp", "posted": null, "notes": "" },
+    { "id": "alternativeto", "date": "2026-11-10", "platform": "AlternativeTo", "source": "alternativeto", "lang": "en", "draft": "directories.md", "section": "1. AlternativeTo (free, quickest)", "posted": null, "notes": "" },
+    { "id": "edappstore", "date": "2026-11-11", "platform": "Educational App Store", "source": "edappstore", "lang": "en", "draft": "directories.md", "section": "2. Educational App Store (submitting is free; certification may not be)", "posted": null, "notes": "" },
+    { "id": "commonsense", "date": "2026-11-12", "platform": "Common Sense Media", "source": "commonsense", "lang": "en", "draft": "directories.md", "section": "3. Common Sense Media (editorial, no request form found)", "posted": null, "notes": "" },
+    { "id": "week-1-instagram", "date": "2026-11-18", "platform": "Instagram", "source": "instagram", "lang": "both", "draft": null, "posted": null, "notes": "" },
+    { "id": "week-1-tiktok", "date": "2026-11-18", "platform": "TikTok", "source": "tiktok", "lang": "both", "draft": null, "posted": null, "notes": "" },
+    { "id": "week-1-youtube", "date": "2026-11-18", "platform": "YouTube", "source": "youtube", "lang": "both", "draft": null, "posted": null, "notes": "" },
+    { "id": "week-1-threads", "date": "2026-11-18", "platform": "Threads", "source": "threads", "lang": "both", "draft": null, "posted": null, "notes": "" },
+    { "id": "week-1-x", "date": "2026-11-18", "platform": "X", "source": "x", "lang": "both", "draft": null, "posted": null, "notes": "" },
+    { "id": "week-1-linkedin", "date": "2026-11-18", "platform": "LinkedIn", "source": "linkedin", "lang": "both", "draft": null, "posted": null, "notes": "" }
+  ]
+}

@@ -134,13 +134,4 @@ Untuk guru TK/SD dan grup WhatsApp guru. Lebih pendek, dan fokus ke kelas.
 
 ## Done
 
-| Where | Posted | Notes (rules, replies, installs) |
-|---|---|---|
-| Show HN | | |
-| r/homeschool | | |
-| r/SteamDeck | | |
-| r/FlutterDev | | |
-| Flame showcase | | |
-| Product Hunt | | |
-| Facebook groups | | |
-| Teacher communities, WhatsApp | | |
+When each one is posted, and notes on rules, replies and installs, go in `calendar.json`: `node cobalagi/scripts/calendar.mjs --posted <id> [date] [notes]`.

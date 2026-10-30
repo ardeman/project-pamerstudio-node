@@ -142,6 +142,7 @@ The scripts work from the app repo (`COBALAGI_APP`, `../project_cobalagi_flutter
 | `cobalagi/scripts/youtube-text.mjs`, `youtube.json` | Each video's YouTube text (below). |
 | `cobalagi/out/` | The videos with their `.srt`, `.youtube.txt` and thumbnails. |
 | `cobalagi/marketing-plan.md` | The marketing plan: steps to tick off, the order, and results. |
+| `cobalagi/calendar.json`, `cobalagi/scripts/calendar.mjs` | The posting calendar: what goes out when, on which platform, and whether it is posted. The script adds each entry's campaign links from the plan's Results and refuses an unknown source or a missing draft. |
 
 ### Commands
 
@@ -156,6 +157,8 @@ Render, from this folder:
 ```sh
 node cobalagi/scripts/render.mjs [short|promo|app-store|all] [soon|live]
 node cobalagi/scripts/youtube-text.mjs --check    # YouTube's limits, for every video
+node cobalagi/scripts/calendar.mjs [--all]        # posting calendar: what is not posted yet, with links
+node cobalagi/scripts/calendar.mjs --posted <id> [YYYY-MM-DD] [notes]
 ```
 
 ### YouTube uploads
