@@ -28,7 +28,7 @@ HN wants something people can try, and the maker posting it. Post on a weekday m
 > - After every puzzle it picks what comes next: the next planet, a generated practice puzzle (checked to be solvable before it's shown) or a review of an earlier skill. A short voice-led warm-up finds each child's starting point.
 > - One Flutter codebase with Flame for the game, on iPhone, iPad, Mac, Android, Windows and Linux. The Linux AppImage runs on the Steam Deck, and game controllers work everywhere without touching the screen.
 >
-> It's free for one player; a one-time tip unlocks extras like up to six players on one device. Builds for every platform are on GitHub Releases, and it's on the App Store: <App Store link, ct=hn>. I'd love feedback, especially from parents and teachers of young kids.
+> It's free for one player; a one-time tip unlocks extras like up to six players on one device. It's on Google Play (<Play link, utm_source=hn>) and the App Store (<App Store link, ct=hn>), and builds for every platform are on GitHub Releases. I'd love feedback, especially from parents and teachers of young kids.
 
 ### 2. r/homeschool
 
