@@ -78,8 +78,6 @@ Google Play reads `utm_source`/`utm_campaign` (Play Console → Statistics → a
 | Press pitches | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=press&utm_campaign=press | https://apps.apple.com/app/id6823508005?pt=PT&ct=press&mt=8 |
 | Hour of Code | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=hourofcode&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=hourofcode&mt=8 |
 | Common Sense Media | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=commonsense&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=commonsense&mt=8 |
-| AlternativeTo | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=alternativeto&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=alternativeto&mt=8 |
-| Educational App Store | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=educationalappstore&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=educationalappstore&mt=8 |
 | Educational App Store | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=edappstore&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=edappstore&mt=8 |
 | AlternativeTo | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=alternativeto&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=alternativeto&mt=8 |
 | Instagram | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=instagram&utm_campaign=weekly | https://apps.apple.com/app/id6823508005?pt=PT&ct=instagram&mt=8 |

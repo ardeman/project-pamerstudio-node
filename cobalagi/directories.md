@@ -29,7 +29,7 @@ How: https://educationalappstore.com/developer → "Submit your app". Its site s
 
 - **App name:** Coba Lagi: Learn to Code
 - **Category:** Computing / Coding, ages 6–8
-- **Links:** App Store and Google Play campaign links for `educationalappstore` (Results), website.
+- **Links:** App Store and Google Play campaign links for `edappstore` (Results), website.
 - **Description:** the AlternativeTo description above, plus:
 
 > What children learn: putting steps in order, loops, functions (their own block), conditions (look ahead, if/otherwise), variables (step box), repeat-until and debugging. After every puzzle the app picks what comes next: the next planet, a generated practice puzzle (always checked to be solvable) or a review of an earlier skill. Mistakes are met with encouragement, and the block that caused a bump is marked.
