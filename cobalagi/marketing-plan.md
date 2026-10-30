@@ -22,7 +22,7 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 
 - [ ] App Store featuring nomination (App Store Connect → Featuring): drafted in `featuring-nomination.md` for 2.9.0 (free, no ads, offline, coding before reading); the user submits it. The regional languages get a second nomination once their version is ready.
 - [ ] Hour of Code (now Hour of AI) / CS Education Week, December: the activity submission window is closed (the last one ended Oct 1). Send the email in `hour-of-code.md` to ask about a late listing and the 2027 window.
-- [ ] Common Sense Media review request, Educational App Store, AlternativeTo.
+- [ ] AlternativeTo, Educational App Store, Common Sense Media: drafted in `directories.md`; the user submits them (free ones only).
 - [ ] Flathub (the Linux build in the Steam Deck's Discover store). The most work of these.
 
 ## 4. Launch posts (one week)
@@ -78,6 +78,8 @@ Google Play reads `utm_source`/`utm_campaign` (Play Console → Statistics → a
 | Press pitches | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=press&utm_campaign=press | https://apps.apple.com/app/id6823508005?pt=PT&ct=press&mt=8 |
 | Hour of Code | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=hourofcode&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=hourofcode&mt=8 |
 | Common Sense Media | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=commonsense&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=commonsense&mt=8 |
+| AlternativeTo | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=alternativeto&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=alternativeto&mt=8 |
+| Educational App Store | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=educationalappstore&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=educationalappstore&mt=8 |
 | Educational App Store | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=edappstore&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=edappstore&mt=8 |
 | AlternativeTo | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=alternativeto&utm_campaign=directory | https://apps.apple.com/app/id6823508005?pt=PT&ct=alternativeto&mt=8 |
 | Instagram | https://play.google.com/store/apps/details?id=com.ardeman.cobalagi&utm_source=instagram&utm_campaign=weekly | https://apps.apple.com/app/id6823508005?pt=PT&ct=instagram&mt=8 |
