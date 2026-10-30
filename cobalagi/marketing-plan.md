@@ -2,7 +2,7 @@
 
 Made 2026-10-30, when 2.9.0 was live on Google Play, the App Store (iPhone, iPad, Mac) and GitHub Releases.
 
-**Goal:** more installs. **Audience:** Indonesian and English-speaking parents, side by side. **Budget:** none, time only. **The user's time:** 1–2 hours a week; Claude drafts everything, the user approves and posts. Nothing is posted without the user.
+**Goal:** more installs. **Audience:** Indonesian and English-speaking parents, side by side. **Budget:** none, time only. **The user's time:** 1–2 hours a week; Claude drafts everything and the user approves it: they post it by hand, or approve it on Pamer Studio on the web and the server posts it at its scheduled time. Nothing is posted without the user's approval.
 
 Work that keeps bringing installs after it is done (store pages, nominations, directories) comes before work that needs a daily habit. Every claim follows the app repo's store listing rules: true for the released app, both languages saying the same.
 
@@ -41,14 +41,15 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 
 ## Posting kit
 
-The user posts by hand; this kit makes that copy and paste. Build it in small steps:
+The user approves each post on the web and the server posts it at its time; where an app has no posting API, the kit makes posting by hand a copy and paste. Build it in small steps:
 
 1. [x] **Calendar file:** what goes out when, on which platform, with which campaign link, and whether it is posted. Each session reads it and drafts the next batch. In `calendar.json`; `node cobalagi/scripts/calendar.mjs` lists what is not posted yet with its links, `--posted <id>` marks one.
 2. [ ] **Per-platform captions with limit checks:** one caption per app for every post, checked like `youtube-text.mjs` checks YouTube's limits (for example Threads 500, X 280, LinkedIn 3,000, TikTok and Instagram caption limits), refusing a caption that doesn't fit.
-3. [ ] **Preview page in `dashboard.html`:** each draft as it will look per app, with copy buttons and "mark as posted".
-4. [ ] **Reply drafts:** the user pastes new comments; Claude drafts replies in the right language, honest and never pushy.
+3. [ ] **Preview page on Pamer Studio (web):** each draft as it will look per app, with copy buttons, "Approve" (the server posts it at its date and time) and "mark as posted" for posts made by hand. The calendar moves to Firestore so the web and the scripts share it.
+4. [ ] **Scheduled posting on the server:** a scheduled function posts each approved draft at its time through the app's own posting API, with the campaign link, and marks it posted (or shows the error on the web). Start with one app, then add the others. Before building it, check each API's access and cost (some need an app review or a paid tier) and the Firebase cost (Cloud Functions need the Blaze plan; Cloud Scheduler has a small free allowance); ask before anything that costs money.
+5. [ ] **Reply drafts:** the user pastes new comments; Claude drafts replies in the right language, honest and never pushy.
 
-Reddit, Hacker News, Product Hunt, Facebook groups, WhatsApp, press and directories stay fully manual; Claude writes the text.
+Reddit, Hacker News, Product Hunt, Facebook groups, WhatsApp, press and directories stay manual (no posting API, or the community expects a person); Claude writes the text.
 
 ## Order
 
@@ -56,7 +57,7 @@ Reddit, Hacker News, Product Hunt, Facebook groups, WhatsApp, press and director
 |---|---|
 | Week 1 | Campaign links and baseline, keywords, featuring nomination, Hour of Code email |
 | Weeks 2–3 | Posting kit steps 1–3, launch posts, directory submissions |
-| Weeks 3–4 | Press pitches, first listing experiment |
+| Weeks 3–4 | Press pitches, first listing experiment, scheduled posting (Posting kit step 4) |
 | December | Hour of Code week; read the campaign numbers, drop channels that bring nothing |
 | January | New school term in Indonesia: teacher communities |
 
