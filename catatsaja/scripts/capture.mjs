@@ -1,7 +1,7 @@
 // Seeds a demo account on the local emulators and captures the app's
 // screens for the promo videos. Run it from the app repo, with
 // `pnpm emulators` running there:
-//   node ../project-pamer-node/catatsaja/scripts/capture.mjs <en|id> [explore]
+//   node ../project-pamerstudio-node/catatsaja/scripts/capture.mjs <en|id> [explore]
 
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

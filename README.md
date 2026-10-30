@@ -1,4 +1,4 @@
-# AI-generated content
+# Pamer Studio
 
 Promo videos and other generated media, one folder per project. Rules for AI agents working here: [`AGENTS.md`](AGENTS.md).
 
@@ -70,8 +70,8 @@ Two videos, each in English and Indonesian:
 Capture screens, from the app repo with `pnpm emulators` running there:
 
 ```sh
-node ../project-pamer-node/catatsaja/scripts/capture.mjs <en|id>
-node ../project-pamer-node/catatsaja/scripts/capture-stories.mjs <en|id>   # ONLY=shot,shot for a few
+node ../project-pamerstudio-node/catatsaja/scripts/capture.mjs <en|id>
+node ../project-pamerstudio-node/catatsaja/scripts/capture-stories.mjs <en|id>   # ONLY=shot,shot for a few
 ```
 
 Render, from this folder:
