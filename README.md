@@ -192,3 +192,11 @@ Today rendering, voices and captures run only on the Mac (the web page says so i
 3. **Request, price, approve.** A Render button writes a request to Firestore (project, video, format, language). The job runs `--dry-run` and writes the clips to buy and their credits against the balance; the page shows that, and Approve is the go-ahead AGENTS.md asks for. Then it renders, writes the stills and the video to Storage, and the page shows them for review. No `--force` from the web.
 4. **Limits.** Only the owner can make requests (rules); one render at a time; a timeout on the job; the Rp 80.000 budget alert stays. Check the compute and Storage costs of one real render before turning it on for every project.
 5. **Docs.** README, AGENTS.md (the approve step, the keys in Secret Manager) and the note on the web page.
+
+### Marketing plans in Firestore
+
+Today each `marketing-plan.md` is tracked in git and copied to Firestore, so a web edit pulled to the Mac leaves a change to commit. Plan to keep the plan in Firestore only:
+
+1. **Firestore holds the plan.** Every save (web or `cloud.mjs push`) also keeps the old version in a `versions` subcollection, in place of git's history; the web page can show and restore them.
+2. **The file is a local copy.** `cloud.mjs pull` writes `marketing-plan.md` for the scripts that read it (Coba Lagi's `posting.mjs` and `calendar.mjs`) and for editing on the Mac; `push` sends edits up, still stopping when both sides changed. Git ignores the file (`git rm --cached`, the history stays).
+3. **Docs.** README, AGENTS.md (pull before changing a plan, push after; no commit) and the web page's "Changed here" note.
