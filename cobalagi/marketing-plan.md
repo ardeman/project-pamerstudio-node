@@ -27,8 +27,8 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 
 ## 4. Launch posts (one week)
 
-- [ ] English: Show HN (GPL, no tracking, Flutter and Flame), r/homeschool, r/SteamDeck (game controller support), r/FlutterDev and Flame's showcase, Product Hunt.
-- [ ] Indonesian: parenting and homeschooling Facebook groups, teacher communities. Indonesia's new coding and AI elective is a hook; check its exact scope before a pitch uses it.
+- [ ] English: Show HN (GPL, no tracking, Flutter and Flame), r/homeschool, r/SteamDeck (game controller support), r/FlutterDev and Flame's showcase, Product Hunt. Drafted in `launch-posts.md`; the user posts them.
+- [ ] Indonesian: parenting and homeschooling Facebook groups, teacher communities. Drafted in `launch-posts.md`. The coding and AI elective is optional, from grade 5, only in schools that are ready (start year differs between reports), so posts call the app "the basics before grade 5" and name no year.
 
 ## 5. Press
 
