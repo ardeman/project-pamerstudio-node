@@ -39,7 +39,7 @@ Work that keeps bringing installs after it is done (store pages, nominations, di
 - [ ] One post a week from gameplay frames and story clips, drafted by Claude.
 - [ ] Post the short and the promos the user hasn't posted yet.
 
-## Posting kit (ideas taken from tebar.app, no account)
+## Posting kit
 
 The user posts by hand; this kit makes that copy and paste. Build it in small steps:
 

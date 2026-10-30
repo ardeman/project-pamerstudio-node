@@ -1,0 +1,12 @@
+rules_version = '2';
+// Media is uploaded from the Mac (shared/cloud.mjs, through gcloud); the page only reads it.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{all=**} {
+      allow read: if request.auth != null
+        && request.auth.token.email == 'are.theman@gmail.com'
+        && request.auth.token.email_verified;
+      allow write: if false;
+    }
+  }
+}
