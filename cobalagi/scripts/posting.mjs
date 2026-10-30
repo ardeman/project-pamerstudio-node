@@ -1,6 +1,6 @@
 // What the posting scripts share: the calendar, the campaign links from
 // marketing-plan.md, and each app's caption limits.
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 
 const root = new URL('../', import.meta.url)
 export const calendarFile = new URL('calendar.json', root)
@@ -61,4 +61,101 @@ export function captionProblems(text, limits, field = 'caption') {
   if (field === 'caption' && limits.hashtags != null && hashtags > limits.hashtags) problems.push(`${hashtags} hashtags (max ${limits.hashtags})`)
   if (/\{[a-zA-Z]+\}/.test(text)) problems.push(`${field} has an unfilled {…}`)
   return problems
+}
+
+export const langsOf = (entry) => (entry.lang === 'both' ? ['en', 'id'] : [entry.lang])
+export const writeCalendar = (calendar) => writeFileSync(calendarFile, JSON.stringify(calendar, null, 2) + '\n')
+
+// Puts the entry's campaign links in: {play} and {appStore} in captions,
+// "<Play link, …>" and "<App Store link, …>" (or "<link Play, …>") in drafts.
+export function fillLinks(text, link) {
+  return text
+    .replaceAll('{play}', link?.play ?? '{play}')
+    .replaceAll('{appStore}', link?.appStore ?? '{appStore}')
+    .replace(/<(?:Play link|link Play)\b[^>]*>/g, (m) => link?.play ?? m)
+    .replace(/<(?:App Store link|link App Store)\b[^>]*>/g, (m) => link?.appStore ?? m)
+}
+
+// [{ lang, title?, caption }] for an entry in captions.json, filled.
+export function captionsOf(entry, posts, links) {
+  const post = posts[entry.id]
+  const fill = (text) => fillLinks(text, links[entry.source])
+  return langsOf(entry).map((lang) => ({
+    lang,
+    title: post.title && fill(post.title[lang] ?? ''),
+    caption: post[lang] == null ? null : fill(post[lang]),
+  }))
+}
+
+// A Markdown draft's section in order: what gets pasted ("- **Title:** …",
+// To and Subject lines, quoted text, each with its label) and the advice
+// between them (label null).
+export function draftParts(entry, link) {
+  const lines = readFileSync(new URL(entry.draft, root), 'utf8').split('\n')
+  const start = lines.findIndex((line) => /^#+ /.test(line) && line.replace(/^#+ /, '') === entry.section)
+  if (start < 0) return null
+  const level = lines[start].match(/^#+/)[0].length
+  const parts = []
+  let label = null
+  const add = (part) => {
+    const last = parts.at(-1)
+    if (part.label === null && last?.label === null && !last.quote) last.text += `\n${part.text}`
+    else if (part.quote && last?.quote) last.text += `\n${part.text}`
+    else parts.push(part)
+  }
+  for (const line of lines.slice(start + 1)) {
+    const heading = line.match(/^(#+) /)
+    if (heading && heading[1].length <= level) break
+    let m
+    if (line.startsWith('>')) add({ label: label ?? 'Text', text: line.replace(/^> ?/, ''), quote: true })
+    else if ((m = line.match(/^- \*\*([^*]+?):\*\*\s+(\S.*)$/))) add({ label: m[1], text: m[2] })
+    else if ((m = line.match(/^(To|Subject): (.+)$/))) add({ label: m[1], text: m[2] })
+    else {
+      m = line.match(/^- \*\*([^*]+?):?\*\*/)
+      if (m) label = m[1]
+      // A bare "- **Description:**" only names the quote below it.
+      if (!/^- \*\*[^*]+\*\*:?\s*$/.test(line)) add({ label: null, text: line })
+    }
+  }
+  return parts
+    .map(({ label, text }) => ({ label, text: fillLinks(text.trim(), link) }))
+    .filter((part) => part.text)
+}
+
+// Each calendar entry as Pamer Studio shows it: [id, post], with its
+// captions checked against the app's limits, or its draft split into parts.
+// shared/cloud.mjs pushes these; `posted` and `approved` come back on pull.
+export function cloudPosts() {
+  const links = campaignLinks()
+  const { posts } = readCaptions()
+  return readCalendar().entries.map((entry) => {
+    const link = links[entry.source] ?? null
+    const limits = platformOf(entry.platform) ?? null
+    const post = {
+      date: entry.date,
+      platform: entry.platform,
+      lang: entry.lang,
+      source: entry.source,
+      link,
+      draft: entry.draft ? [entry.draft, entry.section].filter(Boolean).join(' → ') : null,
+      notes: entry.notes ?? '',
+      limits,
+      captions: null,
+      parts: null,
+    }
+    if (entry.draft === 'captions.json' && posts[entry.id]) {
+      post.captions = captionsOf(entry, posts, links).map(({ lang, title, caption }) => ({
+        lang,
+        title: title ?? null,
+        caption,
+        used: limits && caption != null ? length(caption, limits) : null,
+        problems: caption == null ? [`no ${lang} caption`]
+          : !limits ? [`no limits for ${entry.platform}`]
+          : [...captionProblems(caption, limits), ...(limits.title ? (title ? captionProblems(title, limits, 'title') : ['no title']) : [])],
+      }))
+    } else if (entry.draft && entry.draft !== 'captions.json') {
+      post.parts = draftParts(entry, link)
+    }
+    return [entry.id, post]
+  })
 }

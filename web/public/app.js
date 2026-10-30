@@ -1,5 +1,5 @@
-// Pamer Studio on the web: each project's marketing plan (tick tasks, edit it)
-// and its media. shared/cloud.mjs pushes both from the Mac and pulls web edits.
+// Pamer Studio on the web: each project's marketing plan (tick tasks, edit it),
+// its posts (preview, approve, mark posted) and its media. shared/cloud.mjs pushes both from the Mac and pulls web edits.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js'
 import {
   getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut,
@@ -32,6 +32,8 @@ let view = recall('view') || 'plan'
 let lang = recall('lang') || 'all'
 let editing = false
 let unsubscribe = null
+let posts = { project: null, list: [], unsubscribe: null }
+let postsFilter = recall('postsFilter') || 'todo'
 let aiMode = recall('aiMode') || 'chat'
 let aiShown = '' // the project and mode the AI view shows, so a snapshot doesn't wipe it
 const chats = new Map() // project id → { session, messages }
@@ -48,6 +50,8 @@ onAuthStateChanged(auth, (user) => {
   $('who').textContent = user?.email ?? ''
   unsubscribe?.()
   unsubscribe = null
+  posts.unsubscribe?.()
+  posts = { project: null, list: [], unsubscribe: null }
   if (!allowed) return
   unsubscribe = onSnapshot(collection(db, 'projects'), (snap) => {
     projects = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
@@ -78,17 +82,20 @@ function render() {
   }
   for (const button of document.querySelectorAll('#views button')) button.classList.toggle('on', button.dataset.view === view)
   $('plan').hidden = view !== 'plan'
+  $('posts').hidden = view !== 'posts'
   $('media').hidden = view !== 'media'
   $('ai').hidden = view !== 'ai'
   const project = projects.find((p) => p.id === current)
   if (!project) {
     $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
+    $('posts').innerHTML = ''
     $('media').innerHTML = ''
     $('ai').innerHTML = ''
     aiShown = ''
     return
   }
   if (!editing) renderPlan(project)
+  watchPosts(project)
   renderMedia(project)
   if (view === 'ai' && aiShown !== `${project.id}/${aiMode}`) renderAI(project)
 }
@@ -251,6 +258,108 @@ function markdown(text) {
   closeList()
   return html.join('\n')
 }
+
+// Posts: the calendar's entries (projects/{id}/posts), pushed with their
+// captions checked or their drafts split into what gets pasted. Approving and
+// marking posted reach calendar.json on pull.
+
+function watchPosts(project) {
+  if (posts.project === project.id) return renderPosts()
+  posts.unsubscribe?.()
+  posts = { project: project.id, list: [], unsubscribe: null, loaded: false }
+  posts.unsubscribe = onSnapshot(collection(db, 'projects', project.id, 'posts'), (snap) => {
+    posts.list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
+    posts.loaded = true
+    renderPosts()
+  })
+}
+
+const today = () => new Date().toLocaleDateString('en-CA')
+const day = (date) => new Date(`${date}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+const setPost = (post, fields) =>
+  updateDoc(doc(db, 'projects', posts.project, 'posts', post.id), { ...fields, changedOnWeb: serverTimestamp() }).catch((error) => alert(error.message))
+
+function renderPosts() {
+  if (!posts.loaded) return
+  if (!posts.list.length) {
+    $('posts').innerHTML = '<p class="note">No posting calendar for this project.</p>'
+    return
+  }
+  const shown = posts.list.filter((p) => postsFilter === 'all' || !p.posted)
+  const texts = [] // what each Copy button copies
+  const copyButton = (text, label = 'Copy') => `<button class="small" data-copy-text="${texts.push(text) - 1}">${label}</button>`
+  const groups = Map.groupBy(shown, (p) => p.date)
+  $('posts').innerHTML = `
+    <div class="bar"><nav class="filters">${[['todo', 'To post'], ['all', 'All']].map(([key, label]) => `<button data-filter="${key}" class="${key === postsFilter ? 'on' : ''}">${label}</button>`).join('')}</nav>
+      <span class="note">${posts.list.filter((p) => p.posted).length} of ${posts.list.length} posted</span></div>
+    ${shown.length ? '' : '<p class="note">Everything is posted.</p>'}
+    ${[...groups].map(([date, items]) => {
+      const due = date < today() ? ' <span class="chip warn">Overdue</span>' : date === today() ? ' <span class="chip ok">Today</span>' : ''
+      return `<h2 class="day">${esc(day(date))}${due}</h2>${items.map((p) => postCard(p, copyButton)).join('')}`
+    }).join('')}`
+  for (const button of $('posts').querySelectorAll('button[data-filter]')) {
+    button.onclick = () => { postsFilter = button.dataset.filter; remember('postsFilter', postsFilter); renderPosts() }
+  }
+  for (const button of $('posts').querySelectorAll('button[data-copy-text]')) {
+    button.onclick = () => copy(button, texts[button.dataset.copyText])
+  }
+  for (const button of $('posts').querySelectorAll('button[data-act]')) {
+    const post = posts.list.find((p) => p.id === button.closest('[data-post]').dataset.post)
+    button.onclick = () => {
+      button.disabled = true
+      setPost(post, {
+        approve: { approved: new Date().toISOString() },
+        unapprove: { approved: null },
+        posted: { posted: today() },
+        unposted: { posted: null },
+      }[button.dataset.act])
+    }
+  }
+}
+
+function postCard(p, copyButton) {
+  const ready = p.captions?.every((c) => !c.problems.length)
+  const status = p.posted ? `<span class="chip ok">Posted ${esc(day(p.posted))}</span>`
+    : p.approved ? '<span class="chip ok">Approved</span>'
+    : p.captions || p.parts ? '<span class="chip">Ready</span>'
+    : '<span class="chip warn">To draft</span>'
+  const langs = p.lang === 'both' ? 'EN + ID' : p.lang.toUpperCase()
+  const links = p.link
+    ? `<div class="links"><span class="note">Campaign links</span>${copyButton(p.link.play, 'Google Play')}${copyButton(p.link.appStore, 'App Store')}</div>`
+    : '<p class="note error">No campaign link for this source.</p>'
+  const body = p.captions ? p.captions.map((c) => captionPreview(p, c, copyButton)).join('')
+    : p.parts ? p.parts.map((part) => part.label
+      ? `<div class="part"><div class="part-head"><span class="label">${esc(part.label)}</span>${copyButton(part.text)}</div><div class="part-text">${linkify(part.text)}</div></div>`
+      : `<div class="doc guide">${markdown(part.text)}</div>`).join('')
+    : '<p class="note">Not drafted yet: a session on the Mac drafts it into captions.json.</p>'
+  // Approving is for apps the server will post to (captions); the rest are posted by hand.
+  const actions = [
+    p.captions && !p.posted && (p.approved
+      ? '<button class="small" data-act="unapprove">Unapprove</button>'
+      : `<button class="small primary" data-act="approve"${ready ? '' : ' disabled title="Fix the captions first"'}>Approve</button>`),
+    p.posted ? '<button class="small" data-act="unposted">Not posted</button>' : '<button class="small" data-act="posted">Mark as posted</button>',
+  ].filter(Boolean).join('')
+  return `<article class="post" data-post="${esc(p.id)}">
+    <div class="post-head"><div><div class="name">${esc(p.platform)}</div><div class="meta"><span class="lang">${langs}</span><span>${esc(p.id)}</span>${p.draft ? `<span>${esc(p.draft)}</span>` : ''}</div></div>${status}</div>
+    ${p.notes ? `<p class="note">${esc(p.notes)}</p>` : ''}
+    ${body}
+    ${links}
+    <div class="actions">${p.approved && !p.posted ? '<span class="note">The server posts approved drafts once scheduled posting is built; until then, post it by hand.</span>' : ''}<span class="grow"></span>${actions}</div>
+  </article>`
+}
+
+// A caption as the app shows it, with its length against the app's limit.
+function captionPreview(p, c, copyButton) {
+  const count = c.used != null ? `<span class="${c.used > p.limits.caption ? 'over' : ''}">${c.used} / ${p.limits.caption}</span>` : ''
+  return `<div class="preview-post">
+    <div class="part-head"><span class="label">${esc(p.platform)} · ${c.lang.toUpperCase()}</span>${count}<span class="grow"></span>${c.title ? copyButton(c.title, 'Copy title') : ''}${c.caption != null ? copyButton(c.caption) : ''}</div>
+    ${c.title ? `<div class="post-title">${esc(c.title)}</div>` : ''}
+    <div class="part-text">${c.caption != null ? linkify(c.caption) : ''}</div>
+    ${c.problems.length ? `<p class="note error">${c.problems.map(esc).join(' · ')}</p>` : ''}
+  </div>`
+}
+
+const linkify = (text) => esc(text).replace(/https?:\/\/[^\s<)]+/g, (url) => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`)
 
 // Media
 

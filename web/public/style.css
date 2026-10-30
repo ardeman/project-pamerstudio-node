@@ -240,7 +240,7 @@ textarea {
 .stack .bar { margin: 0; }
 .field { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
 .field select { flex: none; }
-.note.error { color: var(--accent); }
+.note.error { color: var(--accent); overflow-wrap: anywhere; }
 #planai { margin: 0 0 12px; }
 .messages { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
 .message.user { align-self: flex-end; max-width: 85%; background: var(--accent-soft); padding: 10px 14px; border-radius: 14px 14px 4px 14px; white-space: pre-wrap; }
@@ -291,3 +291,28 @@ textarea {
   .bar > .note { order: 3; }
   .progress .track { width: 64px; }
 }
+
+/* Posts */
+h2.day { display: flex; align-items: center; gap: 10px; font-size: 15px; margin: 28px 0 12px; }
+.post { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.post-head { display: flex; align-items: flex-start; gap: 12px; justify-content: space-between; }
+.post .name { font-weight: 600; }
+.post .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+.post .lang { font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+.post .note { margin: 0; }
+.part, .preview-post { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.preview-post { background: var(--sunken); }
+.part-head { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+.part-head .label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.part-head .grow { flex: 1; }
+.part-head .over { color: var(--accent); font-weight: 600; }
+.part-head button { margin-left: auto; }
+.part-head .grow + button, .part-head button + button { margin-left: 0; }
+.part-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5; }
+.post-title { font-weight: 600; }
+.post .guide { font-size: 13px; color: var(--muted); max-width: none; padding: 0; margin: 0; background: none; border: 0; box-shadow: none; }
+.post .guide > :first-child { margin-top: 0; }
+.post .guide > :last-child { margin-bottom: 0; }
+.post .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.post .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.post .actions .grow { flex: 1; }

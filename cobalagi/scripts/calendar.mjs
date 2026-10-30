@@ -6,8 +6,8 @@
 //   node cobalagi/scripts/calendar.mjs --check          # links and drafts only
 // Captions for apps with one are in captions.json (captions.mjs checks them).
 // Links come from Results in marketing-plan.md, so they stay in one place.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { calendarFile, campaignLinks, readCalendar, readCaptions } from './posting.mjs'
+import { existsSync, readFileSync } from 'node:fs'
+import { campaignLinks, readCalendar, readCaptions, writeCalendar } from './posting.mjs'
 
 const root = new URL('../', import.meta.url)
 const calendar = readCalendar()
@@ -45,7 +45,7 @@ function markPosted(id, date = today, notes) {
   if (!dateFormat.test(date)) throw new Error(`${date} is not YYYY-MM-DD`)
   entry.posted = date
   if (notes) entry.notes = notes
-  writeFileSync(calendarFile, JSON.stringify(calendar, null, 2) + '\n')
+  writeCalendar(calendar)
   console.log(`${id}: posted ${date}`)
 }
 
@@ -60,7 +60,7 @@ function list(links, all) {
       const when = date < today ? ' (overdue)' : date === today ? ' (today)' : ''
       console.log(`\n${date}${when}`)
     }
-    const status = entry.posted ? `posted ${entry.posted}` : entry.draft ? 'ready' : 'to draft'
+    const status = entry.posted ? `posted ${entry.posted}` : entry.approved ? 'approved on the web' : entry.draft ? 'ready' : 'to draft'
     const draft = entry.draft ? `${entry.draft} → ${entry.section ?? ''}` : 'no draft yet'
     console.log(`  ${entry.id} · ${entry.platform} · ${entry.lang} · ${status}`)
     console.log(`    ${draft}`)

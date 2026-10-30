@@ -5,6 +5,9 @@
 // It signs in as the gcloud account (`gcloud auth login`), so no key is stored.
 // Media uploads only what changed (by MD5) and deletes cloud files that are gone
 // here, so Storage holds only what out/ has. A plan edited on the web is never overwritten without --force.
+// A project with a posting calendar (calendar.json and scripts/posting.mjs) also
+// gets its posts, one document each; pull brings back what was marked posted
+// or approved on the web. A post marked posted here stays posted.
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
@@ -68,6 +71,10 @@ const setFields = (id, fields) => {
   const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
   return call(`${DOCS}/projects/${id}?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
 }
+const listPosts = async (id) => {
+  const res = await call(`${DOCS}/projects/${id}/posts?pageSize=300`)
+  return new Map((res?.documents ?? []).map((d) => [d.name.split('/').pop(), fromFields(d.fields ?? {})]))
+}
 
 const sha = (text) => createHash('sha1').update(text).digest('hex')
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
@@ -78,7 +85,7 @@ const walk = (dir) =>
   )
 
 const allProjects = readdirSync(ROOT, { withFileTypes: true })
-  .filter((e) => e.isDirectory() && (existsSync(`${ROOT}${e.name}/${PLAN}`) || existsSync(`${ROOT}${e.name}/out`)))
+  .filter((e) => e.isDirectory() && [PLAN, 'out', 'calendar.json'].some((f) => existsSync(`${ROOT}${e.name}/${f}`)))
   .map((e) => e.name)
 const unknown = named.filter((n) => !allProjects.includes(n))
 if (unknown.length) throw new Error(`No such project: ${unknown.join(', ')} (have: ${allProjects.join(', ')})`)
@@ -170,14 +177,79 @@ async function pushMedia(id) {
   return { media, mediaAt: new Date() }
 }
 
+// The project's posting helpers, or null when it has no calendar.
+const postingOf = async (id) => {
+  const file = `${ROOT}${id}/scripts/posting.mjs`
+  return existsSync(`${ROOT}${id}/calendar.json`) && existsSync(file) ? import(file) : null
+}
+
+async function pushPosts(id) {
+  const posting = await postingOf(id)
+  if (!posting) return
+  const posts = posting.cloudPosts()
+  const remote = await listPosts(id)
+  let sent = 0
+  for (const [postId, post] of posts) {
+    const { posted, ...content } = post
+    const was = remote.get(postId)
+    const hash = sha(JSON.stringify(content))
+    const fields = { ...content, hash, updatedAt: new Date() }
+    if (posted && was?.posted !== posted) fields.posted = posted
+    else if (was?.hash === hash) continue
+    if (!was) Object.assign(fields, { posted: posted ?? null, approved: null })
+    sent++
+    if (dryRun) console.log(`  would push post ${postId}`)
+    else {
+      const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
+      await call(`${DOCS}/projects/${id}/posts/${postId}?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
+    }
+  }
+  const stale = [...remote.keys()].filter((postId) => !posts.some(([p]) => p === postId))
+  for (const postId of stale) {
+    if (dryRun) console.log(`  would delete post ${postId}`)
+    else await call(`${DOCS}/projects/${id}/posts/${postId}`, { method: 'DELETE' })
+  }
+  const webOnly = posts.filter(([postId, post]) => !post.posted && remote.get(postId)?.posted).map(([postId]) => postId)
+  console.log(`${id}: ${posts.length} posts, ${sent} ${dryRun ? 'to push' : 'pushed'}${stale.length ? `, ${stale.length} ${dryRun ? 'to delete' : 'deleted'}` : ''}`)
+  if (webOnly.length) console.log(`${id}: marked posted on the web, pull to bring it here: ${webOnly.join(', ')}`)
+}
+
 async function push(id) {
   const remote = await getDoc(id)
   const fields = { ...(await pushPlan(id, remote)), ...(await pushMedia(id)) }
   if (!remote && !fields.name) fields.name = id
   if (!dryRun && Object.keys(fields).length) await setFields(id, fields)
+  await pushPosts(id)
+}
+
+async function pullPosts(id) {
+  const posting = await postingOf(id)
+  if (!posting) return
+  const calendar = posting.readCalendar()
+  const remote = await listPosts(id)
+  const changes = []
+  for (const entry of calendar.entries) {
+    const post = remote.get(entry.id)
+    if (!post) continue
+    if (post.posted && !entry.posted) {
+      entry.posted = post.posted
+      changes.push(`${entry.id} posted ${post.posted}`)
+    }
+    if ((post.approved ?? null) !== (entry.approved ?? null)) {
+      entry.approved = post.approved ?? null
+      changes.push(`${entry.id} ${post.approved ? 'approved' : 'no longer approved'}`)
+    }
+  }
+  if (changes.length) posting.writeCalendar(calendar)
+  console.log(`${id}: ${changes.length ? `calendar.json: ${changes.join(', ')}` : 'posts already the same'}`)
 }
 
 async function pull(id) {
+  await pullPlan(id)
+  await pullPosts(id)
+}
+
+async function pullPlan(id) {
   const remote = await getDoc(id)
   const file = `${ROOT}${id}/${PLAN}`
   if (!remote?.plan) return console.log(`${id}: no plan on the web`)

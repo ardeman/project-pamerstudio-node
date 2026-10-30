@@ -5,27 +5,11 @@
 //   node cobalagi/scripts/captions.mjs --check   # limits only
 // Refuses to print while any caption doesn't fit, so a cut-off post can't be
 // pasted.
-import { campaignLinks, captionProblems, platformOf, readCalendar, readCaptions, length } from './posting.mjs'
+import { campaignLinks, captionProblems, captionsOf, platformOf, readCalendar, readCaptions, length } from './posting.mjs'
 
 const calendar = readCalendar()
 const { posts } = readCaptions()
 const links = campaignLinks()
-const langsOf = (entry) => (entry.lang === 'both' ? ['en', 'id'] : [entry.lang])
-
-function fill(text, entry) {
-  const link = links[entry.source]
-  return text.replaceAll('{play}', link?.play ?? '{play}').replaceAll('{appStore}', link?.appStore ?? '{appStore}')
-}
-
-// [{ lang, title?, caption }] for an entry, filled.
-function captionsOf(entry) {
-  const post = posts[entry.id]
-  return langsOf(entry).map((lang) => ({
-    lang,
-    title: post.title && fill(post.title[lang] ?? '', entry),
-    caption: post[lang] == null ? null : fill(post[lang], entry),
-  }))
-}
 
 function check() {
   const problems = []
@@ -36,7 +20,7 @@ function check() {
     if (entry.draft !== 'captions.json') problems.push(`${id}: its calendar entry's draft isn't captions.json`)
     const limits = platformOf(entry.platform)
     if (!limits) { problems.push(`${id}: no limits for platform "${entry.platform}" in posting.mjs`); continue }
-    for (const { lang, title, caption } of captionsOf(entry)) {
+    for (const { lang, title, caption } of captionsOf(entry, posts, links)) {
       if (caption == null) problems.push(`${id}: no ${lang} caption`)
       else problems.push(...captionProblems(caption, limits).map((p) => `${id} (${lang}): ${p}`))
       if (limits.title) {
@@ -51,7 +35,7 @@ function check() {
 function print(entry) {
   const limits = platformOf(entry.platform)
   console.log(`\n=== ${entry.id} · ${entry.platform} · ${entry.date}${entry.posted ? ` · posted ${entry.posted}` : ''}`)
-  for (const { lang, title, caption } of captionsOf(entry)) {
+  for (const { lang, title, caption } of captionsOf(entry, posts, links)) {
     if (title) console.log(`\n--- ${lang} title (${length(title, limits)}/${limits.title})\n${title}`)
     console.log(`\n--- ${lang} (${length(caption, limits)}/${limits.caption})\n${caption}`)
   }
