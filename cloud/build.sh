@@ -22,9 +22,11 @@ g artifacts repositories set-cleanup-policies render --location "$REGION" --poli
 [{"name": "keep-3", "action": {"type": "Keep"}, "mostRecentVersions": {"keepCount": 3}},
  {"name": "delete-rest", "action": {"type": "Delete"}, "condition": {"tagState": "ANY"}}]
 EOF
-# No roles yet: the job reads nothing until its inputs are in Storage.
 g iam service-accounts describe "$SA" >/dev/null 2>&1 ||
   g iam service-accounts create render-job --display-name 'Pamer Studio render job'
+# Reads its inputs and writes new clips back (cloud/inputs.mjs).
+g storage buckets add-iam-policy-binding gs://pamer-studio.firebasestorage.app \
+  --member "serviceAccount:$SA" --role roles/storage.objectUser >/dev/null
 
 g builds submit --region "$REGION" --config cloud/cloudbuild.yaml --substitutions "_IMAGE=$IMAGE" .
 
