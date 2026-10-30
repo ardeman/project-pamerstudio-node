@@ -53,8 +53,15 @@ const token = process.env.CLOUD_RUN_JOB
   : execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8' }).trim()
 const headers = { authorization: `Bearer ${token}`, 'x-goog-user-project': PROJECT }
 
-async function call(url, options = {}) {
-  const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } })
+// Thousands of requests: try a dropped connection or a busy server again.
+async function call(url, options = {}, tries = 4) {
+  const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } }).catch((error) => {
+    if (tries <= 1) throw error
+  })
+  if ((!res || res.status === 429 || res.status >= 500) && tries > 1) {
+    await new Promise((resolve) => setTimeout(resolve, 2000 * (5 - tries)))
+    return call(url, options, tries - 1)
+  }
   if (!res.ok) throw new Error(`${options.method ?? 'GET'} ${url.split('?')[0]}: ${res.status} ${await res.text()}`)
   return res
 }
