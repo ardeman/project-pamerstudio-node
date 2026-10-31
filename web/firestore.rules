@@ -7,8 +7,20 @@ service cloud.firestore {
         && request.auth.token.email == 'are.theman@gmail.com'
         && request.auth.token.email_verified;
     }
-    match /{document=**} {
-      allow read, write: if owner();
+    match /{collection}/{document=**} {
+      allow read, write: if owner() && collection != 'renders';
+    }
+    // Render requests (cloud/render.mjs): the page asks and approves a price;
+    // only the job (past these rules) sets the rest.
+    match /renders/{id} {
+      allow read: if owner();
+      allow create: if owner()
+        && request.resource.data.keys().hasOnly(['project', 'action', 'args', 'status', 'createdAt'])
+        && request.resource.data.status == 'requested';
+      allow update: if owner()
+        && resource.data.status == 'priced'
+        && request.resource.data.status == 'approved'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'approvedAt']);
     }
   }
 }

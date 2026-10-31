@@ -51,7 +51,9 @@ const projects = named.length ? named : Object.keys(INPUTS)
 const token = process.env.CLOUD_RUN_JOB
   ? (await (await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token', { headers: { 'Metadata-Flavor': 'Google' } })).json()).access_token
   : execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8' }).trim()
-const headers = { authorization: `Bearer ${token}`, 'x-goog-user-project': PROJECT }
+// The quota project is for the gcloud account only; the job's account bills
+// the project it runs in.
+const headers = { authorization: `Bearer ${token}`, ...(!process.env.CLOUD_RUN_JOB && { 'x-goog-user-project': PROJECT }) }
 
 // Thousands of requests: try a dropped connection or a busy server again.
 async function call(url, options = {}, tries = 4) {

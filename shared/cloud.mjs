@@ -14,6 +14,8 @@ import { createHash, randomUUID } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { relative } from 'node:path'
 
+import { cloudActions } from '../cloud/actions.mjs'
+
 const ROOT = new URL('../', import.meta.url).pathname
 const PROJECT = 'pamer-studio'
 const BUCKET = 'pamer-studio.firebasestorage.app'
@@ -216,7 +218,8 @@ async function pushPosts(id) {
 
 async function push(id) {
   const remote = await getDoc(id)
-  const fields = { ...(await pushPlan(id, remote)), ...(await pushMedia(id)) }
+  // What the Render tab may ask the render job for (cloud/actions.mjs).
+  const fields = { ...(await pushPlan(id, remote)), ...(await pushMedia(id)), renders: await cloudActions(id) }
   if (!remote && !fields.name) fields.name = id
   if (!dryRun && Object.keys(fields).length) await setFields(id, fields)
   await pushPosts(id)

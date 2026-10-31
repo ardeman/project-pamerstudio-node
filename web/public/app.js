@@ -1,11 +1,11 @@
 // Pamer Studio on the web: each project's marketing plan (tick tasks, edit it),
-// its posts (preview, approve, mark posted) and its media. shared/cloud.mjs pushes both from the Mac and pulls web edits.
+// its posts (preview, approve, mark posted), its media and cloud renders. shared/cloud.mjs pushes both from the Mac and pulls web edits.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js'
 import {
   getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js'
 import {
-  collection, doc, getFirestore, onSnapshot, serverTimestamp, updateDoc,
+  addDoc, collection, doc, getFirestore, onSnapshot, query, serverTimestamp, updateDoc, where,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js'
 import { caption, captionProblems, changePlan, chat as startChat, platforms, videoLines } from './ai.js'
 
@@ -33,6 +33,7 @@ let lang = recall('lang') || 'all'
 let editing = false
 let unsubscribe = null
 let posts = { project: null, list: [], unsubscribe: null }
+let renders = { project: null, list: [], unsubscribe: null }
 let postsFilter = recall('postsFilter') || 'todo'
 let aiMode = recall('aiMode') || 'chat'
 let aiShown = '' // the project and mode the AI view shows, so a snapshot doesn't wipe it
@@ -52,6 +53,8 @@ onAuthStateChanged(auth, (user) => {
   unsubscribe = null
   posts.unsubscribe?.()
   posts = { project: null, list: [], unsubscribe: null }
+  renders.unsubscribe?.()
+  renders = { project: null, list: [], unsubscribe: null }
   if (!allowed) return
   unsubscribe = onSnapshot(collection(db, 'projects'), (snap) => {
     projects = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
@@ -85,18 +88,21 @@ function render() {
   $('posts').hidden = view !== 'posts'
   $('media').hidden = view !== 'media'
   $('ai').hidden = view !== 'ai'
+  $('render').hidden = view !== 'render'
   const project = projects.find((p) => p.id === current)
   if (!project) {
     $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
     $('posts').innerHTML = ''
     $('media').innerHTML = ''
     $('ai').innerHTML = ''
+    $('render').innerHTML = ''
     aiShown = ''
     return
   }
   if (!editing) renderPlan(project)
   watchPosts(project)
   renderMedia(project)
+  watchRenders(project)
   if (view === 'ai' && aiShown !== `${project.id}/${aiMode}`) renderAI(project)
 }
 
@@ -411,6 +417,84 @@ function item(m) {
     <div class="actions"><a class="button small" href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>${copyText}${rewrite}</div></div></div>`
 }
 
+// Render: ask the render job in the cloud (cloud/render.mjs) for a project's
+// stills or video. A paid render is priced first, and only Approve buys it.
+
+const STATUS = {
+  requested: 'Waiting for the job', queued: 'Starting', pricing: 'Checking the price', priced: 'Waiting for approval',
+  approved: 'Approved', rendering: 'Rendering', done: 'Done', failed: 'Failed',
+}
+let renderForm = null // the action and picks being filled in, kept across snapshots
+
+function watchRenders(project) {
+  if (renders.project === project.id) return renderRenders(project)
+  renders.unsubscribe?.()
+  renders = { project: project.id, list: [], unsubscribe: null }
+  renders.unsubscribe = onSnapshot(query(collection(db, 'renders'), where('project', '==', project.id)), (snap) => {
+    renders.list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds ?? Infinity) - (a.createdAt?.seconds ?? Infinity))
+    renderRenders(latest(project))
+  })
+}
+
+function renderRenders(project) {
+  const actions = project.renders ?? []
+  if (!actions.length) {
+    $('render').innerHTML = '<p class="note">No cloud renders for this project yet: rendering stays on the Mac.</p>'
+    return
+  }
+  if (renderForm?.project !== project.id) renderForm = { project: project.id, action: actions[0].label, picks: {} }
+  const action = actions.find((a) => a.label === renderForm.action) ?? actions[0]
+  const select = (key, title, options, chosen) =>
+    `<label class="field">${esc(title)} <select data-pick="${esc(key)}">${options.map((o) => `<option value="${esc(o.value ?? '')}"${(o.value ?? '') === chosen ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select></label>`
+  const picks = action.pick.map((p, i) => select(i, p.title, p.options, renderForm.picks[i] ?? p.options[0].value ?? ''))
+  $('render').innerHTML = `
+    <form id="renderform" class="stack">
+      <div class="bar">${select('action', 'Render', actions.map((a) => ({ label: a.label, value: a.label })), action.label)}</div>
+      <div class="bar">${picks.join('')}</div>
+      <div class="bar"><button class="primary">Request</button>
+        <span class="note">${action.paid ? 'Priced first: nothing is bought until you approve.' : 'Free: no paid calls.'}</span></div>
+    </form>
+    ${renders.list.map(renderCard).join('') || '<p class="note">No requests yet.</p>'}`
+  for (const el of $('render').querySelectorAll('select[data-pick]')) {
+    el.onchange = () => {
+      if (el.dataset.pick === 'action') renderForm = { project: project.id, action: el.value, picks: {} }
+      else renderForm.picks[el.dataset.pick] = el.value
+      renderRenders(latest(project))
+    }
+  }
+  $('renderform').onsubmit = (event) => {
+    event.preventDefault()
+    const args = action.pick.map((p, i) => renderForm.picks[i] ?? p.options[0].value ?? '').filter(Boolean)
+    addDoc(collection(db, 'renders'), { project: project.id, action: action.label, args, status: 'requested', createdAt: serverTimestamp() })
+      .catch((error) => alert(error.message))
+  }
+  for (const button of $('render').querySelectorAll('button[data-approve]')) {
+    button.onclick = () => {
+      button.disabled = true
+      updateDoc(doc(db, 'renders', button.dataset.approve), { status: 'approved', approvedAt: serverTimestamp() }).catch((error) => alert(error.message))
+    }
+  }
+}
+
+function renderCard(r) {
+  const status = STATUS[r.status] ?? r.status
+  const chip = r.status === 'done' ? 'ok' : r.status === 'failed' || r.status === 'priced' ? 'warn' : ''
+  const price = r.price && !r.price.free
+    ? `<p><strong>${r.price.unit === 'dollars' ? `~$${r.price.amount}` : `~${r.price.amount} credits`}${r.price.unknown ? '+' : ''}</strong> for ${r.price.items} new · ${esc(r.price.summary.split('·').pop().trim())}</p>
+       <details><summary>What it buys</summary><pre>${esc(r.price.list)}</pre></details>`
+    : r.price?.free ? '<p class="note">Everything is cached: free.</p>' : ''
+  const approve = r.status === 'priced' ? `<div class="bar"><button class="primary" data-approve="${esc(r.id)}">Approve and render</button></div>` : ''
+  const outputs = (r.outputs ?? []).map((o) => item({ ...o, type: /\.mp4$/.test(o.path) ? 'video' : /\.(png|jpg)$/.test(o.path) ? 'image' : /\.wav$/.test(o.path) ? 'audio' : 'file' }))
+  return `<article class="post">
+    <div class="bar"><strong>${esc(r.action)}</strong><span class="note">${esc((r.args ?? []).join(' · '))}</span>
+      <span class="chip ${chip}">${esc(status)}</span><span class="note">${when(r.createdAt)}</span></div>
+    ${r.error ? `<p class="note error">${esc(r.error)}</p>` : ''}
+    ${price}${approve}
+    ${outputs.length ? `<div class="grid">${outputs.join('')}</div>` : ''}
+    ${r.log ? `<details><summary>Log</summary><pre>${esc(r.log)}</pre></details>` : ''}
+  </article>`
+}
+
 // AI: a chat about the project, captions and video lines. Answers are drafts:
 // copy them, or add them to the plan's Drafts section to reach the Mac on pull.
 
@@ -547,7 +631,7 @@ function renderLines(project) {
   $('aibody').innerHTML = `
     <form id="linesform" class="stack">
       <textarea id="linesask" rows="5" placeholder="The video: who it's about, what happens, how long, e.g. a 20-second story of a made-up student who…"></textarea>
-      <div class="bar"><button class="primary">Draft lines</button><span class="note">Rendering and voices stay on the Mac.</span></div>
+      <div class="bar"><button class="primary">Draft lines</button><span class="note">New lines go into a video on the Mac; the Render tab renders what is there.</span></div>
     </form>
     <p id="linesout" class="note" hidden></p>
     <div id="lines"></div>`
