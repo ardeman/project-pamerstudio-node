@@ -22,5 +22,8 @@ shots/
 usage.jsonl
 fal-usage.jsonl
 
+# Marketing plans live in Firestore; this is the copy `node shared/cloud.mjs pull` writes.
+*/marketing-plan.md
+
 # Firebase CLI deploy cache.
 .firebase/

@@ -9,7 +9,9 @@
 // A project with a posting calendar (calendar.json and scripts/posting.mjs) also
 // gets its posts, one document each; pull brings back what was marked posted
 // or approved on the web. A post marked posted here stays posted.
-// A plan that a push or a web save replaces is kept in projects/<id>/versions.
+// Firestore holds the plans: marketing-plan.md is a local copy that git ignores,
+// written by pull (also when it's missing). A plan that a push or a web save
+// replaces is kept in projects/<id>/versions, in place of git's history.
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
@@ -269,7 +271,7 @@ async function pullPlan(id) {
     if (remote.editedOnWeb) await setFields(id, { editedOnWeb: false, planHash: sha(local) })
     return console.log(`${id}: plan already the same`)
   }
-  if (!remote.editedOnWeb) return console.log(`${id}: not changed on the web; the file here is newer, push it`)
+  if (!remote.editedOnWeb && local) return console.log(`${id}: not changed on the web; the file here is newer, push it`)
   // Both sides changed since the last push or pull: don't lose the Mac's edits.
   if (local && sha(local) !== remote.planHash && !force) {
     throw new Error(`${id}: the plan changed both here and on the web. Merge by hand, or pull with --force to take the web's version.`)
