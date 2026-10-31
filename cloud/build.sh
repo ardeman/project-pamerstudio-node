@@ -64,5 +64,5 @@ g functions deploy render-trigger --gen2 --region "$REGION" --runtime nodejs22 -
   --entry-point trigger --service-account "$TRIGGER_SA" --trigger-service-account "$TRIGGER_SA" \
   --trigger-location "$REGION" --trigger-event-filters type=google.cloud.firestore.document.v1.written \
   --trigger-event-filters database='(default)' --trigger-event-filters-path-pattern document='renders/{id}' \
-  --memory 256Mi --max-instances 2 --no-allow-unauthenticated
+  --memory 256Mi --max-instances 1 --concurrency 1 --no-allow-unauthenticated
 g run services add-iam-policy-binding render-trigger --region "$REGION" --member "serviceAccount:$TRIGGER_SA" --role roles/run.invoker >/dev/null

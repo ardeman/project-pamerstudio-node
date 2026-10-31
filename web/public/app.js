@@ -422,7 +422,7 @@ function item(m) {
 
 const STATUS = {
   requested: 'Waiting for the job', queued: 'Starting', pricing: 'Checking the price', priced: 'Waiting for approval',
-  approved: 'Approved', rendering: 'Rendering', done: 'Done', failed: 'Failed',
+  approved: 'Approved, waiting for the job', rendering: 'Rendering', done: 'Done', failed: 'Failed',
 }
 let renderForm = null // the action and picks being filled in, kept across snapshots
 
