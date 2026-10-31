@@ -33,16 +33,20 @@ g storage buckets add-iam-policy-binding gs://pamer-studio.firebasestorage.app \
   --member "serviceAccount:$SA" --role roles/storage.objectUser >/dev/null
 # Reads the request and writes its price, status and files (cloud/render.mjs).
 g projects add-iam-policy-binding "$PROJECT" --member "serviceAccount:$SA" --role roles/datastore.user --condition None >/dev/null
-# The ElevenLabs key, read by the job only. Catat Saja's renders call no fal.ai.
-if ! g secrets describe elevenlabs-api-key >/dev/null 2>&1; then
-  grep '^ELEVENLABS_API_KEY=' .env | cut -d= -f2- | tr -d '"'"'"'\n' |
-    g secrets create elevenlabs-api-key --replication-policy automatic --data-file -
-fi
-g secrets add-iam-policy-binding elevenlabs-api-key --member "serviceAccount:$SA" --role roles/secretmanager.secretAccessor >/dev/null
+# The ElevenLabs and fal.ai keys, read by the job only. Catat Saja's renders call
+# no fal.ai; the job reads its balance for the Dashboard tab.
+for pair in elevenlabs-api-key:ELEVENLABS_API_KEY fal-api-key:FAL_API_KEY; do
+  secret=${pair%%:*} var=${pair#*:}
+  if ! g secrets describe "$secret" >/dev/null 2>&1; then
+    grep "^$var=" .env | cut -d= -f2- | tr -d '"'"'"'\n' |
+      g secrets create "$secret" --replication-policy automatic --data-file -
+  fi
+  g secrets add-iam-policy-binding "$secret" --member "serviceAccount:$SA" --role roles/secretmanager.secretAccessor >/dev/null
+done
 
 g builds submit --region "$REGION" --config cloud/cloudbuild.yaml --substitutions "_IMAGE=$IMAGE" .
 
-SECRETS=ELEVENLABS_API_KEY=elevenlabs-api-key:latest
+SECRETS=ELEVENLABS_API_KEY=elevenlabs-api-key:latest,FAL_API_KEY=fal-api-key:latest
 if g run jobs describe render --region "$REGION" >/dev/null 2>&1; then
   g run jobs update render --region "$REGION" --image "$IMAGE" --set-secrets "$SECRETS"
 else

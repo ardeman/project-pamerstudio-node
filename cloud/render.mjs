@@ -17,6 +17,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { relative } from 'node:path'
 
 import { subscription } from '../shared/eleven.mjs'
+import { balance as falBalance } from '../shared/fal.mjs'
 import { commandOf } from './actions.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
@@ -156,10 +157,12 @@ async function main() {
   await update({ status: 'done', outputs, usage: usage(), log, doneAt: new Date() })
 }
 
-// The credits left after the run, for the page's Dashboard tab (free to read).
+// The credits and fal.ai balance left after the run, for the page's Dashboard tab (free to read).
 async function balance() {
   const fields = { ...(await subscription()), checkedAt: new Date(), checkedBy: 'cloud render' }
   fields.resetsAt = new Date(fields.resetsAt)
+  const fal = await falBalance().catch((error) => console.error(error.message))
+  if (fal) Object.assign(fields, { falBalance: fal.balance, falCurrency: fal.currency, falCheckedAt: new Date(), falCheckedBy: 'cloud render' })
   const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
   await call(`${DOC.replace(/renders\/[^/]+$/, 'dashboard/account')}?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
 }

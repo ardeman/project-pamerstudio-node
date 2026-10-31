@@ -18,6 +18,7 @@ import { relative } from 'node:path'
 
 import { cloudActions } from '../cloud/actions.mjs'
 import { subscription, usage } from './eleven.mjs'
+import { balance as falBalance } from './fal.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
 const PROJECT = 'pamer-studio'
@@ -278,8 +279,8 @@ async function pullPlan(id) {
   console.log(`${id}: pulled the web's plan into ${id}/${PLAN}`)
 }
 
-// The ElevenLabs credits and usage.jsonl's paid calls for the Dashboard tab:
-// the page can't hold the key, so the Mac reads them (free) on every push.
+// The ElevenLabs credits, usage.jsonl's paid calls and the fal.ai balance for the
+// Dashboard tab: the page can't hold the keys, so the Mac reads them (free) on every push.
 async function pushAccount() {
   let account
   try {
@@ -287,10 +288,16 @@ async function pushAccount() {
   } catch (error) {
     return console.log(`credits: ${error.message}`)
   }
-  const calls = usage().slice(-200)
-  console.log(`credits: ${account.limit - account.used} of ${account.limit} left, ${calls.length} paid calls${dryRun ? ' (not pushed)' : ''}`)
+  const fields = { ...account, resetsAt: new Date(account.resetsAt), checkedAt: new Date(), checkedBy: 'Mac', usage: usage().slice(-200) }
+  console.log(`credits: ${account.limit - account.used} of ${account.limit} left, ${fields.usage.length} paid calls${dryRun ? ' (not pushed)' : ''}`)
+  try {
+    const fal = await falBalance()
+    Object.assign(fields, { falBalance: fal.balance, falCurrency: fal.currency, falCheckedAt: new Date(), falCheckedBy: 'Mac' })
+    console.log(`fal.ai: $${fal.balance.toFixed(2)} left`)
+  } catch (error) {
+    console.log(error.message)
+  }
   if (dryRun) return
-  const fields = { ...account, resetsAt: new Date(account.resetsAt), checkedAt: new Date(), checkedBy: 'Mac', usage: calls }
   const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
   await call(`${DOCS}/dashboard/account?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
 }

@@ -34,6 +34,15 @@ const headers = () => {
   return { Authorization: `Key ${key}`, 'Content-Type': 'application/json' }
 }
 
+// The prepaid balance left (free to read; needs an admin key).
+export const balance = async () => {
+  const response = await fetch('https://api.fal.ai/v1/account/billing?expand=credits', { headers: headers() })
+  if (!response.ok) throw new Error(`fal balance: ${response.status} ${await response.text()}`)
+  const { credits } = await response.json()
+  if (!credits) throw new Error('fal balance: not returned (the key needs the admin scope)')
+  return { balance: credits.current_balance, currency: credits.currency }
+}
+
 // A model's price per unit ('images', 'seconds' of video) in USD.
 const prices = {}
 const unitPrice = async (model, unit) => {

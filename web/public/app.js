@@ -539,7 +539,7 @@ function renderCard(r) {
   </article>`
 }
 
-// Dashboard: the ElevenLabs credits and what each paid call cost, as the Mac
+// Dashboard: the ElevenLabs credits, what each paid call cost and the fal.ai balance, as the Mac
 // (shared/cloud.mjs push) or the last cloud render read them; the page can't
 // hold the key to read them itself. Cloud renders' calls are on their requests.
 const num = (n) => Math.round(n ?? 0).toLocaleString('en-US')
@@ -559,6 +559,7 @@ function renderDashboard() {
   const spent = {}
   for (const u of period) spent[u.project] = (spent[u.project] ?? 0) + (u.credits ?? 0)
   const stale = Date.now() - (a.checkedAt?.toMillis?.() ?? 0) > 864e5
+  const falStale = Date.now() - (a.falCheckedAt?.toMillis?.() ?? 0) > 864e5
   const used = Math.min(100, (a.used / a.limit) * 100).toFixed(1)
   const short = (at) => new Date(at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })
   const requests = [...dash.renders].sort((x, y) => (y.createdAt?.seconds ?? Infinity) - (x.createdAt?.seconds ?? Infinity)).slice(0, 20)
@@ -569,7 +570,11 @@ function renderDashboard() {
       <div class="meter" role="img" aria-label="${num(a.used)} of ${num(a.limit)} used"><i style="width:${used}%"></i></div>
       <p class="note">${num(a.used)} of ${num(a.limit)} used · resets ${resets ? resets.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · ${esc(a.tier)} plan</p>
       ${stale ? '<p class="note">Over a day old: <code>node shared/cloud.mjs account</code> on the Mac refreshes it, and so does every cloud render.</p>' : ''}
-      <p class="note">fal.ai's balance can't be read: check it in fal's dashboard.</p>
+    </article>
+    <article class="post">
+      <div class="bar"><strong>fal.ai balance</strong>${a.falCheckedAt ? `<span class="chip ${falStale ? 'warn' : ''}">As of ${when(a.falCheckedAt)} · ${esc(a.falCheckedBy ?? '')}</span>` : ''}</div>
+      ${a.falBalance != null ? `<div class="stat">$${a.falBalance.toFixed(2)} <span>${esc(a.falCurrency ?? 'USD')} left</span></div>` : ''}
+      <p class="note">${a.falBalance != null ? 'Prepaid; read by <code>node shared/cloud.mjs account</code> on the Mac and by every cloud render.' : 'Not pushed yet: <code>node shared/cloud.mjs account</code> on the Mac reads it (the fal key needs the admin scope).'}</p>
     </article>
     <h2>Spending <span class="note">this period: ${Object.entries(spent).map(([p, c]) => `${esc(p)} ${num(c)}`).join(' · ') || 'nothing yet'}</span></h2>
     ${calls.length ? `<div class="table wide"><table>
