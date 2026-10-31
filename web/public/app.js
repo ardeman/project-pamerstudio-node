@@ -572,7 +572,7 @@ function renderDashboard() {
     <article class="post">
       <div class="bar"><strong>fal.ai balance</strong>${a.falCheckedAt ? `<span class="chip ${falStale ? 'warn' : ''}">As of ${when(a.falCheckedAt)} · ${readBy(a.falCheckedBy)}</span>` : ''}</div>
       ${a.falBalance != null ? `<div class="stat">$${a.falBalance.toFixed(2)} <span>${esc(a.falCurrency ?? 'USD')} left</span></div>` : ''}
-      <p class="note">${a.falBalance != null ? 'Prepaid; read by <code>node shared/cloud.mjs account</code> on the Mac and by every cloud render.' : 'Not pushed yet: <code>node shared/cloud.mjs account</code> on the Mac reads it (the fal key needs the admin scope).'}</p>
+      <p class="note">${a.falBalance != null ? 'Prepaid.' : 'Not pushed yet: <code>node shared/cloud.mjs account</code> on the Mac reads it (the fal key needs the admin scope).'}</p>
     </article>
     <h2>Spending <span class="note">this period: ${Object.entries(spent).map(([p, c]) => `${esc(p)} ${num(c)}`).join(' · ') || 'nothing yet'}</span></h2>
     ${calls.length ? `<div class="table wide"><table>
