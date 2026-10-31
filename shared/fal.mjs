@@ -4,7 +4,7 @@
 // Settings come from ../.env:
 //   FAL_API_KEY  required
 // Every paid call is logged to ../fal-usage.jsonl (apart from usage.jsonl,
-// which the dashboard reads as ElevenLabs credits). With --dry-run nothing is
+// which the web Dashboard shows as ElevenLabs credits). With --dry-run nothing is
 // bought: missing pictures and videos are collected for estimate(), priced by fal's own
 // pricing API.
 

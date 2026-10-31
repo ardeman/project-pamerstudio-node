@@ -34,6 +34,7 @@ let editing = false
 let unsubscribe = null
 let posts = { project: null, list: [], unsubscribe: null }
 let renders = { project: null, list: [], unsubscribe: null }
+let dash = { account: null, renders: [], unsubscribe: [] }
 let postsFilter = recall('postsFilter') || 'todo'
 let aiMode = recall('aiMode') || 'chat'
 let aiShown = '' // the project and mode the AI view shows, so a snapshot doesn't wipe it
@@ -55,7 +56,13 @@ onAuthStateChanged(auth, (user) => {
   posts = { project: null, list: [], unsubscribe: null }
   renders.unsubscribe?.()
   renders = { project: null, list: [], unsubscribe: null }
+  for (const stop of dash.unsubscribe) stop()
+  dash = { account: null, renders: [], unsubscribe: [] }
   if (!allowed) return
+  dash.unsubscribe = [
+    onSnapshot(doc(db, 'dashboard', 'account'), (snap) => { dash.account = snap.data() ?? null; if (view === 'dashboard') renderDashboard() }),
+    onSnapshot(collection(db, 'renders'), (snap) => { dash.renders = snap.docs.map((d) => ({ id: d.id, ...d.data() })); if (view === 'dashboard') renderDashboard() }),
+  ]
   unsubscribe = onSnapshot(collection(db, 'projects'), (snap) => {
     projects = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     if (!projects.some((p) => p.id === current)) current = projects[0]?.id
@@ -89,6 +96,8 @@ function render() {
   $('media').hidden = view !== 'media'
   $('ai').hidden = view !== 'ai'
   $('render').hidden = view !== 'render'
+  $('dashboard').hidden = view !== 'dashboard'
+  if (view === 'dashboard') renderDashboard()
   const project = projects.find((p) => p.id === current)
   if (!project) {
     $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
@@ -493,6 +502,54 @@ function renderCard(r) {
     ${outputs.length ? `<div class="grid">${outputs.join('')}</div>` : ''}
     ${r.log ? `<details><summary>Log</summary><pre>${esc(r.log)}</pre></details>` : ''}
   </article>`
+}
+
+// Dashboard: the ElevenLabs credits and what each paid call cost, as the Mac
+// (shared/cloud.mjs push) or the last cloud render read them; the page can't
+// hold the key to read them itself. Cloud renders' calls are on their requests.
+const num = (n) => Math.round(n ?? 0).toLocaleString('en-US')
+
+function renderDashboard() {
+  const a = dash.account
+  if (!a) {
+    $('dashboard').innerHTML = '<p class="note">No credits pushed yet: run <code>node shared/cloud.mjs account</code> on the Mac.</p>'
+    return
+  }
+  const calls = [
+    ...(a.usage ?? []).map((u) => ({ ...u, where: 'Mac' })),
+    ...dash.renders.flatMap((r) => (r.usage ?? []).map((u) => ({ ...u, where: 'Cloud' }))),
+  ].sort((x, y) => y.at.localeCompare(x.at))
+  const resets = a.resetsAt?.toDate?.()
+  const period = resets ? calls.filter((u) => Date.parse(u.at) > resets - 30 * 864e5) : calls
+  const spent = {}
+  for (const u of period) spent[u.project] = (spent[u.project] ?? 0) + (u.credits ?? 0)
+  const stale = Date.now() - (a.checkedAt?.toMillis?.() ?? 0) > 864e5
+  const used = Math.min(100, (a.used / a.limit) * 100).toFixed(1)
+  const short = (at) => new Date(at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })
+  const requests = [...dash.renders].sort((x, y) => (y.createdAt?.seconds ?? Infinity) - (x.createdAt?.seconds ?? Infinity)).slice(0, 20)
+  $('dashboard').innerHTML = `
+    <article class="post">
+      <div class="bar"><strong>ElevenLabs credits</strong><span class="chip ${stale ? 'warn' : ''}">As of ${when(a.checkedAt)} · ${esc(a.checkedBy ?? '')}</span></div>
+      <div class="stat">${num(a.limit - a.used)} <span>credits left</span></div>
+      <div class="meter" role="img" aria-label="${num(a.used)} of ${num(a.limit)} used"><i style="width:${used}%"></i></div>
+      <p class="note">${num(a.used)} of ${num(a.limit)} used · resets ${resets ? resets.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · ${esc(a.tier)} plan</p>
+      ${stale ? '<p class="note">Over a day old: <code>node shared/cloud.mjs account</code> on the Mac refreshes it, and so does every cloud render.</p>' : ''}
+      <p class="note">fal.ai's balance can't be read: check it in fal's dashboard.</p>
+    </article>
+    <h2>Spending <span class="note">this period: ${Object.entries(spent).map(([p, c]) => `${esc(p)} ${num(c)}`).join(' · ') || 'nothing yet'}</span></h2>
+    ${calls.length ? `<div class="table wide"><table>
+      <thead><tr><th>When</th><th>Where</th><th>Project</th><th>What</th><th>Size</th><th class="r">Estimate</th><th class="r">Charged</th><th class="r">Left</th></tr></thead>
+      <tbody>${calls.slice(0, 50).map((u) => `<tr><td>${esc(short(u.at))}</td><td>${u.where}</td><td>${esc(u.project)}</td><td>${esc(u.kind)} ${esc(u.lang ?? '')} ${esc(u.name)}</td>
+        <td>${u.chars ? `${u.chars} chars` : `${u.seconds} s`}</td><td class="r">${num(u.estimate)}</td><td class="r">${num(u.credits)}</td><td class="r">${num(u.left)}</td></tr>`).join('')}</tbody>
+    </table></div>` : '<p class="note">No paid calls logged yet. Each new voice clip or music track adds a row.</p>'}
+    <h2>Cloud renders <span class="note">${dash.renders.length}</span></h2>
+    ${requests.length ? `<div class="table wide"><table>
+      <thead><tr><th>When</th><th>Project</th><th>Render</th><th>Status</th><th class="r">Price</th><th class="r">Charged</th></tr></thead>
+      <tbody>${requests.map((r) => `<tr><td>${when(r.createdAt)}</td><td>${esc(r.project)}</td><td>${esc(r.action)} <span class="note">${esc((r.args ?? []).join(' · '))}</span></td>
+        <td><span class="chip ${r.status === 'done' ? 'ok' : r.status === 'failed' || r.status === 'priced' ? 'warn' : ''}">${esc(STATUS[r.status] ?? r.status)}</span></td>
+        <td class="r">${r.price?.free ? 'free' : r.price ? `${r.price.unit === 'dollars' ? `$${r.price.amount}` : num(r.price.amount)}${r.price.unknown ? '+' : ''}` : ''}</td>
+        <td class="r">${r.usage?.length ? num(r.usage.reduce((sum, u) => sum + (u.credits ?? 0), 0)) : ''}</td></tr>`).join('')}</tbody>
+    </table></div>` : '<p class="note">No cloud renders yet.</p>'}`
 }
 
 // AI: a chat about the project, captions and video lines. Answers are drafts:

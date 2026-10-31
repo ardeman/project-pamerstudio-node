@@ -8,7 +8,11 @@ service cloud.firestore {
         && request.auth.token.email_verified;
     }
     match /{collection}/{document=**} {
-      allow read, write: if owner() && collection != 'renders';
+      allow read, write: if owner() && !(collection in ['renders', 'dashboard']);
+    }
+    // The credits and paid calls (shared/cloud.mjs, cloud/render.mjs): read only.
+    match /dashboard/{id} {
+      allow read: if owner();
     }
     // Render requests (cloud/render.mjs): the page asks and approves a price;
     // only the job (past these rules) sets the rest.

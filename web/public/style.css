@@ -152,8 +152,8 @@ button:focus-visible, .button:focus-visible, input:focus-visible, textarea:focus
 .tabs button:hover { color: var(--text); }
 .tabs button.on { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
 .segmented, .filters { display: inline-flex; gap: 2px; padding: 3px; background: var(--sunken); border-radius: 10px; }
-.segmented { margin-bottom: 8px; }
-.segmented button, .filters button { border: 0; background: none; color: var(--muted); padding: 5px 14px; border-radius: 7px; }
+.segmented { margin-bottom: 8px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.segmented button, .filters button { flex: none; white-space: nowrap; border: 0; background: none; color: var(--muted); padding: 5px 14px; border-radius: 7px; }
 .segmented button:hover, .filters button:hover { color: var(--text); }
 .segmented button.on, .filters button.on { background: var(--raised); color: var(--text); box-shadow: var(--shadow), 0 0 0 1px var(--line); }
 
@@ -316,3 +316,9 @@ h2.day { display: flex; align-items: center; gap: 10px; font-size: 15px; margin:
 .post .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .post .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .post .actions .grow { flex: 1; }
+.stat { font-size: 32px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat span { font-size: 15px; font-weight: 400; color: var(--muted); }
+.meter { height: 8px; border-radius: 4px; background: var(--sunken); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+.table.wide td { white-space: nowrap; }
+th.r, td.r { text-align: right; font-variant-numeric: tabular-nums; }

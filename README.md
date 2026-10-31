@@ -4,7 +4,7 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 
 | Folder | What |
 | --- | --- |
-| `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`), instrumental music (`music`) and sound effects (`sfx`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl` (not on the dashboard, which counts ElevenLabs credits). `dashboard.mjs`: a local page with the credits, the spending and every project's stills and videos. `cloud.mjs`: puts the marketing plans and finished media on Pamer Studio on the web (below). |
+| `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`), instrumental music (`music`) and sound effects (`sfx`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl` (not on the dashboard, which counts ElevenLabs credits). `cloud.mjs`: puts the marketing plans, finished media and the credits on Pamer Studio on the web (below). |
 | `cloud/` | Rendering in the cloud (Roadmap below): the render image, `inputs.mjs`, which syncs what renders read with Storage, and the render requests from the web page (`render.mjs`, `actions.mjs`, `trigger/`). |
 | `web/` | Pamer Studio on the web (https://pamer-studio.web.app): Firebase Hosting, Firestore and Storage rules. |
 | `bedug/` | Bedug's notification sounds (app repo: `../project_bedug_flutter`). |
@@ -17,27 +17,27 @@ Copy `.env.example` to `.env` and add an ElevenLabs API key. It needs the Text t
 
 Tools: Node 24, ffmpeg, and Google Chrome (Playwright uses it to render). Capturing app screens also needs Java for the Firebase emulators: `brew install openjdk@21`, then put `/opt/homebrew/opt/openjdk@21/bin` on `PATH` when you start them.
 
-## The menu, credits and the dashboard
+## The menu and credits
 
 ```sh
 npm start                # a menu in the terminal (shared/cli.mjs)
-npm run dashboard        # or: node shared/dashboard.mjs [--no-open]
 ```
 
-`npm start` shows the credits left on top and every project's actions (each project lists them in its `menu.mjs`): move with the arrow keys, Enter to choose, Esc to go back. A paid render first runs a free `--dry-run`; if anything isn't cached it shows the cost and asks before buying. It also opens the dashboard.
+`npm start` shows the credits left on top and every project's actions (each project lists them in its `menu.mjs`): move with the arrow keys, Enter to choose, Esc to go back. A paid render first runs a free `--dry-run`; if anything isn't cached it shows the cost and asks before buying. Its last item sends the credits to the web page's Dashboard tab.
 
 
-It writes `dashboard.html` here and opens it in the browser: the ElevenLabs credits left and when they reset, the last paid calls from `usage.jsonl` (estimate, what was charged, what was left), and every project's stills and videos, filterable by language. The credits are read when you run it, on this machine, so the key never goes in the page; run it again to refresh. Both files are local and not committed. Speech to text (`check-voice.mjs`) isn't logged, but it shows in the balance.
+The Dashboard tab on the web page (below) shows the ElevenLabs credits left and when they reset, the credits each project spent this period, the last paid calls (from `usage.jsonl` on the Mac and from each cloud render: estimate, what was charged, what was left) and the latest cloud renders with their price. The page can't hold the key, so the credits are read elsewhere (free) and kept in Firestore (`dashboard/account`) with the time they were read: by every `node shared/cloud.mjs push`, by `node shared/cloud.mjs account` (only that), and by the render job at the end of every run. The tab flags them when they're over a day old. Speech to text (`check-voice.mjs`) isn't logged, but it shows in the balance. Stills stay on the Mac (`out/stills/`, `out/stories/stills/`); they aren't uploaded.
 
 Any render that goes through `eleven.mjs` also takes `--dry-run`: it buys nothing, lists the clips and tracks that aren't cached with their estimated credits (one per character; music at the rate earlier tracks cost, once one is logged), and compares the total with the balance. Without it, a clip that needs more credits than are left stops the render, unless you pass `--force`. `fal.mjs` takes `--dry-run` too, with the price in dollars; it can't read the fal balance, so check that in fal's dashboard.
 
 ## Pamer Studio on the web
 
-https://pamer-studio.web.app shows each project's marketing plan (tick tasks or edit it from a phone, with a Copy button on every campaign link) and its posts and its finished media (videos, covers, subtitles, YouTube text and captions, filterable by language). Posts shows a project's posting calendar by date: captions as each app will show them, with their length against its limit; other drafts split into what gets pasted (title, URL, text…), each with a Copy button; and the campaign links. Mark a post as posted there, or approve a caption for the server to post once scheduled posting is built (Posting kit step 4 in Coba Lagi's plan). Only the Google account `are.theman@gmail.com` can sign in. It runs on the Firebase project `pamer-studio`.
+https://pamer-studio.web.app shows each project's marketing plan (tick tasks or edit it from a phone, with a Copy button on every campaign link) and its posts and its finished media (videos, covers, subtitles, YouTube text and captions, filterable by language). Posts shows a project's posting calendar by date: captions as each app will show them, with their length against its limit; other drafts split into what gets pasted (title, URL, text…), each with a Copy button; and the campaign links. Mark a post as posted there, or approve a caption for the server to post once scheduled posting is built (Posting kit step 4 in Coba Lagi's plan). Its Dashboard tab shows the credits and spending (above). Only the Google account `are.theman@gmail.com` can sign in, and nothing shows before it does: the Firestore rules give every document only to that account, and the `dashboard` documents are read only from the page. It runs on the Firebase project `pamer-studio`.
 
 ```sh
 node shared/cloud.mjs push [project...] [--dry-run] [--force]            # plan, posts and media up
 node shared/cloud.mjs pull [project...] [--force]                         # plan edits, posted and approved back
+node shared/cloud.mjs account                                             # the credits and paid calls for the Dashboard tab
 cd web && npx -y firebase-tools deploy                                    # the page and the rules, by hand
 ```
 

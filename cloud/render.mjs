@@ -16,6 +16,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { relative } from 'node:path'
 
+import { subscription } from '../shared/eleven.mjs'
 import { commandOf } from './actions.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
@@ -155,6 +156,14 @@ async function main() {
   await update({ status: 'done', outputs, usage: usage(), log, doneAt: new Date() })
 }
 
+// The credits left after the run, for the page's Dashboard tab (free to read).
+async function balance() {
+  const fields = { ...(await subscription()), checkedAt: new Date(), checkedBy: 'cloud render' }
+  fields.resetsAt = new Date(fields.resetsAt)
+  const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
+  await call(`${DOC.replace(/renders\/[^/]+$/, 'dashboard/account')}?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
+}
+
 try {
   await main()
 } catch (error) {
@@ -162,3 +171,4 @@ try {
   await update({ status: 'failed', error: error.message, log }).catch(console.error)
   process.exitCode = 1
 }
+await balance().catch((error) => console.error('credits:', error.message))

@@ -2,6 +2,7 @@
 // (https://pamer-studio.web.app), and brings plan edits made there back. Usage:
 //   node shared/cloud.mjs push [project...] [--dry-run] [--force]
 //   node shared/cloud.mjs pull [project...] [--force]
+//   node shared/cloud.mjs account        the Dashboard tab's credits and paid calls only
 // It signs in as the gcloud account (`gcloud auth login`), so no key is stored.
 // Media uploads only what changed (by MD5) and deletes cloud files that are gone
 // here, so Storage holds only what out/ has. A plan edited on the web is never overwritten without --force.
@@ -15,6 +16,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { relative } from 'node:path'
 
 import { cloudActions } from '../cloud/actions.mjs'
+import { subscription, usage } from './eleven.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
 const PROJECT = 'pamer-studio'
@@ -271,9 +273,29 @@ async function pullPlan(id) {
   console.log(`${id}: pulled the web's plan into ${id}/${PLAN}`)
 }
 
-if (command === 'push') for (const id of projects) await push(id)
-else if (command === 'pull') for (const id of projects) await pull(id)
+// The ElevenLabs credits and usage.jsonl's paid calls for the Dashboard tab:
+// the page can't hold the key, so the Mac reads them (free) on every push.
+async function pushAccount() {
+  let account
+  try {
+    account = await subscription()
+  } catch (error) {
+    return console.log(`credits: ${error.message}`)
+  }
+  const calls = usage().slice(-200)
+  console.log(`credits: ${account.limit - account.used} of ${account.limit} left, ${calls.length} paid calls${dryRun ? ' (not pushed)' : ''}`)
+  if (dryRun) return
+  const fields = { ...account, resetsAt: new Date(account.resetsAt), checkedAt: new Date(), checkedBy: 'Mac', usage: calls }
+  const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
+  await call(`${DOCS}/dashboard/account?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
+}
+
+if (command === 'push') {
+  for (const id of projects) await push(id)
+  await pushAccount()
+} else if (command === 'pull') for (const id of projects) await pull(id)
+else if (command === 'account') await pushAccount()
 else {
-  console.log('Usage: node shared/cloud.mjs push|pull [project...] [--dry-run] [--force]')
+  console.log('Usage: node shared/cloud.mjs push|pull [project...] [--dry-run] [--force], or account')
   process.exitCode = 1
 }
