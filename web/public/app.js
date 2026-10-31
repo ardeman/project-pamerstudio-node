@@ -5,7 +5,8 @@ import {
   getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js'
 import {
-  addDoc, collection, doc, getFirestore, onSnapshot, query, serverTimestamp, updateDoc, where,
+  addDoc, collection, doc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, runTransaction,
+  serverTimestamp, updateDoc, where,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js'
 import { caption, captionProblems, changePlan, chat as startChat, platforms, videoLines } from './ai.js'
 
@@ -120,8 +121,15 @@ const latest = (project) => projects.find((p) => p.id === project.id) ?? project
 
 // The plan
 
+// The plan it replaces goes into versions (as cloud.mjs push does), in the same transaction.
 const savePlan = (project, plan) =>
-  updateDoc(doc(db, 'projects', project.id), { plan, editedOnWeb: true, updatedAt: serverTimestamp() })
+  runTransaction(db, async (t) => {
+    const ref = doc(db, 'projects', project.id)
+    const old = (await t.get(ref)).data()?.plan
+    if (old === plan) return
+    if (old) t.set(doc(collection(ref, 'versions')), { plan: old, by: 'web', savedAt: serverTimestamp() })
+    t.update(ref, { plan, editedOnWeb: true, updatedAt: serverTimestamp() })
+  })
 
 const when = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '')
 
@@ -164,8 +172,10 @@ function editPlan(project) {
     <form id="askplan" class="ask"><input id="planask" placeholder="Ask AI to change the plan, e.g. add a task to post the trailer on Threads" autocomplete="off">
       <button class="primary">Ask AI</button></form>
     <p id="planai" class="note" hidden></p>
-    <textarea id="text" spellcheck="false"></textarea>`
+    <textarea id="text" spellcheck="false"></textarea>
+    <details id="versions"><summary>Earlier versions</summary><p class="note">Loading…</p></details>`
   $('text').value = project.plan
+  $('versions').ontoggle = () => { if ($('versions').open) showVersions(project) }
   // The AI's plan only goes into the editor; it saves when Save is pressed.
   $('askplan').onsubmit = (event) => {
     event.preventDefault()
@@ -192,6 +202,31 @@ function editPlan(project) {
       alert(error.message)
       $('save').disabled = false
     }
+  }
+}
+
+// The plans that saves replaced, newest first. Restore only fills the editor.
+async function showVersions(project) {
+  const box = $('versions')
+  try {
+    const snap = await getDocs(query(collection(db, 'projects', project.id, 'versions'), orderBy('savedAt', 'desc'), limit(30)))
+    const list = snap.docs.map((d) => d.data())
+    if (!list.length) return box.querySelector('p').textContent = 'None yet: each save keeps the plan it replaces.'
+    box.innerHTML = `<summary>Earlier versions</summary><table>${list.map((v, i) =>
+      `<tr><td>${esc(when(v.savedAt))}</td><td>replaced on the ${v.by === 'web' ? 'web' : 'Mac'}</td><td>${v.plan.length.toLocaleString('en-GB')} characters</td><td><button class="small" data-version="${i}">Restore</button></td></tr>`).join('')}</table>`
+    for (const button of box.querySelectorAll('button[data-version]')) {
+      button.onclick = () => {
+        const before = $('text').value
+        const v = list[button.dataset.version]
+        $('text').value = v.plan
+        $('planai').hidden = false
+        $('planai').innerHTML = `Restored the plan from ${esc(when(v.savedAt))}. Check it, then Save. <button class="small" id="undo">Undo</button>`
+        $('undo').onclick = () => { $('text').value = before; $('planai').hidden = true }
+        $('planai').scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  } catch (error) {
+    box.querySelector('p').textContent = error.message
   }
 }
 

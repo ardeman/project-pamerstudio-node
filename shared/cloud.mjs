@@ -9,6 +9,7 @@
 // A project with a posting calendar (calendar.json and scripts/posting.mjs) also
 // gets its posts, one document each; pull brings back what was marked posted
 // or approved on the web. A post marked posted here stays posted.
+// A plan that a push or a web save replaces is kept in projects/<id>/versions.
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
@@ -75,6 +76,9 @@ const setFields = (id, fields) => {
   const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
   return call(`${DOCS}/projects/${id}?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
 }
+// The plan a save replaces, so the web page can show and restore it.
+const saveVersion = (id, plan, by) =>
+  call(`${DOCS}/projects/${id}/versions`, { method: 'POST', body: JSON.stringify({ fields: toFields({ plan, by, savedAt: new Date() }) }) })
 const listPosts = async (id) => {
   const res = await call(`${DOCS}/projects/${id}/posts?pageSize=300`)
   return new Map((res?.documents ?? []).map((d) => [d.name.split('/').pop(), fromFields(d.fields ?? {})]))
@@ -137,6 +141,7 @@ async function pushPlan(id, remote) {
     throw new Error(`${id}: the plan was changed on the web. Run \`node shared/cloud.mjs pull ${id}\` first, or push with --force to overwrite it.`)
   }
   console.log(`${id}: plan ${dryRun ? 'would be ' : ''}pushed`)
+  if (remote?.plan && !dryRun) await saveVersion(id, remote.plan, 'Mac')
   return { name, plan, planHash: sha(plan), editedOnWeb: false, updatedAt: new Date() }
 }
 

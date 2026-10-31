@@ -7,8 +7,17 @@ service cloud.firestore {
         && request.auth.token.email == 'are.theman@gmail.com'
         && request.auth.token.email_verified;
     }
-    match /{collection}/{document=**} {
-      allow read, write: if owner() && !(collection in ['renders', 'dashboard']);
+    // Each rule that matches can grant access, so no wildcard: it would let
+    // the page change versions too.
+    match /projects/{id} {
+      allow read, write: if owner();
+    }
+    match /projects/{id}/posts/{post} {
+      allow read, write: if owner();
+    }
+    // Old plans (shared/cloud.mjs push and the page's saves): kept, never changed.
+    match /projects/{id}/versions/{version} {
+      allow read, create: if owner();
     }
     // The credits and paid calls (shared/cloud.mjs, cloud/render.mjs): read only.
     match /dashboard/{id} {
