@@ -138,16 +138,13 @@ function renderPlan(project) {
     $('plan').innerHTML = '<p class="note">This project has no marketing plan.</p>'
     return
   }
-  const state = project.editedOnWeb
-    ? '<span class="chip warn" title="Run node shared/cloud.mjs pull on the Mac">Changed here: pull it on the Mac</span>'
-    : '<span class="chip ok">Same as on the Mac</span>'
   const tasks = project.plan.match(/^\s*(-|\d+\.)\s+\[( |x)\]/gm) ?? []
   const done = tasks.filter((t) => t.includes('[x]')).length
   const progress = tasks.length
     ? `<span class="progress"><span class="track"><span class="fill" style="width:${(100 * done) / tasks.length}%"></span></span>${done} of ${tasks.length} done</span>`
     : ''
   $('plan').innerHTML = `
-    <div class="bar">${state}${progress}<span class="grow"></span><span class="note">Updated ${esc(when(project.updatedAt))}</span><button id="edit">Edit</button></div>
+    <div class="bar">${progress}<span class="grow"></span><span class="note">Updated ${esc(when(project.updatedAt))}</span><button id="edit">Edit</button></div>
     <article class="doc">${markdown(project.plan)}</article>`
   $('edit').onclick = () => editPlan(project)
   countTasks($('plan'))
@@ -543,6 +540,7 @@ function renderCard(r) {
 // (shared/cloud.mjs push) or the last cloud render read them; the page can't
 // hold the key to read them itself. Cloud renders' calls are on their requests.
 const num = (n) => Math.round(n ?? 0).toLocaleString('en-US')
+const readBy = (by) => (by === 'Mac' ? 'read on the Mac' : by ? `read by a ${esc(by)}` : '')
 
 function renderDashboard() {
   const a = dash.account
@@ -565,14 +563,14 @@ function renderDashboard() {
   const requests = [...dash.renders].sort((x, y) => (y.createdAt?.seconds ?? Infinity) - (x.createdAt?.seconds ?? Infinity)).slice(0, 20)
   $('dashboard').innerHTML = `
     <article class="post">
-      <div class="bar"><strong>ElevenLabs credits</strong><span class="chip ${stale ? 'warn' : ''}">As of ${when(a.checkedAt)} · ${esc(a.checkedBy ?? '')}</span></div>
+      <div class="bar"><strong>ElevenLabs credits</strong><span class="chip ${stale ? 'warn' : ''}">As of ${when(a.checkedAt)} · ${readBy(a.checkedBy)}</span></div>
       <div class="stat">${num(a.limit - a.used)} <span>credits left</span></div>
       <div class="meter" role="img" aria-label="${num(a.used)} of ${num(a.limit)} used"><i style="width:${used}%"></i></div>
       <p class="note">${num(a.used)} of ${num(a.limit)} used · resets ${resets ? resets.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · ${esc(a.tier)} plan</p>
       ${stale ? '<p class="note">Over a day old: <code>node shared/cloud.mjs account</code> on the Mac refreshes it, and so does every cloud render.</p>' : ''}
     </article>
     <article class="post">
-      <div class="bar"><strong>fal.ai balance</strong>${a.falCheckedAt ? `<span class="chip ${falStale ? 'warn' : ''}">As of ${when(a.falCheckedAt)} · ${esc(a.falCheckedBy ?? '')}</span>` : ''}</div>
+      <div class="bar"><strong>fal.ai balance</strong>${a.falCheckedAt ? `<span class="chip ${falStale ? 'warn' : ''}">As of ${when(a.falCheckedAt)} · ${readBy(a.falCheckedBy)}</span>` : ''}</div>
       ${a.falBalance != null ? `<div class="stat">$${a.falBalance.toFixed(2)} <span>${esc(a.falCurrency ?? 'USD')} left</span></div>` : ''}
       <p class="note">${a.falBalance != null ? 'Prepaid; read by <code>node shared/cloud.mjs account</code> on the Mac and by every cloud render.' : 'Not pushed yet: <code>node shared/cloud.mjs account</code> on the Mac reads it (the fal key needs the admin scope).'}</p>
     </article>
