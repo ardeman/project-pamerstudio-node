@@ -90,7 +90,7 @@ ${p[langOf(video)].replaceAll('{store}', store)}
 // What YouTube refuses or would show unfilled, for every video either way.
 function check(version) {
   const problems = []
-  const expected = ['promo-en', 'promo-id', 'short-en', 'short-id']
+  const expected = ['promo-en', 'promo-id', 'short-2-en', 'short-2-id', 'short-en', 'short-id']
   const videos = Object.keys(copy.videos)
   if (videos.sort().join() !== expected.join()) problems.push(`videos are ${videos}, expected ${expected}`)
   for (const video of videos) {

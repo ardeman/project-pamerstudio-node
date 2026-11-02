@@ -8,7 +8,7 @@ export const menu = [
     label: 'Promo · render videos (free once Koba\'s lines are cached)',
     script: 'scripts/render.mjs',
     pick: [
-      { title: 'Video', options: ['all', 'short', 'promo'] },
+      { title: 'Video', options: ['all', 'short', 'short-2', 'promo'] },
       { title: 'Store line', options: [{ label: 'coming soon', value: 'soon' }, { label: 'live on Google Play', value: 'live' }] },
     ],
   },

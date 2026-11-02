@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for the promo videos (short-video.sh, promo-video.sh).
+# Shared helpers for the promo videos (short-video.sh, short-video-2.sh, promo-video.sh).
 # Cards are HTML rendered by headless Chrome; gameplay comes from the frames
 # that the app repo's tool/screenshots records of the "Watch me!" demos, the
 # story scenes and a bump being fixed (run there):

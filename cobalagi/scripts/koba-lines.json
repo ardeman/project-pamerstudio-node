@@ -3,5 +3,9 @@
   "hook": {
     "en": "Oh no! The wind took my stars!",
     "id": "Gawat! Bintangku tertiup angin!"
+  },
+  "fog": {
+    "en": "Oh no! This fog is so thick, I can't see the path!",
+    "id": "Aduh! Kabutnya tebal sekali, aku tidak bisa melihat jalan!"
   }
 }
