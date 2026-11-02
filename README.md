@@ -157,7 +157,7 @@ Promo videos, each in Indonesian and English, showing real gameplay from the app
 - **Promo** (`promo-video.sh`): landscape, 1920 × 1080, about 50 seconds, for YouTube and the Play listing's video, with a `thumbnail-<lang>.jpg` for YouTube.
 - **App Store header and search result** (`app-store-video.sh`, `app-store-header-<lang>.mp4` and `app-store-search-<lang>.mp4`): the listing's only Header and Search Results assets (the app repo has no stills for them), 13 seconds at 30 fps, at Apple's sizes (3840 × 1646, 21:9, and 3840 × 2560, 3:2; 5 to 30 seconds). The header shows only the app, since the page shows its name and icon right below: iPhone 17s and iPad Pros fanned out and tilted (a big iPhone in the middle, as in Bedug's header), each playing a demo, with everything that matters inside the middle 66% an iPhone shows and clear of its Dynamic Island and round buttons. The search result puts Koba and the tagline over an iPad Pro and an iPhone 17 playing the demos. The devices are in Apple's product bezels with their status bars, read from the app repo's `store/bezels/` (its `tool/fetch_bezels.sh`; their license allows them only in App Store material, so they are never copied here) and drawn by its `store/device.mjs`. Each screen is filled with the app's light top colour, measured in Chrome and keyed out, so the gameplay shows through with the status bar over it. Apple loops them and starts them muted (search results can't be unmuted), so nothing depends on sound; the header has the music for viewers who unmute it. Upload them in App Store Connect under Header and Search Results.
 
-The videos name no store in their pictures (the short ends on the website, which links to every store), so the same files stay right once the app is public on Google Play. Only their YouTube text changes: `live` (`STORE=live`) puts the Play link in the descriptions. Cards are HTML shot by headless Chrome in a taller window and cropped, because its page is now and then a little short and left a strip at the bottom.
+The videos name no store in their pictures (the short ends on the website, which links to every store), so the same files stay right once the app is public on Google Play. Only their YouTube text changes: `live` (the default) puts the Play link in the descriptions, `soon` (`STORE=soon`) says it's coming. Cards are HTML shot by headless Chrome in a taller window and cropped, because its page is now and then a little short and left a strip at the bottom.
 
 The scripts work from the app repo (`COBALAGI_APP`, `../project_cobalagi_flutter` by default), which has what they show: `website/screenshots/`, the voice clips and music in `assets/audio/`, the words in `lib/app/l10n/`, the robot art and the version in `pubspec.yaml`. Only the videos are written here.
 
@@ -189,7 +189,7 @@ VIDEO_FRAMES=1 flutter test tool/screenshots --update-goldens --plain-name 'vide
 Render, from this folder:
 
 ```sh
-node cobalagi/scripts/render.mjs [short|short-2|promo|app-store|all] [soon|live]
+node cobalagi/scripts/render.mjs [short|short-2|promo|app-store|all] [live|soon]
 node cobalagi/scripts/youtube-text.mjs --check    # YouTube's limits, for every video
 node cobalagi/scripts/calendar.mjs [--all]        # posting calendar: what is not posted yet, with links
 node cobalagi/scripts/calendar.mjs --posted <id> [YYYY-MM-DD] [notes]
@@ -203,7 +203,7 @@ Rendering a video also writes `out/<video>.youtube.txt`, with the title, the des
 
 - **Other platforms:** each short's `.youtube.txt` ends with OTHER PLATFORMS, a caption per app (Instagram, Facebook, WhatsApp Status, Threads, LinkedIn, TikTok) from `social` in `youtube.json`; the same vertical file goes to all of them. Each caption is checked against its app's limits in `posting.mjs`.
 - **Titles carry the app's version** at the time the video is made (`{version}`, the version name in the app's `pubspec.yaml`), so an upload always says which app it shows. A title without `{version}` is refused.
-- **The store line** (`{store}` in descriptions) says "Coming soon to Google Play" until the app is public; then render with `live`.
+- **The store line** (`{store}` in descriptions) gives the Google Play link (`live`, the default: the app is on Play since 2026-10-30); `soon` says "Coming soon to Google Play".
 - **Claims stay true** for the released app, as in its store listing, and both languages say the same.
 - `youtube-text.mjs` refuses to write while any video breaks YouTube's limits (title 100, description 5,000 characters, no angle brackets) or leaves a `{…}` unfilled; `--check` runs just that.
 - Settings: category Education, comments moderated Strict, AI use No (no realistic synthetic content), "Made for Kids" left to the channel owner (recommended No: the videos speak to parents).

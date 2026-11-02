@@ -3,8 +3,8 @@
 // finishes a video:
 //   node cobalagi/scripts/youtube-text.mjs <video> <out.txt>
 // where <video> is the file name without .mp4 (promo-en, short-id, ...).
-// The title carries the app's version name from its pubspec.yaml; STORE=live
-// swaps "Coming soon" for the Google Play link.
+// The title carries the app's version name from its pubspec.yaml; it gives the
+// Google Play link unless STORE=soon.
 //   node cobalagi/scripts/youtube-text.mjs --check
 // checks every video's text against YouTube's limits, without writing.
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -133,7 +133,7 @@ if (problems.length) {
 if (args[0] === '--check') {
   console.log(`YouTube text OK for Coba Lagi ${version}`)
 } else if (args.length === 2) {
-  writeFileSync(args[1], youtubeText(args[0], { version, live: process.env.STORE === 'live' }))
+  writeFileSync(args[1], youtubeText(args[0], { version, live: process.env.STORE !== 'soon' }))
 } else {
   console.error('Usage: node cobalagi/scripts/youtube-text.mjs <video> <out.txt> | --check')
   process.exit(64)

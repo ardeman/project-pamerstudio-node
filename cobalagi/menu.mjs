@@ -9,7 +9,7 @@ export const menu = [
     script: 'scripts/render.mjs',
     pick: [
       { title: 'Video', options: ['all', 'short', 'short-2', 'promo'] },
-      { title: 'Store line', options: [{ label: 'coming soon', value: 'soon' }, { label: 'live on Google Play', value: 'live' }] },
+      { title: 'Store line', options: [{ label: 'live on Google Play', value: 'live' }, { label: 'coming soon', value: 'soon' }] },
     ],
   },
   { label: 'Promo · check YouTube text', script: 'scripts/youtube-text.mjs', flags: ['--check'] },
