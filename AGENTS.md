@@ -51,4 +51,4 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 
 ## Keeping docs current
 
-When you change a command, the layout or the setup, update `README.md`; when you change a rule, update this file. `CLAUDE.md` contains only the import of this file.
+When you change a command, the layout or the setup, update `README.md`; when you change a rule, update this file. `CLAUDE.md` contains only the import of this file, and `.github/copilot-instructions.md` only a pointer to it.
