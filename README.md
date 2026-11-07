@@ -8,6 +8,7 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 | `cloud/` | Rendering in the cloud (below): the render image, `inputs.mjs`, which syncs what renders read with Storage, and the render requests from the web page (`render.mjs`, `actions.mjs`, `trigger/`). |
 | `web/` | Pamer Studio on the web (https://pamer-studio.web.app): Firebase Hosting, Firestore and Storage rules. |
 | `bedug/` | Bedug's notification sounds (app repo: `../project_bedug_flutter`). |
+| `krida/` | Krida's in-game sounds, voice lines and music (app repo: `../project-krida-kmp`). |
 | `catatsaja/` | Catat Saja promo videos (app repo: `../project-catatsaja-reactrouter`). |
 | `cobalagi/` | Coba Lagi promo videos (app repo: `../project_cobalagi_flutter`). |
 
@@ -83,6 +84,16 @@ node bedug/scripts/export.mjs [--dry-run]   # free while every take is cached
 ```
 
 The timing of the bedug's hits is at the top of `export.mjs`; changing it costs nothing. A changed prompt buys a new take.
+
+## Krida
+
+The congklak game's sounds (made 2026-11-07, 487 credits in all, about 430 of them the music): seven sound effects (seed into a hole, seed into the store, capture, turn chime, win, lose; the button tap reuses the seed click, since the sound model only gave near-silent taps), six Indonesian voice lines in Gavrila's voice (a native speaker from the library, as in Catat Saja's stories: "Giliranmu!", "Giliran lawan.", "Tembak!", "Kamu menang!", "Kamu kalah.", "Seri!") and a 60-second calm gamelan track that loops. `krida/scripts/sounds.mjs` holds the prompts and lines (cached in `krida/audio/`); `krida/scripts/export.mjs` trims each sound to its onset, levels it and writes `krida/out/<name>.m4a` (AAC, mono; the music in stereo, its last 2 seconds faded over its start so it loops without a seam), about 850 KB in all.
+
+```sh
+node krida/scripts/export.mjs [--dry-run]   # free while everything is cached
+cp krida/out/*.m4a ../project-krida-kmp/ios/Krida/Audio/
+cp krida/out/*.m4a ../project-krida-kmp/androidApp/src/main/res/raw/
+```
 
 ## Catat Saja
 
