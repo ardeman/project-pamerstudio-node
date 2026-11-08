@@ -36,6 +36,21 @@ export const effects = {
     prompt:
       'A handful of small cowrie shells scooped up and poured together into a deep wooden bowl: a quick satisfying rattling cascade of shells, close up, no reverb, no voices, no music',
   },
+  // Ular tangga: a wooden die on the wooden board, and a pawn hopping one square.
+  die: {
+    name: 'die',
+    seconds: 0.5,
+    model: MODEL,
+    prompt:
+      'One single small wooden dice hitting a hard wooden table once: a sharp, hollow, bright clack, close up, one hit only, no rolling, no reverb, no other sounds',
+  },
+  step: {
+    name: 'step',
+    seconds: 0.5,
+    model: MODEL,
+    prompt:
+      'A small rounded wooden game pawn set down once on a soft cloth-covered wooden board: a short, low, muffled, gentle tok, close up, one touch only, no reverb, no other sounds',
+  },
   turn: {
     name: 'turn',
     seconds: 0.6,

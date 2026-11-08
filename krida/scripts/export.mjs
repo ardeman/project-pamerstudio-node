@@ -18,7 +18,7 @@ const run = (command, ...args) => {
 }
 
 // Seed clicks repeat many times a move, so they sit below the voice.
-const quiet = new Set(['sfx_sow', 'sfx_store', 'sfx_tap'])
+const quiet = new Set(['sfx_sow', 'sfx_store', 'sfx_tap', 'sfx_die', 'sfx_step'])
 
 const files = await make()
 if (dryRun) {
