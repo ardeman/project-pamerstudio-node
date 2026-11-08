@@ -1,5 +1,5 @@
-// Krida's in-game sounds: congklak sound effects and short Indonesian voice
-// lines, made with ElevenLabs and cached in krida/audio/. export.mjs turns
+// Krida's in-game sounds: congklak sound effects and short voice lines in
+// Indonesian and English, made with ElevenLabs and cached in krida/audio/. export.mjs turns
 // them into the app's files.
 //   node krida/scripts/sounds.mjs [--dry-run] [--force]
 
@@ -67,6 +67,17 @@ export const lines = {
   draw: 'Seri!',
 }
 
+// The same lines for the English app, in the same voice so the game keeps
+// one narrator. Exported as vo_<key>_en.
+export const linesEn = {
+  your_turn: 'Your turn!',
+  their_turn: "Opponent's turn.",
+  shoot: 'Shoot!',
+  win: 'You win!',
+  lose: 'You lose.',
+  draw: "It's a draw!",
+}
+
 // Background music under the menus and the board: calm enough to think over,
 // looped in the app (export.mjs crossfades its ends).
 export const bgm = {
@@ -84,6 +95,8 @@ export const make = async () => {
   files.sfx_tap = files.sfx_sow
   for (const [key, text] of Object.entries(lines))
     files[`vo_${key}`] = (await speak({ dir, lang: 'id', name: `vo-${key}`, text, voice: VOICE })).file
+  for (const [key, text] of Object.entries(linesEn))
+    files[`vo_${key}_en`] = (await speak({ dir, lang: 'en', name: `vo-${key}-en`, text, voice: VOICE })).file
   return files
 }
 
