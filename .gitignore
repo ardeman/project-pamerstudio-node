@@ -20,6 +20,8 @@ audio/
 art/
 out/
 shots/
+# Launch-motion shot symlinks into store-screenshots (not capture caches).
+!krida/launch-motion/shots/
 
 # Spending logs, written by shared/.
 usage.jsonl

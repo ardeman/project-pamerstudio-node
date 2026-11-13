@@ -1,7 +1,8 @@
-// Krida product-launch-motion film.
+// Krida product-launch-motion film (real app captures inside seek(t)).
 //   node krida/launch-motion/render.mjs --stills [en|id|all]
 //   node krida/launch-motion/render.mjs [en|id|all] [--blur] [--silent]
-// Audio uses cached krida/out sfx + bgm only (free). --silent skips the mix.
+// Captures: shots/{en,id}/*.png → store-screenshots iPhone PNGs (symlinks).
+// Audio: cached krida/out bgm + sfx (free).
 
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -17,13 +18,11 @@ const HTML = join(ROOT, 'film.html')
 
 const DURATION = 12
 const SIZE = 1080
-// One still near each beat (plus a couple of holds).
 const BEAT_TIMES = Array.from({ length: 24 }, (_, i) => i * 0.5 + 0.12)
 
 const SFX_FILES = {
   tap: 'sfx_tap.m4a',
   sow: 'sfx_sow.m4a',
-  capture: 'sfx_capture.m4a',
   store: 'sfx_store.m4a',
   win: 'sfx_win.m4a',
   turn: 'sfx_turn.m4a',
@@ -42,17 +41,14 @@ async function buildAudio() {
   // Keep in sync with film.html window.CUES.
   const cues = [
     { at: 0.5, sfx: 'tap' },
-    { at: 1.0, sfx: 'sow' },
-    { at: 1.5, sfx: 'sow' },
-    { at: 2.0, sfx: 'sow' },
-    { at: 2.5, sfx: 'sow' },
-    { at: 3.0, sfx: 'sow' },
-    { at: 3.5, sfx: 'sow' },
-    { at: 4.0, sfx: 'capture' },
-    { at: 5.0, sfx: 'store' },
-    { at: 6.0, sfx: 'tap' },
-    { at: 7.0, sfx: 'win' },
-    { at: 8.0, sfx: 'turn' },
+    { at: 1.6, sfx: 'tap' },
+    { at: 2.75, sfx: 'sow' },
+    { at: 3.25, sfx: 'sow' },
+    { at: 3.75, sfx: 'sow' },
+    { at: 4.25, sfx: 'store' },
+    { at: 5.25, sfx: 'tap' },
+    { at: 6.75, sfx: 'turn' },
+    { at: 8.0, sfx: 'win' },
   ].map((c) => ({ at: c.at, file: join(SFX, SFX_FILES[c.sfx]) }))
   const mixPath = join(OUT, 'mix.m4a')
   await mixSfx({

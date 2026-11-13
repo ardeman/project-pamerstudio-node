@@ -1,16 +1,22 @@
 # Krida · launch-motion
 
-12 s one-shape congklak loop (1080², 120 BPM): play → sow → holes → capture →
-store → your turn → win → wordmark → tagline → loop.
+12 s one-shape loop (1080², 120 BPM) with **real app captures** inside the
+morphing card:
 
-Stylized UI chrome only — not store screenshots. EN + ID via `?lang=`.
-Audio from cached `krida/out/` (`bgm.m4a` + `sfx_*.m4a`) — free. Use `--silent` to skip.
+| Beat | Shot (`shots/{lang}/`) | Source |
+| --- | --- | --- |
+| Lobby | `lobby.png` | iPhone `01-hero.png` |
+| Board | `board.png` | iPhone `02-boards-a.png` (congklak) |
+| Emotes | `emotes.png` | iPhone `05-emotes.png` |
+| Match | `match.png` | iPhone `04-matchmaking.png` |
+
+Symlinks into `store-screenshots/public/screenshots/apple/iphone/{lang}/`.
+EN + ID. Audio from cached `krida/out/` bgm + sfx (free).
 
 ```sh
 node krida/launch-motion/render.mjs --stills
-node krida/launch-motion/render.mjs              # MP4 + bgm + SFX
+node krida/launch-motion/render.mjs
 node krida/launch-motion/render.mjs --silent
-node krida/launch-motion/render.mjs --blur       # slower, motion blur
 ```
 
 Skill: `../../.agents/skills/product-launch-motion/SKILL.md`.

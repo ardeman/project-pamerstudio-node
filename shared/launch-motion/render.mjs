@@ -31,6 +31,11 @@ async function openFilm(browser, htmlPath, { width, height, lang }) {
   await page.goto(url)
   await page.waitForFunction(() => typeof window.seek === 'function')
   if (lang) await page.evaluate((l) => window.setLang?.(l), lang)
+  // Wait for any <img> shots (file:// captures) so stills aren’t blank.
+  await page.waitForFunction(() => {
+    const imgs = [...document.images]
+    return imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0)
+  }, { timeout: 20000 })
   return page
 }
 
