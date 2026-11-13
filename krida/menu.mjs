@@ -12,13 +12,4 @@ export const menu = [
     label: 'Sounds · copy into app repo',
     script: 'scripts/install-audio.mjs',
   },
-  {
-    label: 'Launch motion · stills (free)',
-    script: 'launch-motion/render.mjs',
-    flags: ['--stills'],
-  },
-  {
-    label: 'Launch motion · silent MP4 preview',
-    script: 'launch-motion/render.mjs',
-  },
 ]
