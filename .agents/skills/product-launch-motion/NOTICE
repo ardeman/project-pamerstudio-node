@@ -1,0 +1,21 @@
+NOTICE — product-launch-motion in Pamer Studio
+==============================================
+
+This skill is adapted from AbubakrChan/product-launch-motion
+(https://github.com/AbubakrChan/product-launch-motion), MIT License,
+Copyright (c) 2026 Abubakr Chan. See LICENSE in this folder.
+
+What we keep here
+-----------------
+- Creative direction and process (adapted SKILL.md)
+- references/prompts.md and references/technique.md (verbatim from upstream)
+
+What we do not ship
+-------------------
+- Upstream sample films, webp previews, or Cheerful brand assets
+- legacy/ v1 HyperFrames / GSAP stack (use the existing Pamer VO promo
+  pipelines for narrated explainers)
+
+Pamer-specific code (shared/launch-motion/, per-app films under krida/ etc.)
+is part of this studio and is not covered by the upstream NOTICE’s film
+restrictions — but still must not reuse Cheerful’s sample pixels.

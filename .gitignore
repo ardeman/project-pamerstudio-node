@@ -12,6 +12,9 @@ node_modules
 .DS_Store
 *.log
 
+# Local scratch (clones, one-off dumps).
+.tmp/
+
 # Generated media and paid audio and picture caches. Keep caches on disk for re-renders.
 audio/
 art/
