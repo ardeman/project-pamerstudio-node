@@ -27,3 +27,10 @@ fal-usage.jsonl
 
 # Firebase CLI deploy cache.
 .firebase/
+
+# Krida store screenshot editor (Next.js)
+store-screenshots/.next/
+store-screenshots/.e2e/
+store-screenshots/*.tsbuildinfo
+store-screenshots/next-env.d.ts
+store-screenshots/.env*.local

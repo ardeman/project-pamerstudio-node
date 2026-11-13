@@ -7,7 +7,9 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 | `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`), instrumental music (`music`) and sound effects (`sfx`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl`; its balance is on the dashboard. `cloud.mjs`: puts the marketing plans, finished media and the credits on Pamer Studio on the web (below). |
 | `cloud/` | Rendering in the cloud (below): the render image, `inputs.mjs`, which syncs what renders read with Storage, and the render requests from the web page (`render.mjs`, `actions.mjs`, `trigger/`). |
 | `web/` | Pamer Studio on the web (https://pamer-studio.web.app): Firebase Hosting, Firestore and Storage rules. |
+| `.agents/skills/` | Canonical marketing agent skills (reuse via `~/.cursor/skills/` + per-app symlinks). `app-store-screenshots` scaffolds the shared editor in `store-screenshots/`. |
 | `bedug/` | Bedug's notification sounds (app repo: `../project_bedug_flutter`). |
+| `store-screenshots/` | Shared App Store / Play screenshot editor for every app (skill `app-store-screenshots`). Peer of `web/`, not under each app folder. |
 | `krida/` | Krida's in-game sounds, voice lines and music (app repo: `../project-krida-kmp`). |
 | `catatsaja/` | Catat Saja promo videos (app repo: `../project-catatsaja-reactrouter`). |
 | `cobalagi/` | Coba Lagi promo videos (app repo: `../project_cobalagi_flutter`). |
@@ -87,12 +89,15 @@ The timing of the bedug's hits is at the top of `export.mjs`; changing it costs 
 
 ## Krida
 
-The congklak game's sounds (made 2026-11-07, 487 credits in all, about 430 of them the music): seven sound effects (seed into a hole, seed into the store, capture, turn chime, win, lose; the button tap reuses the seed click, since the sound model only gave near-silent taps), six Indonesian voice lines in Gavrila's voice (a native speaker from the library, as in Catat Saja's stories: "Giliranmu!", "Giliran lawan.", "Tembak!", "Kamu menang!", "Kamu kalah.", "Seri!"; the same six in English as `vo_<line>_en`, added 2026-11-08 for 61 credits: "Your turn!", "Opponent's turn.", "Shoot!", "You win!", "You lose.", "It's a draw!") and a 60-second calm gamelan track that loops. Ular tangga added two effects on 2026-11-08 for about 16 credits: `sfx_die`, a wooden die's clack on each bounce, and `sfx_step`, a pawn's soft tok on each square. `krida/scripts/sounds.mjs` holds the prompts and lines (cached in `krida/audio/`); `krida/scripts/export.mjs` trims each sound to its onset, levels it and writes `krida/out/<name>.m4a` (AAC, mono; the music in stereo, its last 2 seconds faded over its start so it loops without a seam), about 900 KB in all.
+The congklak game's sounds (made 2026-11-07, 487 credits in all, about 430 of them the music): seven sound effects (seed into a hole, seed into the store, capture, turn chime, win, lose; the button tap reuses the seed click, since the sound model only gave near-silent taps), six Indonesian voice lines in Gavrila's voice (a native speaker from the library, as in Catat Saja's stories: "Giliranmu!", "Giliran lawan.", "Tembak!", "Kamu menang!", "Kamu kalah.", "Seri!"; the same six in English as `vo_<line>_en`, added 2026-11-08 for 61 credits: "Your turn!", "Opponent's turn.", "Shoot!", "You win!", "You lose.", "It's a draw!") and a 60-second calm gamelan track that loops. Ular tangga added two effects on 2026-11-08 for about 16 credits: `sfx_die`, a wooden die's clack on each bounce, and `sfx_step`, a pawn's soft tok on each square. Seven more lines were added on 2026-11-12 for about 153 credits, each in both languages: ludo's "Pilih bidakmu!" / "Tap a token to move!", "Lempar lagi!" / "Roll again!", "Kena!" / "Captured!" and "Masuk rumah!" / "Token home!", ular tangga's "Naik tangga!" / "Up the ladder!" and "Digigit ular!" / "Snake bite!", and gaple's "Pas!" / "Pass!". `krida/scripts/sounds.mjs` holds the prompts and lines (cached in `krida/audio/`); `krida/scripts/export.mjs` trims each sound to its onset, levels it and writes `krida/out/<name>.m4a` (AAC, mono; the music in stereo, its last 2 seconds faded over its start so it loops without a seam), about 900 KB in all.
+
+`npm start` lists Krida once `krida/menu.mjs` is present (same pattern as Catat Saja and Coba Lagi). App path: `KRIDA_APP` or `../project-krida-kmp` (`scripts/app.mjs`). Store screenshots use the shared editor at `store-screenshots/` (also in `npm start` under that name).
 
 ```sh
+npm start                                   # Krida sounds + shared screenshot editor
 node krida/scripts/export.mjs [--dry-run]   # free while everything is cached
-cp krida/out/*.m4a ../project-krida-kmp/ios/Krida/Audio/
-cp krida/out/*.m4a ../project-krida-kmp/androidApp/src/main/res/raw/
+node krida/scripts/install-audio.mjs        # copy out/*.m4a into the app repo
+node store-screenshots/scripts/dev.mjs      # editor at http://localhost:3456/
 ```
 
 ## Catat Saja
