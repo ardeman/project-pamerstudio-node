@@ -4,8 +4,11 @@
   <meta charset="utf-8" />
   <title>Krida · launch motion pilot</title>
   <style>
-    html, body { margin: 0; width: 100%; height: 100%; background: #E39A5C; overflow: hidden; }
-    body { font-family: "SF Pro Display", "Segoe UI", system-ui, sans-serif; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: "SF Pro Rounded", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at 35% 25%, #F7D7B5 0%, #E39A5C 100%);
+    }
     #stage { position: absolute; inset: 0; }
     #world {
       position: absolute; left: 0; top: 0;
@@ -21,36 +24,57 @@
       flex-direction: column;
       overflow: hidden;
       box-shadow: 0 18px 40px rgba(43, 33, 26, 0.18);
-      will-change: auto; /* never will-change on camera-scaled nodes */
+    }
+    #seeds {
+      position: absolute; inset: 0;
+      pointer-events: none;
+    }
+    #seeds span {
+      position: absolute; width: 14px; height: 14px; border-radius: 50%;
+      background: #8F552A;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,.15);
+      transform: translate(-50%, -50%);
     }
     #label {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 10px;
+      flex-direction: column; gap: 8px;
       pointer-events: none;
       text-align: center;
       padding: 24px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: -0.02em;
+      z-index: 1;
     }
-    #label .sub { font-weight: 500; opacity: 0.7; font-size: 0.42em; letter-spacing: 0; }
+    #label .sub { font-weight: 600; opacity: 0.72; font-size: 0.4em; letter-spacing: 0; }
     #cursor {
       position: absolute; width: 22px; height: 22px; margin: -2px 0 0 -2px;
       pointer-events: none; z-index: 5;
+      transform-origin: 4px 2px;
     }
     #cursor svg { display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+    #ripple {
+      position: absolute; border-radius: 50%;
+      border: 2px solid rgba(43, 33, 26, 0.35);
+      pointer-events: none; z-index: 4;
+      transform: translate(-50%, -50%);
+    }
     #hud {
       position: absolute; left: 0; right: 0; bottom: 48px;
       text-align: center; color: #2B211A; font-weight: 800;
-      font-size: 28px; letter-spacing: 0.04em; opacity: 0;
+      font-size: 28px; letter-spacing: 0.08em; opacity: 0;
     }
   </style>
 </head>
 <body>
   <div id="stage">
     <div id="world">
-      <div id="card"><div id="label"></div></div>
+      <div id="card">
+        <div id="seeds"></div>
+        <div id="label"></div>
+      </div>
     </div>
+    <div id="ripple" aria-hidden="true"></div>
     <div id="cursor" aria-hidden="true">
       <svg width="22" height="22" viewBox="0 0 24 24">
         <path fill="#1B1612" stroke="#FFF7EC" stroke-width="1.2"
@@ -87,14 +111,17 @@
       return { o: e * (1 - xo), b: (1 - e) * 10 + xo * 10, dy: (1 - e) * 16 - xo * 10, e }
     }
 
-    // 120 BPM → 0.5 s per beat. 8 beats, loops.
+    // 120 BPM → 0.5 s/beat. 10 beats, loops. Stylized congklak chrome (not screenshots).
+    // DECISION: play → press → sow (seeds) → hole → capture → store → win → wordmark → settle → play
     const PERIOD = 0.5
-    const DURATION = 4
+    const DURATION = 5
+    const B = (n) => n * PERIOD
     const copy = {
       en: {
         play: 'Play',
         sow: 'Sow',
         hole: '7',
+        capture: 'Capture',
         store: 'Store',
         storeSub: 'your house',
         win: 'You win!',
@@ -103,6 +130,7 @@
         play: 'Mainkan',
         sow: 'Tabur',
         hole: '7',
+        capture: 'Ambil',
         store: 'Rumah',
         storeSub: 'lubang besar',
         win: 'Kamu menang!',
@@ -113,65 +141,71 @@
     const sp = { w: 22, z: 0.82 }
     const spSoft = { w: 16, z: 0.9 }
     const spCam = { w: 10, z: 1 }
+    const spPress = { w: 40, z: 1 }
 
-    // Card morph targets: x,y are world centre; w,h,r size/radius.
     const T = {
-      x: new Track(0),
-      y: new Track(0),
       w: new Track(280),
       h: new Track(88),
       r: new Track(44),
       press: new Track(1),
-      cx: new Track(0),
-      cy: new Track(0),
       z: new Track(1),
-      mx: new Track(40),
-      my: new Track(120),
+      mx: new Track(48),
+      my: new Track(130),
       hud: new Track(0),
+      seeds: new Track(0),
+      accent: new Track(0),
     }
 
-    // Beat plan (DECISION: stylized congklak chrome, not app screenshots).
-    // 0 play → 1 press → 2 sow → 3 hole → 4 store → 5 win toast → 6 wordmark → 7 reset toward play
-    const B = (n) => n * PERIOD
-    T.w.to(B(1) - 0.12, 260, sp).to(B(2) - 0.25, 200, sp).to(B(3) - 0.25, 160, sp)
-      .to(B(4) - 0.25, 220, sp).to(B(5) - 0.25, 320, sp).to(B(6) - 0.2, 200, sp)
-      .to(B(7) - 0.15, 280, sp)
-    T.h.to(B(1) - 0.12, 80, sp).to(B(2) - 0.25, 200, sp).to(B(3) - 0.25, 160, sp)
-      .to(B(4) - 0.25, 160, sp).to(B(5) - 0.25, 100, sp).to(B(6) - 0.2, 72, sp)
-      .to(B(7) - 0.15, 88, sp)
-    T.r.to(B(1) - 0.12, 40, sp).to(B(2) - 0.25, 36, sp).to(B(3) - 0.25, 80, sp)
-      .to(B(4) - 0.25, 36, sp).to(B(5) - 0.25, 28, sp).to(B(6) - 0.2, 20, sp)
-      .to(B(7) - 0.15, 44, sp)
-    T.press.to(B(1), 0.92, { w: 40, z: 1 }).to(B(1) + 0.12, 1, { w: 28, z: 1 })
-    T.z.to(B(2) - 0.2, 1.08, spCam).to(B(4) - 0.2, 1.0, spCam)
-      .to(B(5) - 0.15, 1.12, spCam).to(B(6) - 0.1, 0.95, spCam).to(B(7) - 0.1, 1, spCam)
-    T.mx.to(B(1) - 0.05, 8, spSoft).to(B(1) + 0.05, 8, spSoft)
-      .to(B(2) - 0.1, -20, spSoft).to(B(3) - 0.1, 10, spSoft)
-      .to(B(4) - 0.1, 30, spSoft).to(B(5) - 0.1, 0, spSoft)
-      .to(B(6) - 0.1, 0, spSoft).to(B(7) - 0.05, 40, spSoft)
-    T.my.to(B(1) - 0.05, 20, spSoft).to(B(1) + 0.05, 20, spSoft)
-      .to(B(2) - 0.1, 10, spSoft).to(B(3) - 0.1, 30, spSoft)
-      .to(B(4) - 0.1, 0, spSoft).to(B(5) - 0.1, -10, spSoft)
-      .to(B(6) - 0.1, 40, spSoft).to(B(7) - 0.05, 120, spSoft)
-    T.hud.to(B(6) - 0.15, 1, spCam).to(B(7) - 0.1, 0, spCam)
+    T.w.to(B(1) - 0.14, 264, sp).to(B(2) - 0.28, 210, sp).to(B(3) - 0.28, 168, sp)
+      .to(B(4) - 0.28, 240, sp).to(B(5) - 0.28, 230, sp).to(B(6) - 0.28, 320, sp)
+      .to(B(7) - 0.22, 200, sp).to(B(9) - 0.18, 280, sp)
+    T.h.to(B(1) - 0.14, 80, sp).to(B(2) - 0.28, 210, sp).to(B(3) - 0.28, 168, sp)
+      .to(B(4) - 0.28, 120, sp).to(B(5) - 0.28, 150, sp).to(B(6) - 0.28, 104, sp)
+      .to(B(7) - 0.22, 72, sp).to(B(9) - 0.18, 88, sp)
+    T.r.to(B(1) - 0.14, 40, sp).to(B(2) - 0.28, 36, sp).to(B(3) - 0.28, 84, sp)
+      .to(B(4) - 0.28, 28, sp).to(B(5) - 0.28, 36, sp).to(B(6) - 0.28, 28, sp)
+      .to(B(7) - 0.22, 20, sp).to(B(9) - 0.18, 44, sp)
+    T.press.to(B(1), 0.9, spPress).to(B(1) + 0.14, 1, { w: 28, z: 1 })
+    T.z.to(B(2) - 0.22, 1.1, spCam).to(B(4) - 0.2, 1.02, spCam)
+      .to(B(6) - 0.18, 1.14, spCam).to(B(7) - 0.12, 0.94, spCam).to(B(9) - 0.12, 1, spCam)
+    T.mx.to(B(1) - 0.06, 10, spSoft).to(B(1) + 0.08, 10, spSoft)
+      .to(B(2) - 0.12, -24, spSoft).to(B(3) - 0.12, 14, spSoft)
+      .to(B(4) - 0.12, 28, spSoft).to(B(5) - 0.12, -8, spSoft)
+      .to(B(6) - 0.12, 6, spSoft).to(B(7) - 0.12, 0, spSoft)
+      .to(B(9) - 0.08, 48, spSoft)
+    T.my.to(B(1) - 0.06, 22, spSoft).to(B(1) + 0.08, 22, spSoft)
+      .to(B(2) - 0.12, 8, spSoft).to(B(3) - 0.12, 28, spSoft)
+      .to(B(4) - 0.12, -6, spSoft).to(B(5) - 0.12, 18, spSoft)
+      .to(B(6) - 0.12, -12, spSoft).to(B(7) - 0.12, 36, spSoft)
+      .to(B(9) - 0.08, 130, spSoft)
+    T.hud.to(B(7) - 0.16, 1, spCam).to(B(8.4), 1, spCam).to(B(9) - 0.1, 0, spCam)
+    T.seeds.to(B(2) - 0.05, 7, { w: 18, z: 1 }).to(B(3) - 0.05, 1, { w: 14, z: 1 })
+      .to(B(4) - 0.05, 0, { w: 20, z: 1 }).to(B(5) - 0.08, 12, { w: 16, z: 1 })
+      .to(B(6) - 0.08, 0, { w: 22, z: 1 })
+    T.accent.to(B(6) - 0.08, 1, spCam).to(B(7) - 0.1, 0, spCam)
 
     const card = document.getElementById('card')
     const label = document.getElementById('label')
+    const seedsEl = document.getElementById('seeds')
     const world = document.getElementById('world')
     const cursor = document.getElementById('cursor')
+    const ripple = document.getElementById('ripple')
     const hud = document.getElementById('hud')
     const stage = document.getElementById('stage')
 
+    // Fixed seed layout angles so stills are deterministic.
+    const SEED_ANG = [0, 52, 104, 156, 208, 260, 312, 30, 90, 150, 210, 270]
+
     function content(t) {
       const c = copy[lang]
-      // Content windows: exit early so swaps don’t overlap.
       const beats = [
-        { tin: -0.05, tout: B(1) - 0.05, html: c.play },
-        { tin: B(2) - 0.05, tout: B(3) - 0.08, html: `${c.sow}<span class="sub">→</span>` },
-        { tin: B(3) - 0.02, tout: B(4) - 0.08, html: c.hole },
-        { tin: B(4) - 0.02, tout: B(5) - 0.08, html: `${c.store}<span class="sub">${c.storeSub}</span>` },
-        { tin: B(5) - 0.02, tout: B(6) - 0.1, html: c.win },
-        { tin: B(7) - 0.05, tout: null, html: c.play },
+        { tin: -0.05, tout: B(1) - 0.06, html: c.play },
+        { tin: B(2) - 0.06, tout: B(3) - 0.1, html: `${c.sow}<span class="sub">→</span>` },
+        { tin: B(3) - 0.04, tout: B(4) - 0.1, html: c.hole },
+        { tin: B(4) - 0.04, tout: B(5) - 0.1, html: c.capture },
+        { tin: B(5) - 0.04, tout: B(6) - 0.1, html: `${c.store}<span class="sub">${c.storeSub}</span>` },
+        { tin: B(6) - 0.04, tout: B(7) - 0.12, html: c.win },
+        { tin: B(9) - 0.08, tout: null, html: c.play },
       ]
       let best = { o: 0, b: 10, dy: 0, html: '' }
       for (const b of beats) {
@@ -181,36 +215,85 @@
       return best
     }
 
+    function drawSeeds(n, W, H) {
+      const count = Math.max(0, Math.round(n))
+      while (seedsEl.children.length < count) {
+        seedsEl.appendChild(document.createElement('span'))
+      }
+      while (seedsEl.children.length > count) seedsEl.lastChild.remove()
+      const cx = W / 2
+      const cy = H / 2
+      const rad = Math.min(W, H) * 0.28
+      for (let i = 0; i < count; i++) {
+        const a = (SEED_ANG[i % SEED_ANG.length] * Math.PI) / 180
+        const el = seedsEl.children[i]
+        el.style.left = `${cx + Math.cos(a) * rad}px`
+        el.style.top = `${cy + Math.sin(a) * rad}px`
+        el.style.opacity = count ? '1' : '0'
+      }
+    }
+
     window.setLang = (l) => { lang = l === 'id' ? 'id' : 'en' }
     window.DURATION = DURATION
+    // Cue list for the renderer (peak-aligned SFX later). Times are film seconds.
+    window.CUES = [
+      { at: B(1), sfx: 'tap' },
+      { at: B(2), sfx: 'sow' },
+      { at: B(3), sfx: 'sow' },
+      { at: B(4), sfx: 'capture' },
+      { at: B(5), sfx: 'store' },
+      { at: B(6), sfx: 'win' },
+      { at: B(7), sfx: 'turn' },
+    ]
+
     window.seek = (tRaw) => {
-      // Loop-safe: wrap into [0, DURATION)
-      let t = ((tRaw % DURATION) + DURATION) % DURATION
+      const t = ((tRaw % DURATION) + DURATION) % DURATION
       const W = T.w.at(t) * T.press.at(t)
       const H = T.h.at(t) * T.press.at(t)
       const R = T.r.at(t)
       const z = T.z.at(t)
       const sw = stage.clientWidth || 1080
       const sh = stage.clientHeight || 1080
+      const accent = T.accent.at(t)
 
-      world.style.transform = `translate(${sw / 2}px, ${sh / 2}px) scale(${z}) translate(${-T.cx.at(t)}px, ${-T.cy.at(t)}px)`
+      world.style.transform =
+        `translate(${sw / 2}px, ${sh / 2}px) scale(${z})`
       card.style.width = `${W}px`
       card.style.height = `${H}px`
       card.style.borderRadius = `${R}px`
       card.style.transform = `translate(${-W / 2}px, ${-H / 2}px)`
-      card.style.background = t >= B(5) - 0.05 && t < B(6) ? '#C9783A' : '#FFF7EC'
-      card.style.color = t >= B(5) - 0.05 && t < B(6) ? '#FFF7EC' : '#2B211A'
+      card.style.background = `rgb(${Math.round(255 - accent * 54)}, ${Math.round(247 - accent * 105)}, ${Math.round(236 - accent * 178)})`
+      card.style.color = accent > 0.45 ? '#FFF7EC' : '#2B211A'
 
       const c = content(t)
       label.innerHTML = c.html
       label.style.opacity = String(c.o)
       label.style.filter = `blur(${c.b}px)`
       label.style.transform = `translateY(${c.dy}px)`
-      label.style.fontSize = t >= B(3) - 0.05 && t < B(4) ? '64px' : '36px'
+      label.style.fontSize = t >= B(3) - 0.05 && t < B(4) ? '64px' : '34px'
 
-      cursor.style.left = `${sw / 2 + T.mx.at(t) * z}px`
-      cursor.style.top = `${sh / 2 + T.my.at(t) * z}px`
-      cursor.style.opacity = t >= B(6) - 0.05 && t < B(7) - 0.05 ? '0.15' : '1'
+      drawSeeds(T.seeds.at(t), W, H)
+
+      const cx = sw / 2 + T.mx.at(t) * z
+      const cy = sh / 2 + T.my.at(t) * z
+      const pressAmt = 1 - T.press.at(t)
+      cursor.style.left = `${cx}px`
+      cursor.style.top = `${cy}px`
+      cursor.style.transform = `scale(${1 - pressAmt * 1.6})`
+      cursor.style.opacity = t >= B(7) - 0.05 && t < B(8.6) ? '0.12' : '1'
+
+      // Click ripple at press.
+      const age = t - B(1)
+      if (age >= 0 && age < 0.4) {
+        const u = age / 0.4
+        ripple.style.left = `${cx}px`
+        ripple.style.top = `${cy}px`
+        ripple.style.width = `${18 + u * 70}px`
+        ripple.style.height = `${18 + u * 70}px`
+        ripple.style.opacity = String(1 - u)
+      } else {
+        ripple.style.opacity = '0'
+      }
 
       hud.style.opacity = String(T.hud.at(t))
     }
