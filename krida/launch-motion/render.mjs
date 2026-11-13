@@ -1,12 +1,11 @@
-// Krida product-launch-motion pilot.
+// Krida product-launch-motion film.
 //   node krida/launch-motion/render.mjs --stills [en|id|all]
 //   node krida/launch-motion/render.mjs [en|id|all] [--blur] [--silent]
-// SFX are free (cached m4a in krida/out/). --silent skips the mix.
+// Audio uses cached krida/out sfx + bgm only (free). --silent skips the mix.
 
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { pathToFileURL } from 'node:url'
 
 import { renderFilm, stillsFilm } from '../../shared/launch-motion/render.mjs'
 import { mixSfx } from '../../shared/launch-motion/mix-sfx.mjs'
@@ -16,9 +15,10 @@ const OUT = fileURLToPath(new URL('../out/launch-motion/', import.meta.url))
 const SFX = fileURLToPath(new URL('../out/', import.meta.url))
 const HTML = join(ROOT, 'film.html')
 
-const DURATION = 5
+const DURATION = 12
 const SIZE = 1080
-const BEAT_TIMES = [0.12, 0.62, 1.12, 1.62, 2.12, 2.62, 3.12, 3.62, 4.12, 4.62]
+// One still near each beat (plus a couple of holds).
+const BEAT_TIMES = Array.from({ length: 24 }, (_, i) => i * 0.5 + 0.12)
 
 const SFX_FILES = {
   tap: 'sfx_tap.m4a',
@@ -37,24 +37,34 @@ const langs = langArg === 'all' ? ['en', 'id'] : [langArg]
 
 await mkdir(OUT, { recursive: true })
 
-async function audioForLang() {
+async function buildAudio() {
   if (silent) return undefined
-  // Cues mirror film.html window.CUES (keep in sync).
+  // Keep in sync with film.html window.CUES.
   const cues = [
     { at: 0.5, sfx: 'tap' },
     { at: 1.0, sfx: 'sow' },
     { at: 1.5, sfx: 'sow' },
-    { at: 2.0, sfx: 'capture' },
-    { at: 2.5, sfx: 'store' },
-    { at: 3.0, sfx: 'win' },
-    { at: 3.5, sfx: 'turn' },
+    { at: 2.0, sfx: 'sow' },
+    { at: 2.5, sfx: 'sow' },
+    { at: 3.0, sfx: 'sow' },
+    { at: 3.5, sfx: 'sow' },
+    { at: 4.0, sfx: 'capture' },
+    { at: 5.0, sfx: 'store' },
+    { at: 6.0, sfx: 'tap' },
+    { at: 7.0, sfx: 'win' },
+    { at: 8.0, sfx: 'turn' },
   ].map((c) => ({ at: c.at, file: join(SFX, SFX_FILES[c.sfx]) }))
-  const mixPath = join(OUT, 'mix-sfx.m4a')
-  await mixSfx({ cues, duration: DURATION, outFile: mixPath })
+  const mixPath = join(OUT, 'mix.m4a')
+  await mixSfx({
+    cues,
+    duration: DURATION,
+    outFile: mixPath,
+    bed: { file: join(SFX, 'bgm.m4a'), volume: 0.26 },
+  })
   return mixPath
 }
 
-const audioFile = stills ? undefined : await audioForLang()
+const audioFile = stills ? undefined : await buildAudio()
 
 for (const lang of langs) {
   if (stills) {
@@ -84,8 +94,5 @@ for (const lang of langs) {
     blur,
     audioFile,
   })
-  console.log('mp4', file, audioFile ? '+sfx' : 'silent')
+  console.log('mp4', file, audioFile ? '+bgm+sfx' : 'silent')
 }
-
-// Touch so tooling that imports this module for cues can resolve the HTML URL.
-void pathToFileURL(HTML)
