@@ -11,6 +11,7 @@ Promo videos and other generated media, one folder per project. Rules for AI age
 | `bedug/` | Bedug's notification sounds (app repo: `../project_bedug_flutter`). |
 | `store-screenshots/` | Shared App Store / Play screenshot editor for every app (skill `app-store-screenshots`). Peer of `web/`, not under each app folder. |
 | `krida/` | Krida's in-game sounds, voice lines and music (app repo: `../project-krida-kmp`). |
+| `bilahaksara/` | Bilah Aksara in-game beds, SFX and short VO for Godot (app repo: `../project-bilahaksara-godot`). |
 | `catatsaja/` | Catat Saja promo videos (app repo: `../project-catatsaja-reactrouter`). |
 | `cobalagi/` | Coba Lagi promo videos (app repo: `../project_cobalagi_flutter`). |
 
@@ -86,6 +87,23 @@ node bedug/scripts/export.mjs [--dry-run]   # free while every take is cached
 ```
 
 The timing of the bedug's hits is at the top of `export.mjs`; changing it costs nothing. A changed prompt buys a new take.
+
+
+## Bilah Aksara
+
+Godot 4 adventure: era BGM beds, UI/combat SFX, and short Indonesian (+ EN) VO lines
+(Gavrila). Same ElevenLabs helpers as Krida (`shared/eleven.mjs`); export is **`.mp3`**
+for Godot (not Krida's `.m4a`). Prompts and lines live in `bilahaksara/scripts/sounds.mjs`
+(cached in `bilahaksara/audio/`). `export.mjs` loop-crossfades music and writes
+`bilahaksara/out/<key>.mp3`; `install-audio.mjs` copies into
+`../project-bilahaksara-godot/assets/audio/{music,sfx,vo}/`. App path: `BILAH_APP` or
+that sibling folder. Details also in the game repo `docs/audio-pamer.md`.
+
+```sh
+npm start                                      # bilahaksara appears once menu.mjs exists
+node bilahaksara/scripts/export.mjs [--dry-run]
+node bilahaksara/scripts/install-audio.mjs
+```
 
 ## Krida
 
