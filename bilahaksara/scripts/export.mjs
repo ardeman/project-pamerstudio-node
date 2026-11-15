@@ -61,7 +61,9 @@ for (const [key, file] of Object.entries(files)) {
     `loudnorm=I=${quiet.has(key) ? -22 : -16}:TP=-1.5`,
     `afade=t=out:st=${Math.max(0, length - 0.12)}:d=0.1`,
   ].join(',')
-  run('ffmpeg', '-y', '-v', 'error', '-i', file, '-af', filter, '-ac', '1', '-ar', '44100', '-c:a', 'libmp3lame', '-b:a', '96k', target)
+  // Speech VO: mono 24 kHz 48 kbps (mobile size target); SFX keep 44.1 kHz 96 kbps.
+  const enc = key.startsWith('vo_') ? ['-ar', '24000', '-b:a', '48k'] : ['-ar', '44100', '-b:a', '96k']
+  run('ffmpeg', '-y', '-v', 'error', '-i', file, '-af', filter, '-map_metadata', '-1', '-ac', '1', enc[0], enc[1], '-c:a', 'libmp3lame', enc[2], enc[3], target)
   total += statSync(target).size
   console.log(target)
 }
