@@ -130,7 +130,7 @@ const act = async (project, action) => {
 await refresh()
 const items = [
   ...projects.flatMap((project) => project.menu.map((action, i) => ({ ...action, project, heading: i ? undefined : project.name }))),
-  { label: 'Send the credits to the web dashboard', heading: 'everything', dashboard: true },
+  { label: 'Send credits and revenue to Insights', heading: 'everything', dashboard: true },
   { label: 'Quit', quit: true },
 ]
 let at = 0
@@ -140,7 +140,7 @@ while (true) {
   at = items.indexOf(chosen)
   if (chosen.dashboard) {
     const result = run(['shared/cloud.mjs', 'account'])
-    await pause(result.status === 0 ? cyan('Done: see the Dashboard tab on pamer-studio.web.app.') : yellow(`Stopped (exit ${result.status}).`))
+    await pause(result.status === 0 ? cyan('Done: see the Insights tab on pamer-studio.web.app.') : yellow(`Stopped (exit ${result.status}).`))
     continue
   }
   if ((await act(chosen.project, chosen)) === 'quit') break

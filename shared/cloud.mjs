@@ -2,7 +2,8 @@
 // (https://pamer-studio.web.app), and brings plan edits made there back. Usage:
 //   node shared/cloud.mjs push [project...] [--dry-run] [--force]
 //   node shared/cloud.mjs pull [project...] [--force]
-//   node shared/cloud.mjs account        the Dashboard tab's credits and paid calls only
+//   node shared/cloud.mjs account        Insights tab: credits + revenue snapshots
+//   node shared/cloud.mjs admob-login    one-time AdMob OAuth (refresh token in .secrets/)
 // It signs in as the gcloud account (`gcloud auth login`), so no key is stored.
 // Media uploads only what changed (by MD5) and deletes cloud files that are gone
 // here, so Storage holds only what out/ has. A plan edited on the web is never overwritten without --force.
@@ -19,8 +20,11 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { relative } from 'node:path'
 
 import { cloudActions } from '../cloud/actions.mjs'
+import { admobLoginFlow, admobRevenue } from './admob.mjs'
 import { subscription, usage } from './eleven.mjs'
 import { balance as falBalance } from './fal.mjs'
+import { midtransRevenue } from './midtrans-revenue.mjs'
+import { appStoreRevenue, playStoreRevenue } from './store-revenue.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
 const PROJECT = 'pamer-studio'
@@ -56,7 +60,9 @@ const toValue = (v) =>
   v === null || v === undefined ? { nullValue: null }
   : v instanceof Date ? { timestampValue: v.toISOString() }
   : typeof v === 'boolean' ? { booleanValue: v }
-  : typeof v === 'number' ? { integerValue: String(Math.round(v)) }
+  : typeof v === 'number' ? (Number.isInteger(v)
+    ? { integerValue: String(v) }
+    : { doubleValue: v })
   : Array.isArray(v) ? { arrayValue: { values: v.map(toValue) } }
   : typeof v === 'object' ? { mapValue: { fields: toFields(v) } }
   : { stringValue: String(v) }
@@ -65,6 +71,7 @@ const fromValue = (v) =>
   'stringValue' in v ? v.stringValue
   : 'booleanValue' in v ? v.booleanValue
   : 'integerValue' in v ? Number(v.integerValue)
+  : 'doubleValue' in v ? v.doubleValue
   : 'timestampValue' in v ? v.timestampValue
   : 'arrayValue' in v ? (v.arrayValue.values ?? []).map(fromValue)
   : 'mapValue' in v ? fromFields(v.mapValue.fields ?? {})
@@ -281,8 +288,8 @@ async function pullPlan(id) {
   console.log(`${id}: pulled the web's plan into ${id}/${PLAN}`)
 }
 
-// The ElevenLabs credits, usage.jsonl's paid calls and the fal.ai balance for the
-// Dashboard tab: the page can't hold the keys, so the Mac reads them (free) on every push.
+// Credits + revenue snapshots for the Insights tab. The page can't hold vendor
+// keys, so the Mac reads them (mostly free) on every push / account.
 async function pushAccount() {
   let account
   try {
@@ -299,6 +306,29 @@ async function pushAccount() {
   } catch (error) {
     console.log(error.message)
   }
+
+  const midtrans = await midtransRevenue()
+  fields.midtrans = midtrans
+  if (midtrans.error) console.log(`midtrans: ${midtrans.error}`)
+  else console.log(`midtrans: Rp ${midtrans.grossIdr.toLocaleString('id-ID')} · ${midtrans.paidCount} paid (${midtrans.periodDays}d)`)
+
+  const admob = await admobRevenue()
+  fields.admob = admob
+  if (admob.error) console.log(`admob: ${admob.error}`)
+  else console.log(`admob: $${(admob.earningsMicros / 1e6).toFixed(2)} est. (${admob.periodDays}d)`)
+
+  const appStore = await appStoreRevenue()
+  fields.appStore = appStore
+  if (appStore.error) console.log(`app store: ${appStore.error}`)
+  else if (appStore.proceeds != null) console.log(`app store: $${appStore.proceeds.toFixed(2)} (${appStore.periodDays}d)`)
+  else console.log(`app store: ${appStore.note || appStore.reason || 'ok'}`)
+
+  const playStore = await playStoreRevenue()
+  fields.playStore = playStore
+  if (playStore.error) console.log(`play store: ${playStore.error}`)
+  else if (playStore.earnings != null) console.log(`play store: $${playStore.earnings.toFixed(2)} (${playStore.periodDays}d)`)
+  else console.log(`play store: ${playStore.note || playStore.reason || 'ok'}`)
+
   if (dryRun) return
   const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
   await call(`${DOCS}/dashboard/account?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
@@ -309,7 +339,14 @@ if (command === 'push') {
   await pushAccount()
 } else if (command === 'pull') for (const id of projects) await pull(id)
 else if (command === 'account') await pushAccount()
-else {
-  console.log('Usage: node shared/cloud.mjs push|pull [project...] [--dry-run] [--force], or account')
+else if (command === 'admob-login') {
+  try {
+    await admobLoginFlow()
+  } catch (error) {
+    console.error(error.message)
+    process.exitCode = 1
+  }
+} else {
+  console.log('Usage: node shared/cloud.mjs push|pull [project...] [--dry-run] [--force], account, or admob-login')
   process.exitCode = 1
 }

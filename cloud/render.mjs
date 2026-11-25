@@ -157,7 +157,7 @@ async function main() {
   await update({ status: 'done', outputs, usage: usage(), log, doneAt: new Date() })
 }
 
-// The credits and fal.ai balance left after the run, for the page's Dashboard tab (free to read).
+// The credits and fal.ai balance left after the run, for Insights (free to read).
 async function balance() {
   const fields = { ...(await subscription()), checkedAt: new Date(), checkedBy: 'cloud render' }
   fields.resetsAt = new Date(fields.resetsAt)

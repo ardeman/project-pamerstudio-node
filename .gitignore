@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.secrets/
 *.p8
 *.pem
 *.key
@@ -20,6 +21,9 @@ audio/
 art/
 out/
 shots/
+krida/promo/clips/*
+!krida/promo/clips/.gitkeep
+
 
 # Spending logs, written by shared/.
 usage.jsonl
