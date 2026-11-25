@@ -1,986 +1,141 @@
 {
   "schemaVersion": 3,
-  "appName": "Krida",
-  "themeId": "quiet-japandi",
-  "fontId": "fraunces",
+  "appName": "Bilah Aksara",
+  "themeId": "vintage-travel-poster",
+  "fontId": "futura",
   "connectedCanvas": true,
   "locales": [
-    "en",
-    "id"
+    "id",
+    "en"
   ],
   "locale": "id",
-  "device": "creative-header",
-  "orientation": "landscape",
+  "device": "android",
+  "orientation": "portrait",
   "appIcon": "/app-icon.png",
   "slidesByDevice": {
-    "iphone": [
-      {
-        "id": "s_krida_01",
-        "layout": "hero",
-        "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
-        },
-        "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/01-hero.png"
-      },
-      {
-        "id": "s_krida_02",
-        "layout": "two-devices",
-        "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
-        },
-        "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/apple/iphone/{locale}/02-boards-b.png"
-      },
-      {
-        "id": "s_krida_03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/apple/iphone/{locale}/03-nearby-b.png"
-      },
-      {
-        "id": "s_krida_04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/04-matchmaking.png"
-      },
-      {
-        "id": "s_krida_05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/05-emotes.png"
-      },
-      {
-        "id": "s_krida_06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/06-profile.png"
-      },
-      {
-        "id": "s_krida_07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/apple/iphone/{locale}/07-autopilot-dark.png"
-      }
-    ],
+    "iphone": [],
     "android": [
       {
-        "id": "s_krida_a01",
+        "id": "s_bilah_a01",
         "layout": "hero",
         "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
+          "id": "DUNIA TERBUKA",
+          "en": "OPEN WORLD"
         },
         "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
+          "id": "Satu pulau.\nSatu janji.",
+          "en": "One island.\nOne promise."
         },
-        "screenshot": "/screenshots/android/phone/{locale}/01-hero.png"
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-01-camp.png"
       },
       {
-        "id": "s_krida_a02",
-        "layout": "two-devices",
+        "id": "s_bilah_a02",
+        "layout": "device-bottom",
         "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
+          "id": "SILUMAN",
+          "en": "STEALTH"
         },
         "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
+          "id": "Rebut pos\ndengan diam.",
+          "en": "Take the post\nwithout a sound."
         },
-        "screenshot": "/screenshots/android/phone/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/android/phone/{locale}/02-boards-b.png"
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-02-outpost.png"
       },
       {
-        "id": "s_krida_a03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/android/phone/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/android/phone/{locale}/03-nearby-b.png"
-      },
-      {
-        "id": "s_krida_a04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/android/phone/{locale}/04-matchmaking.png"
-      },
-      {
-        "id": "s_krida_a05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/android/phone/{locale}/05-emotes.png"
-      },
-      {
-        "id": "s_krida_a06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/android/phone/{locale}/06-profile.png"
-      },
-      {
-        "id": "s_krida_a07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/android/phone/{locale}/07-autopilot-dark.png"
-      }
-    ],
-    "ipad": [
-      {
-        "id": "s_ipad_01",
-        "layout": "hero",
-        "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
-        },
-        "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/01-hero.png"
-      },
-      {
-        "id": "s_ipad_02",
-        "layout": "two-devices",
-        "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
-        },
-        "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/apple/ipad/{locale}/02-boards-b.png"
-      },
-      {
-        "id": "s_ipad_03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/apple/ipad/{locale}/03-nearby-b.png"
-      },
-      {
-        "id": "s_ipad_04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/04-matchmaking.png"
-      },
-      {
-        "id": "s_ipad_05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/05-emotes.png"
-      },
-      {
-        "id": "s_ipad_06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/06-profile.png"
-      },
-      {
-        "id": "s_ipad_07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/apple/ipad/{locale}/07-autopilot-dark.png"
-      }
-    ],
-    "tvos": [
-      {
-        "id": "s_mwe1dwg5_d",
-        "layout": "hero",
-        "label": {
-          "en": "MEET YOUR APP"
-        },
-        "headline": {
-          "en": "Made for\nthe living room."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_e",
-        "layout": "split-landscape",
-        "label": {
-          "en": "FEATURE 01"
-        },
-        "headline": {
-          "en": "One idea\nper screen."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_f",
+        "id": "s_bilah_a03",
         "layout": "device-top",
+        "inverted": true,
         "label": {
-          "en": "FEATURE 02"
+          "id": "MALAM",
+          "en": "NIGHT"
         },
         "headline": {
-          "en": "Flip the contrast."
+          "id": "Gelap\nmenjadi sekutu.",
+          "en": "Darkness\non your side."
         },
-        "screenshot": "",
-        "inverted": true
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-03-night.png"
       },
       {
-        "id": "s_mwe1dwg5_g",
+        "id": "s_bilah_a04",
+        "layout": "hero",
+        "label": {
+          "id": "SENJATA",
+          "en": "ARMS"
+        },
+        "headline": {
+          "id": "Bilah, batu,\npanah.",
+          "en": "Blade, stone,\nbow."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-04-ketapel.png"
+      },
+      {
+        "id": "s_bilah_a05",
+        "layout": "device-bottom",
+        "label": {
+          "id": "CERITA",
+          "en": "STORY"
+        },
+        "headline": {
+          "id": "Kepercayaan\ndan pengkhianatan.",
+          "en": "Trust,\nand betrayal."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-05-letnan.png"
+      },
+      {
+        "id": "s_bilah_a06",
         "layout": "no-device",
         "label": {
+          "id": "LEBIH",
           "en": "MORE"
         },
         "headline": {
-          "en": "And so\nmuch more."
+          "id": "Masak. Salat.\nKeahlian. Misi.",
+          "en": "Cook. Pray.\nSkills. Missions."
         },
-        "screenshot": ""
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-06-surau.png"
       }
     ],
-    "watchos": [
-      {
-        "id": "s_mwe1dwg5_h",
-        "layout": "hero",
-        "label": {
-          "en": "MEET YOUR APP"
-        },
-        "headline": {
-          "en": "On your\nwrist."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_i",
-        "layout": "device-bottom",
-        "label": {
-          "en": "FEATURE 01"
-        },
-        "headline": {
-          "en": "One glance.\nDone."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_j",
-        "layout": "device-top",
-        "label": {
-          "en": "FEATURE 02"
-        },
-        "headline": {
-          "en": "Always\nwith you."
-        },
-        "screenshot": "",
-        "inverted": true
-      }
-    ],
-    "carplay": [
-      {
-        "id": "s_mwe1dwg5_k",
-        "layout": "split-landscape",
-        "label": {
-          "en": "CARPLAY"
-        },
-        "headline": {
-          "en": "Eyes on\nthe road."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_l",
-        "layout": "device-bottom",
-        "label": {
-          "en": "FEATURE 01"
-        },
-        "headline": {
-          "en": "Everything, one tap away."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_m",
-        "layout": "device-top",
-        "label": {
-          "en": "FEATURE 02"
-        },
-        "headline": {
-          "en": "Made for every drive."
-        },
-        "screenshot": "",
-        "inverted": true
-      }
-    ],
-    "mac": [
-      {
-        "id": "s_mwe1dwg5_n",
-        "layout": "hero",
-        "label": {
-          "en": "MEET YOUR APP"
-        },
-        "headline": {
-          "en": "Made for\nyour Mac."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_o",
-        "layout": "split-landscape",
-        "label": {
-          "en": "FEATURE 01"
-        },
-        "headline": {
-          "en": "Everything in\none window."
-        },
-        "screenshot": ""
-      },
-      {
-        "id": "s_mwe1dwg5_p",
-        "layout": "device-top",
-        "label": {
-          "en": "FEATURE 02"
-        },
-        "headline": {
-          "en": "One shortcut away."
-        },
-        "screenshot": "",
-        "inverted": true
-      },
-      {
-        "id": "s_mwe1dwg5_q",
-        "layout": "two-devices",
-        "label": {
-          "en": "FEATURE 03"
-        },
-        "headline": {
-          "en": "Work across windows."
-        },
-        "screenshot": "",
-        "screenshotSecondary": ""
-      },
-      {
-        "id": "s_mwe1dwg5_r",
-        "layout": "no-device",
-        "label": {
-          "en": "MORE"
-        },
-        "headline": {
-          "en": "And so\nmuch more."
-        },
-        "screenshot": ""
-      }
-    ],
-    "android-7": [
-      {
-        "id": "s_a7_01",
-        "layout": "hero",
-        "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
-        },
-        "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/01-hero.png"
-      },
-      {
-        "id": "s_a7_02",
-        "layout": "two-devices",
-        "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
-        },
-        "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/android/tablet-7/{locale}/02-boards-b.png"
-      },
-      {
-        "id": "s_a7_03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/android/tablet-7/{locale}/03-nearby-b.png"
-      },
-      {
-        "id": "s_a7_04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/04-matchmaking.png"
-      },
-      {
-        "id": "s_a7_05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/05-emotes.png"
-      },
-      {
-        "id": "s_a7_06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/06-profile.png"
-      },
-      {
-        "id": "s_a7_07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/android/tablet-7/{locale}/07-autopilot-dark.png"
-      }
-    ],
-    "android-10": [
-      {
-        "id": "s_a10_01",
-        "layout": "hero",
-        "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
-        },
-        "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/01-hero.png"
-      },
-      {
-        "id": "s_a10_02",
-        "layout": "two-devices",
-        "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
-        },
-        "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/android/tablet-10/{locale}/02-boards-b.png"
-      },
-      {
-        "id": "s_a10_03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/android/tablet-10/{locale}/03-nearby-b.png"
-      },
-      {
-        "id": "s_a10_04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/04-matchmaking.png"
-      },
-      {
-        "id": "s_a10_05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/05-emotes.png"
-      },
-      {
-        "id": "s_a10_06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/06-profile.png"
-      },
-      {
-        "id": "s_a10_07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/07-autopilot-dark.png"
-      }
-    ],
+    "ipad": [],
+    "tvos": [],
+    "watchos": [],
+    "carplay": [],
+    "mac": [],
+    "android-7": [],
+    "android-10": [],
     "feature-graphic": [
       {
-        "id": "s_krida_fg",
+        "id": "s_bilah_fg",
         "layout": "feature-graphic",
         "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
+          "id": "BILAH AKSARA",
+          "en": "BILAH AKSARA"
         },
         "headline": {
-          "en": "Traditional games. Warm 3D.",
-          "id": "Permainan tradisional. Voxel 3D."
+          "id": "Petualangan aksi. Satu janji.",
+          "en": "Action adventure. One promise."
         },
-        "screenshot": "/screenshots/android/tablet-10/{locale}/01-hero.png",
-        "screenshotSecondary": "/screenshots/android/phone/{locale}/01-hero.png"
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-01-camp.png",
+        "screenshotSecondary": "/screenshots/android/phone/{locale}/bilah-02-outpost.png"
       }
     ],
     "duo-outer": [],
-    "duo-outer-landscape": [
-      {
-        "id": "s_duo_ol_01",
-        "layout": "hero",
-        "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
-        },
-        "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/01-hero.png",
-        "bezelRotation": 0
-      },
-      {
-        "id": "s_duo_ol_02",
-        "layout": "two-devices",
-        "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
-        },
-        "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/apple/duo-inner/{locale}/02-boards-b.png",
-        "bezelRotation": 0
-      },
-      {
-        "id": "s_duo_ol_03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/apple/duo-inner/{locale}/03-nearby-b.png",
-        "bezelRotation": 180
-      },
-      {
-        "id": "s_duo_ol_04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/04-matchmaking.png",
-        "bezelRotation": 0
-      },
-      {
-        "id": "s_duo_ol_05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/05-emotes.png",
-        "bezelRotation": 0
-      },
-      {
-        "id": "s_duo_ol_06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/06-profile.png",
-        "bezelRotation": 0
-      },
-      {
-        "id": "s_duo_ol_07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/apple/duo-outer/{locale}/07-autopilot-dark.png",
-        "bezelRotation": 0
-      }
-    ],
+    "duo-outer-landscape": [],
     "duo-inner": [],
-    "duo-inner-landscape": [
-      {
-        "id": "s_duo_il_01",
-        "layout": "hero",
-        "label": {
-          "en": "KRIDA",
-          "id": "KRIDA"
-        },
-        "headline": {
-          "en": "Indonesian boards\nin warm 3D.",
-          "id": "Permainan Papan\nNusantara\ndalam voxel 3D."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/01-hero.png"
-      },
-      {
-        "id": "s_duo_il_02",
-        "layout": "two-devices",
-        "label": {
-          "en": "FIVE BOARDS",
-          "id": "LIMA PAPAN"
-        },
-        "headline": {
-          "en": "Pick a board.\nPlay in 3D.",
-          "id": "Pilih\npermainan.\nMain dalam 3D."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/02-boards-a.png",
-        "screenshotSecondary": "/screenshots/apple/duo-outer/{locale}/02-boards-b.png",
-        "secondaryBezelRotation": 0
-      },
-      {
-        "id": "s_duo_il_03",
-        "layout": "two-devices",
-        "label": {
-          "en": "NEARBY",
-          "id": "DEKAT"
-        },
-        "headline": {
-          "en": "Same room.\nNo internet.",
-          "id": "Satu ruangan.\nTanpa internet."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/03-nearby-a.png",
-        "screenshotSecondary": "/screenshots/apple/duo-outer/{locale}/03-nearby-b.png",
-        "secondaryBezelRotation": 180
-      },
-      {
-        "id": "s_duo_il_04",
-        "layout": "split-landscape",
-        "label": {
-          "en": "ONLINE",
-          "id": "ONLINE"
-        },
-        "headline": {
-          "en": "Quick match\nin seconds.",
-          "id": "Cari lawan\ndalam hitungan detik."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/04-matchmaking.png"
-      },
-      {
-        "id": "s_duo_il_05",
-        "layout": "split-landscape",
-        "label": {
-          "en": "REACT",
-          "id": "REAKSI"
-        },
-        "headline": {
-          "en": "Send one\nmid-game.",
-          "id": "Kirim reaksi\nsaat main."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/05-emotes.png"
-      },
-      {
-        "id": "s_duo_il_06",
-        "layout": "split-landscape",
-        "label": {
-          "en": "YOU",
-          "id": "KAMU"
-        },
-        "headline": {
-          "en": "Name & avatar\nyours to set.",
-          "id": "Nama & avatar\nbisa diatur."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/06-profile.png"
-      },
-      {
-        "id": "s_duo_il_07",
-        "layout": "split-landscape",
-        "inverted": true,
-        "label": {
-          "en": "AUTOPLAY",
-          "id": "AUTOPLAY"
-        },
-        "headline": {
-          "en": "Step away.\nPlay continues.",
-          "id": "Pergi sebentar.\nGiliran tetap jalan."
-        },
-        "screenshot": "/screenshots/apple/duo-inner/{locale}/07-autopilot-dark.png"
-      }
-    ],
-    "creative-universal": [
-      {
-        "id": "s_mwe1dwg5_1e",
-        "layout": "split-landscape",
-        "label": {
-          "en": "NEW"
-        },
-        "headline": {
-          "en": "Your app,\nat a glance."
-        },
-        "screenshot": ""
-      }
-    ],
-    "creative-header": [
-      {
-        "id": "s_krida_header",
-        "layout": "no-device",
-        "label": {
-          "en": "",
-          "id": ""
-        },
-        "headline": {
-          "en": "",
-          "id": ""
-        },
-        "screenshot": "",
-        "imageElements": [
-          {
-            "id": "hdr",
-            "src": "/screenshots/apple/creatives/{locale}/header.png",
-            "transform": {
-              "x": 0,
-              "y": 0,
-              "width": 3840,
-              "height": 1646,
-              "rotation": 0,
-              "zIndex": 1
-            },
-            "fit": "cover"
-          }
-        ]
-      }
-    ],
-    "creative-search": [
-      {
-        "id": "s_krida_search",
-        "layout": "no-device",
-        "label": {
-          "en": "",
-          "id": ""
-        },
-        "headline": {
-          "en": "",
-          "id": ""
-        },
-        "screenshot": "",
-        "imageElements": [
-          {
-            "id": "srch",
-            "src": "/screenshots/apple/creatives/{locale}/search_result.png",
-            "transform": {
-              "x": 0,
-              "y": 0,
-              "width": 3840,
-              "height": 2560,
-              "zIndex": 1
-            },
-            "fit": "cover"
-          }
-        ]
-      }
-    ]
+    "duo-inner-landscape": [],
+    "creative-universal": [],
+    "creative-header": [],
+    "creative-search": []
   },
   "scene": {
-    "backdrop": "solid",
+    "backdrop": "gradient",
     "span": true,
     "decoration": "none",
     "shadow": 40,
-    "glow": 0,
+    "glow": 20,
     "tilt": 0,
-    "headlineWeight": 500,
+    "headlineWeight": 700,
     "headlineScale": 1,
     "headlineCase": "as-typed",
-    "captionAlign": "left"
-  },
-  "orientationLock": "landscape",
-  "hiddenDevices": [
-    "tvos",
-    "watchos",
-    "carplay",
-    "mac",
-    "creative-universal"
-  ]
+    "captionAlign": "center"
+  }
 }

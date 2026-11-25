@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 3,
+  "appName": "Bilah Aksara",
+  "themeId": "vintage-travel-poster",
+  "fontId": "futura",
+  "connectedCanvas": true,
+  "locales": ["id", "en"],
+  "locale": "id",
+  "device": "android",
+  "orientation": "portrait",
+  "appIcon": "/app-icon.png",
+  "scene": {
+    "backdrop": "gradient",
+    "span": true,
+    "decoration": "none",
+    "shadow": 40,
+    "glow": 20,
+    "tilt": 0,
+    "headlineWeight": 700,
+    "headlineCase": "as-typed",
+    "captionAlign": "center"
+  },
+  "slidesByDevice": {
+    "android": [
+      {
+        "id": "s_bilah_a01",
+        "layout": "hero",
+        "label": {
+          "id": "DUNIA TERBUKA",
+          "en": "OPEN WORLD"
+        },
+        "headline": {
+          "id": "Satu pulau.\nSatu janji.",
+          "en": "One island.\nOne promise."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-01-camp.png"
+      },
+      {
+        "id": "s_bilah_a02",
+        "layout": "device-bottom",
+        "label": {
+          "id": "SILUMAN",
+          "en": "STEALTH"
+        },
+        "headline": {
+          "id": "Rebut pos\ndengan diam.",
+          "en": "Take the post\nwithout a sound."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-02-outpost.png"
+      },
+      {
+        "id": "s_bilah_a03",
+        "layout": "device-top",
+        "inverted": true,
+        "label": {
+          "id": "MALAM",
+          "en": "NIGHT"
+        },
+        "headline": {
+          "id": "Gelap\nmenjadi sekutu.",
+          "en": "Darkness\non your side."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-03-night.png"
+      },
+      {
+        "id": "s_bilah_a04",
+        "layout": "hero",
+        "label": {
+          "id": "SENJATA",
+          "en": "ARMS"
+        },
+        "headline": {
+          "id": "Bilah, batu,\npanah.",
+          "en": "Blade, stone,\nbow."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-04-ketapel.png"
+      },
+      {
+        "id": "s_bilah_a05",
+        "layout": "device-bottom",
+        "label": {
+          "id": "CERITA",
+          "en": "STORY"
+        },
+        "headline": {
+          "id": "Kepercayaan\ndan pengkhianatan.",
+          "en": "Trust,\nand betrayal."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-05-letnan.png"
+      },
+      {
+        "id": "s_bilah_a06",
+        "layout": "no-device",
+        "label": {
+          "id": "LEBIH",
+          "en": "MORE"
+        },
+        "headline": {
+          "id": "Masak. Salat.\nKeahlian. Misi.",
+          "en": "Cook. Pray.\nSkills. Missions."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-06-surau.png"
+      }
+    ],
+    "feature-graphic": [
+      {
+        "id": "s_bilah_fg",
+        "layout": "feature-graphic",
+        "label": {
+          "id": "BILAH AKSARA",
+          "en": "BILAH AKSARA"
+        },
+        "headline": {
+          "id": "Petualangan aksi. Satu janji.",
+          "en": "Action adventure. One promise."
+        },
+        "screenshot": "/screenshots/android/phone/{locale}/bilah-01-camp.png",
+        "screenshotSecondary": "/screenshots/android/phone/{locale}/bilah-02-outpost.png"
+      }
+    ],
+    "iphone": [],
+    "ipad": [],
+    "android-7": [],
+    "android-10": [],
+    "mac": [],
+    "tvos": [],
+    "watchos": [],
+    "carplay": [],
+    "duo-outer": [],
+    "duo-outer-landscape": [],
+    "duo-inner": [],
+    "duo-inner-landscape": [],
+    "creative-universal": [],
+    "creative-header": [],
+    "creative-search": []
+  }
+}
