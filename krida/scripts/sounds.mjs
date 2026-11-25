@@ -10,6 +10,8 @@ const dir = new URL('../audio/', import.meta.url).pathname
 // Gavrila, a native Indonesian voice from the library (as in Catat Saja's
 // stories), used by id without adding it to the account.
 const VOICE = 'gjhfBUoH6DHh0DG1X4u0'
+// Cheerful arcade announcer (Modoo Marble / Line Get Rich vibe): expressive, bright, quick.
+const VO_CHEER = { stability: 0.25, similarity_boost: 0.68, style: 0.85, speed: 1.15 }
 
 const MODEL = 'eleven_text_to_sound_v3'
 
@@ -70,27 +72,119 @@ export const effects = {
     model: MODEL,
     prompt: 'A short gentle falling melody of three soft gamelan notes, a friendly mobile game lose sound, not sad, no voices',
   },
+  // Perang kapal: a peg on the ocean / a ship, and a sinking.
+  miss: {
+    name: 'miss',
+    seconds: 0.7,
+    model: MODEL,
+    prompt:
+      'A small wooden peg dropped once into shallow water: a short soft splash, close up, one drop only, no reverb, no voices, no music',
+  },
+  hit: {
+    name: 'hit',
+    seconds: 0.6,
+    model: MODEL,
+    prompt:
+      'A small wooden peg striking a hollow wooden toy ship once: a sharp short knock, close up, one hit only, no reverb, no voices, no music',
+  },
+  sunk: {
+    name: 'sunk',
+    seconds: 1.2,
+    model: MODEL,
+    prompt:
+      'A small wooden toy ship sinking into water: a deeper splash with a short bubbling trail, close up, satisfying, no reverb, no voices, no music',
+  },
+  // Werewolf: night fall and dawn — short atmosphere stingers, no voices.
+  night: {
+    name: 'night',
+    seconds: 1.4,
+    model: MODEL,
+    prompt:
+      'A short distant wolf howl at night over a quiet village, soft and atmospheric, one howl only, fades quickly, no other animals, no voices, no music',
+  },
+  dawn: {
+    name: 'dawn',
+    seconds: 1.2,
+    model: MODEL,
+    prompt:
+      'A short warm morning village chime: two soft wooden bamboo notes rising gently like sunrise, pleasant mobile game dawn sting, no rooster, no voices, no music',
+  },
 }
 
-// Spoken over the game, so short and clear.
+// Spoken over the game: short, punchy, cheerful (board-game announcer).
 export const lines = {
   your_turn: 'Giliranmu!',
-  their_turn: 'Giliran lawan.',
+  their_turn: 'Giliran lawan!',
   shoot: 'Tembak!',
   win: 'Kamu menang!',
-  lose: 'Kamu kalah.',
+  lose: 'Kamu kalah!',
   draw: 'Seri!',
+  pick: 'Pilih bidakmu!',
+  roll_again: 'Lempar lagi!',
+  captured: 'Kena!',
+  home: 'Masuk rumah!',
+  ladder: 'Naik tangga!',
+  snake: 'Digigit ular!',
+  pass: 'Pas!',
+  dice_off: 'Lempar dadu untuk urutan main!',
+  place_ships: 'Seret kapal ke lautmu!',
+  die_1: 'Satu!',
+  die_2: 'Dua!',
+  die_3: 'Tiga!',
+  die_4: 'Empat!',
+  die_5: 'Lima!',
+  die_6: 'Enam!',
+  miss: 'Meleset!',
+  hit: 'Kena!',
+  sunk: 'Kapal tenggelam!',
+  // Werewolf phase calls (short arcade announcer).
+  night: 'Malam!',
+  dawn: 'Fajar!',
+  peaceful: 'Malam tenang!',
+  day: 'Siang!',
+  vote: 'Voting!',
+  election: 'Pemilihan!',
+  town_win: 'Desa menang!',
+  wolves_win: 'Serigala menang!',
+  you_died: 'Kamu gugur!',
 }
 
 // The same lines for the English app, in the same voice so the game keeps
 // one narrator. Exported as vo_<key>_en.
 export const linesEn = {
   your_turn: 'Your turn!',
-  their_turn: "Opponent's turn.",
+  their_turn: "Opponent's turn!",
   shoot: 'Shoot!',
   win: 'You win!',
-  lose: 'You lose.',
+  lose: 'You lose!',
   draw: "It's a draw!",
+  pick: 'Pick a token!',
+  roll_again: 'Roll again!',
+  captured: 'Captured!',
+  home: 'Home!',
+  ladder: 'Up the ladder!',
+  snake: 'Snake!',
+  pass: 'Pass!',
+  dice_off: 'Throw the die for the playing order!',
+  place_ships: 'Drag ships onto your ocean!',
+  die_1: 'One!',
+  die_2: 'Two!',
+  die_3: 'Three!',
+  die_4: 'Four!',
+  die_5: 'Five!',
+  die_6: 'Six!',
+  miss: 'Miss!',
+  hit: 'Hit!',
+  sunk: 'Ship sunk!',
+  night: 'Night!',
+  dawn: 'Dawn!',
+  peaceful: 'Peaceful night!',
+  day: 'Day!',
+  vote: 'Vote!',
+  election: 'Election!',
+  town_win: 'Town wins!',
+  wolves_win: 'Wolves win!',
+  you_died: 'You died!',
 }
 
 // Background music under the menus and the board: calm enough to think over,
@@ -109,9 +203,9 @@ export const make = async () => {
   // The sound model gives near-silent UI taps; the seed click doubles as one.
   files.sfx_tap = files.sfx_sow
   for (const [key, text] of Object.entries(lines))
-    files[`vo_${key}`] = (await speak({ dir, lang: 'id', name: `vo-${key}`, text, voice: VOICE })).file
+    files[`vo_${key}`] = (await speak({ dir, lang: 'id', name: `vo-${key}`, text, voice: VOICE, settings: VO_CHEER })).file
   for (const [key, text] of Object.entries(linesEn))
-    files[`vo_${key}_en`] = (await speak({ dir, lang: 'en', name: `vo-${key}-en`, text, voice: VOICE })).file
+    files[`vo_${key}_en`] = (await speak({ dir, lang: 'en', name: `vo-${key}-en`, text, voice: VOICE, settings: VO_CHEER })).file
   return files
 }
 

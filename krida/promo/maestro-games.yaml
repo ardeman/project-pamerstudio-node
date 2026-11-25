@@ -1,0 +1,14 @@
+appId: com.ardeman.krida
+---
+# Tap Next game so the picker cycles through boards (sneak peek — don't Start).
+- extendedWaitUntil:
+    visible: "Next game"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 1500
+- repeat:
+    times: 6
+    commands:
+      - tapOn: "Next game"
+      - waitForAnimationToEnd:
+          timeout: 900

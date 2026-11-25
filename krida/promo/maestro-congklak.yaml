@@ -1,0 +1,15 @@
+appId: com.ardeman.krida
+---
+# Start Autopilot so sowing runs while simctl records.
+- extendedWaitUntil:
+    visible: "Autopilot"
+    timeout: 20000
+- tapOn: Autopilot
+# Keep driving while the tape rolls — wait through sowing turns.
+- extendedWaitUntil:
+    visible: ".*[Ss]owing.*"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 8000
+- waitForAnimationToEnd:
+    timeout: 8000

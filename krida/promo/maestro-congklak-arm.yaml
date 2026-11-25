@@ -1,0 +1,10 @@
+appId: com.ardeman.krida
+---
+# Arm Autopilot before the tape starts so sowing is already moving on camera.
+- extendedWaitUntil:
+    visible: "Autopilot"
+    timeout: 25000
+- tapOn: Autopilot
+- extendedWaitUntil:
+    visible: ".*[Ss]owing.*"
+    timeout: 20000

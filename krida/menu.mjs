@@ -12,4 +12,28 @@ export const menu = [
     label: 'Sounds · copy into app repo',
     script: 'scripts/install-audio.mjs',
   },
+  {
+    label: 'Promo · record congklak gameplay (simulator)',
+    script: 'promo/record.mjs',
+    flags: ['congklak'],
+  },
+  {
+    label: 'Promo · record nearby lobby (simulator)',
+    script: 'promo/record.mjs',
+    flags: ['nearby'],
+  },
+  {
+    label: 'Promo · record game picker swipe (simulator)',
+    script: 'promo/record.mjs',
+    flags: ['games'],
+  },
+  {
+    label: 'Promo · render sneak peek (needs three clips)',
+    script: 'promo/render.mjs',
+  },
+  {
+    label: 'Promo · narrator VO (EN+ID)',
+    script: 'promo/voice.mjs',
+    paid: true,
+  },
 ]

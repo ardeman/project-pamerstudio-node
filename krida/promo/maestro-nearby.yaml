@@ -1,0 +1,8 @@
+appId: com.ardeman.krida
+---
+# Hold on the nearby host lobby while simctl records.
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 2000
+- waitForAnimationToEnd:
+    timeout: 12000
