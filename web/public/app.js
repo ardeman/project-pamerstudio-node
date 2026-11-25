@@ -71,7 +71,7 @@ onAuthStateChanged(auth, (user) => {
   })
 })
 
-for (const button of document.querySelectorAll('#views button')) {
+for (const button of document.querySelectorAll('#views [data-view]')) {
   button.onclick = () => {
     view = button.dataset.view
     remember('view', view)
@@ -91,7 +91,7 @@ function render() {
       render()
     }
   }
-  for (const button of document.querySelectorAll('#views button')) button.classList.toggle('on', button.dataset.view === view)
+  for (const button of document.querySelectorAll('#views [data-view]')) button.classList.toggle('on', button.dataset.view === view)
   $('plan').hidden = view !== 'plan'
   $('posts').hidden = view !== 'posts'
   $('media').hidden = view !== 'media'
@@ -131,7 +131,10 @@ const savePlan = (project, plan) =>
     t.update(ref, { plan, editedOnWeb: true, updatedAt: serverTimestamp() })
   })
 
-const when = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '')
+const when = (ts) => {
+  const d = ts?.toDate?.() ?? (typeof ts === 'string' || typeof ts === 'number' ? new Date(ts) : null)
+  return d && !Number.isNaN(+d) ? d.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : ''
+}
 
 function renderPlan(project) {
   if (!project.plan) {
@@ -536,58 +539,187 @@ function renderCard(r) {
   </article>`
 }
 
-// Dashboard: the ElevenLabs credits, what each paid call cost and the fal.ai balance, as the Mac
-// (shared/cloud.mjs push) or the last cloud render read them; the page can't
-// hold the key to read them itself. Cloud renders' calls are on their requests.
+// Insights: credits (ElevenLabs / fal) and revenue snapshots pushed by
+// shared/cloud.mjs account. The page never holds vendor keys.
 const num = (n) => Math.round(n ?? 0).toLocaleString('en-US')
+const idr = (n) => `Rp ${Math.round(n ?? 0).toLocaleString('id-ID')}`
+const usd = (n) => `$${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const microsToMoney = (micros, currency = 'USD') => {
+  const value = (Number(micros) || 0) / 1e6
+  if (currency === 'IDR') return idr(value)
+  return usd(value)
+}
 const readBy = (by) => (by === 'Mac' ? 'read on the Mac' : by ? `read by a ${esc(by)}` : '')
+const isStale = (ts) => {
+  const ms = ts?.toMillis?.() ?? (typeof ts === 'string' ? Date.parse(ts) : 0)
+  return !ms || Date.now() - ms > 864e5
+}
+const asOfChip = (ts, by) => {
+  if (!ts) return ''
+  return `<span class="chip ${isStale(ts) ? 'warn' : ''}">As of ${when(ts)}${by ? ` · ${readBy(by)}` : ''}</span>`
+}
+/** Short date for the glance strip — chips there are too narrow for the full "As of" line. */
+const asOfGlance = (ts) => {
+  if (!ts) return ''
+  const d = ts?.toDate?.() ?? (typeof ts === 'string' || typeof ts === 'number' ? new Date(ts) : null)
+  if (!d || Number.isNaN(+d)) return ''
+  const label = d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return `<span class="glance-asof${isStale(ts) ? ' stale' : ''}">${esc(label)}</span>`
+}
+const emptyPanel = (title, body) => `
+  <div class="empty-panel">
+    <p><strong>${esc(title)}</strong></p>
+    <p class="note">${body}</p>
+  </div>`
+const breakdownList = (rows) => rows?.length
+  ? `<ul class="breakdown">${rows.map((r) => `<li><span>${esc(r.label)}</span><strong>${esc(r.value)}</strong></li>`).join('')}</ul>`
+  : ''
 
 function renderDashboard() {
   const a = dash.account
   if (!a) {
-    $('dashboard').innerHTML = '<p class="note">No credits pushed yet: run <code>node shared/cloud.mjs account</code> on the Mac.</p>'
+    $('dashboard').innerHTML = `
+      <div class="insights">
+        <div class="insights-hero">
+          <h1>Insights</h1>
+          <p class="lede">Credits and revenue across every project.</p>
+        </div>
+        ${emptyPanel('Nothing synced yet', 'Run <code>node shared/cloud.mjs account</code> on the Mac (also runs after every <code>push</code>).')}
+      </div>`
     return
   }
   const calls = [
     ...(a.usage ?? []).map((u) => ({ ...u, where: 'Mac' })),
     ...dash.renders.flatMap((r) => (r.usage ?? []).map((u) => ({ ...u, where: 'Cloud' }))),
-  ].sort((x, y) => y.at.localeCompare(x.at))
-  const resets = a.resetsAt?.toDate?.()
+  ].sort((x, y) => String(y.at).localeCompare(String(x.at)))
+  const resets = a.resetsAt?.toDate?.() ?? (a.resetsAt ? new Date(a.resetsAt) : null)
   const period = resets ? calls.filter((u) => Date.parse(u.at) > resets - 30 * 864e5) : calls
   const spent = {}
   for (const u of period) spent[u.project] = (spent[u.project] ?? 0) + (u.credits ?? 0)
-  const stale = Date.now() - (a.checkedAt?.toMillis?.() ?? 0) > 864e5
-  const falStale = Date.now() - (a.falCheckedAt?.toMillis?.() ?? 0) > 864e5
-  const used = Math.min(100, (a.used / a.limit) * 100).toFixed(1)
+  const usedPct = a.limit ? Math.min(100, (a.used / a.limit) * 100).toFixed(1) : '0'
   const short = (at) => new Date(at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })
   const requests = [...dash.renders].sort((x, y) => (y.createdAt?.seconds ?? Infinity) - (x.createdAt?.seconds ?? Infinity)).slice(0, 20)
+  const mid = a.midtrans
+  const admob = a.admob
+  const appStore = a.appStore
+  const playStore = a.playStore
+  const creditsLeft = a.limit != null ? num(a.limit - a.used) : '—'
+  const falLabel = a.falBalance != null ? usd(a.falBalance) : '—'
+  const midLabel = mid?.error ? '—' : mid?.grossIdr != null ? idr(mid.grossIdr) : '—'
+  const admobLabel = admob?.error ? '—' : admob?.earningsMicros != null ? microsToMoney(admob.earningsMicros, admob.currency) : '—'
+  const appLabel = appStore?.error ? '—' : appStore?.proceeds != null ? usd(appStore.proceeds) : (appStore?.reason ? '—' : '—')
+  const playLabel = playStore?.error ? '—' : playStore?.earnings != null ? usd(playStore.earnings) : '—'
+
+  const glance = [
+    { label: 'ElevenLabs', value: creditsLeft, unit: 'left', asof: asOfGlance(a.checkedAt) },
+    { label: 'fal.ai', value: falLabel, unit: a.falBalance != null ? 'left' : '', asof: asOfGlance(a.falCheckedAt) },
+    { label: 'Midtrans', value: midLabel, unit: mid?.periodDays ? `${mid.periodDays}d` : '', asof: asOfGlance(mid?.checkedAt) },
+    { label: 'AdMob', value: admobLabel, unit: admob?.periodDays ? `${admob.periodDays}d` : '', asof: asOfGlance(admob?.checkedAt) },
+    { label: 'App Store', value: appLabel, unit: appStore?.periodDays ? `${appStore.periodDays}d` : '', asof: asOfGlance(appStore?.checkedAt) },
+    { label: 'Play Store', value: playLabel, unit: playStore?.periodDays ? `${playStore.periodDays}d` : '', asof: asOfGlance(playStore?.checkedAt) },
+  ]
+
+  const midBody = mid?.error
+    ? emptyPanel('Midtrans unavailable', esc(mid.error))
+    : mid?.grossIdr != null
+      ? `<div class="stat">${idr(mid.grossIdr)} <span>${mid.paidCount ?? 0} paid · ${mid.periodDays}d</span></div>
+         ${breakdownList((mid.byProduct ?? []).map((p) => ({ label: p.name || p.slug, value: `${idr(p.grossIdr)} · ${p.count}` })))}
+         <p class="note">Dahlunas production orders (Midtrans). ${asOfChip(mid.checkedAt, mid.checkedBy)}</p>`
+      : emptyPanel('Midtrans not synced', 'Run <code>node shared/cloud.mjs account</code> with gcloud access to Firestore project <code>dah-lunas</code>.')
+
+  const admobBody = admob?.error
+    ? emptyPanel('AdMob unavailable', `${esc(admob.error)} Try <code>node shared/cloud.mjs admob-login</code> then <code>account</code> again.`)
+    : admob?.earningsMicros != null
+      ? `<div class="stat">${microsToMoney(admob.earningsMicros, admob.currency)} <span>est. · ${admob.periodDays}d</span></div>
+         ${breakdownList((admob.byApp ?? []).map((p) => ({ label: p.name || p.appId, value: microsToMoney(p.earningsMicros, admob.currency) })))}
+         <p class="note">AdMob network report. ${asOfChip(admob.checkedAt, admob.checkedBy)}</p>`
+      : emptyPanel('AdMob not connected', 'Set <code>ADMOB_PUBLISHER_ID</code>, run <code>node shared/cloud.mjs admob-login</code>, then <code>account</code>.')
+
+  const storeCard = (title, snap, setup) => {
+    if (snap?.error) return `<article class="metric-card"><div class="bar"><strong>${esc(title)}</strong></div>${emptyPanel('Unavailable', esc(snap.error))}</article>`
+    if (snap?.proceeds != null || snap?.earnings != null) {
+      const amount = snap.proceeds != null ? usd(snap.proceeds) : usd(snap.earnings)
+      return `<article class="metric-card">
+        <div class="bar"><strong>${esc(title)}</strong>${snap.checkedAt ? asOfChip(snap.checkedAt, snap.checkedBy) : ''}</div>
+        <div class="stat">${amount} <span>${snap.periodDays ? `${snap.periodDays}d` : ''}</span></div>
+        ${breakdownList((snap.byApp ?? []).map((p) => ({ label: p.name || p.id, value: usd(p.proceeds ?? p.earnings ?? 0) })))}
+        ${snap.note ? `<p class="note">${esc(snap.note)}</p>` : ''}
+      </article>`
+    }
+    if (snap?.note || snap?.reason) {
+      return `<article class="metric-card">
+        <div class="bar"><strong>${esc(title)}</strong>${snap.checkedAt ? asOfChip(snap.checkedAt, snap.checkedBy) : ''}</div>
+        ${emptyPanel('Connected', esc(snap.note || snap.reason))}
+      </article>`
+    }
+    return `<article class="metric-card"><div class="bar"><strong>${esc(title)}</strong></div>${emptyPanel('Not connected', setup)}</article>`
+  }
+
   $('dashboard').innerHTML = `
-    <article class="post">
-      <div class="bar"><strong>ElevenLabs credits</strong><span class="chip ${stale ? 'warn' : ''}">As of ${when(a.checkedAt)} · ${readBy(a.checkedBy)}</span></div>
-      <div class="stat">${num(a.limit - a.used)} <span>credits left</span></div>
-      <div class="meter" role="img" aria-label="${num(a.used)} of ${num(a.limit)} used"><i style="width:${used}%"></i></div>
-      <p class="note">${num(a.used)} of ${num(a.limit)} used · resets ${resets ? resets.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · ${esc(a.tier)} plan</p>
-      ${stale ? '<p class="note">Over a day old: <code>node shared/cloud.mjs account</code> on the Mac refreshes it, and so does every cloud render.</p>' : ''}
-    </article>
-    <article class="post">
-      <div class="bar"><strong>fal.ai balance</strong>${a.falCheckedAt ? `<span class="chip ${falStale ? 'warn' : ''}">As of ${when(a.falCheckedAt)} · ${readBy(a.falCheckedBy)}</span>` : ''}</div>
-      ${a.falBalance != null ? `<div class="stat">$${a.falBalance.toFixed(2)} <span>${esc(a.falCurrency ?? 'USD')} left</span></div>` : ''}
-      <p class="note">${a.falBalance != null ? 'Prepaid.' : 'Not pushed yet: <code>node shared/cloud.mjs account</code> on the Mac reads it (the fal key needs the admin scope).'}</p>
-    </article>
-    <h2>Spending <span class="note">this period: ${Object.entries(spent).map(([p, c]) => `${esc(p)} ${num(c)}`).join(' · ') || 'nothing yet'}</span></h2>
-    ${calls.length ? `<div class="table wide"><table>
-      <thead><tr><th>When</th><th>Where</th><th>Project</th><th>What</th><th>Size</th><th class="r">Estimate</th><th class="r">Charged</th><th class="r">Left</th></tr></thead>
-      <tbody>${calls.slice(0, 50).map((u) => `<tr><td>${esc(short(u.at))}</td><td>${u.where}</td><td>${esc(u.project)}</td><td>${esc(u.kind)} ${esc(u.lang ?? '')} ${esc(u.name)}</td>
-        <td>${u.chars ? `${u.chars} chars` : `${u.seconds} s`}</td><td class="r">${num(u.estimate)}</td><td class="r">${num(u.credits)}</td><td class="r">${num(u.left)}</td></tr>`).join('')}</tbody>
-    </table></div>` : '<p class="note">No paid calls logged yet. Each new voice clip or music track adds a row.</p>'}
-    <h2>Cloud renders <span class="note">${dash.renders.length}</span></h2>
-    ${requests.length ? `<div class="table wide"><table>
-      <thead><tr><th>When</th><th>Project</th><th>Render</th><th>Status</th><th class="r">Price</th><th class="r">Charged</th></tr></thead>
-      <tbody>${requests.map((r) => `<tr><td>${when(r.createdAt)}</td><td>${esc(r.project)}</td><td>${esc(r.action)} <span class="note">${esc((r.args ?? []).join(' · '))}</span></td>
-        <td><span class="chip ${r.status === 'done' ? 'ok' : r.status === 'failed' || r.status === 'priced' ? 'warn' : ''}">${esc(STATUS[r.status] ?? r.status)}</span></td>
-        <td class="r">${r.price?.free ? 'free' : r.price ? `${r.price.unit === 'dollars' ? `$${r.price.amount}` : num(r.price.amount)}${r.price.unknown ? '+' : ''}` : ''}</td>
-        <td class="r">${r.usage?.length ? num(r.usage.reduce((sum, u) => sum + (u.credits ?? 0), 0)) : ''}</td></tr>`).join('')}</tbody>
-    </table></div>` : '<p class="note">No cloud renders yet.</p>'}`
+    <div class="insights">
+      <div class="insights-hero">
+        <div>
+          <h1>Insights</h1>
+          <p class="lede">Credits left and revenue across projects. Refresh with <code>node shared/cloud.mjs account</code>.</p>
+        </div>
+      </div>
+      <div class="glance">
+        ${glance.map((g) => `<div class="glance-card">
+          <div class="glance-label">${esc(g.label)}</div>
+          <div class="stat">${g.value}${g.unit ? ` <span>${esc(g.unit)}</span>` : ''}</div>
+          ${g.asof || '<span class="glance-asof">—</span>'}
+        </div>`).join('')}
+      </div>
+
+      <section>
+        <div class="section-head"><h2>Credits</h2><p class="note">ElevenLabs period spend: ${Object.entries(spent).map(([p, c]) => `${esc(p)} ${num(c)}`).join(' · ') || 'nothing yet'}</p></div>
+        <div class="metric-grid">
+          <article class="metric-card">
+            <div class="bar"><strong>ElevenLabs</strong>${asOfChip(a.checkedAt, a.checkedBy)}</div>
+            <div class="stat">${creditsLeft} <span>credits left</span></div>
+            <div class="meter" role="img" aria-label="${num(a.used)} of ${num(a.limit)} used"><i style="width:${usedPct}%"></i></div>
+            <p class="note">${num(a.used)} of ${num(a.limit)} used · resets ${resets ? resets.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · ${esc(a.tier)} plan</p>
+            ${isStale(a.checkedAt) ? '<p class="note">Over a day old: <code>node shared/cloud.mjs account</code> refreshes it.</p>' : ''}
+          </article>
+          <article class="metric-card">
+            <div class="bar"><strong>fal.ai</strong>${a.falCheckedAt ? asOfChip(a.falCheckedAt, a.falCheckedBy) : ''}</div>
+            ${a.falBalance != null
+              ? `<div class="stat">${usd(a.falBalance)} <span>${esc(a.falCurrency ?? 'USD')} left</span></div><p class="note">Prepaid balance.</p>`
+              : emptyPanel('Not pushed', 'The fal key needs the admin scope, then run <code>account</code>.')}
+          </article>
+        </div>
+        <div class="section-head" style="margin-top:20px"><h2>Spending</h2><p class="note">paid ElevenLabs calls</p></div>
+        ${calls.length ? `<div class="table wide"><table>
+          <thead><tr><th>When</th><th>Where</th><th>Project</th><th>What</th><th>Size</th><th class="r">Estimate</th><th class="r">Charged</th><th class="r">Left</th></tr></thead>
+          <tbody>${calls.slice(0, 50).map((u) => `<tr><td>${esc(short(u.at))}</td><td>${u.where}</td><td>${esc(u.project)}</td><td>${esc(u.kind)} ${esc(u.lang ?? '')} ${esc(u.name)}</td>
+            <td>${u.chars ? `${u.chars} chars` : `${u.seconds} s`}</td><td class="r">${num(u.estimate)}</td><td class="r">${num(u.credits)}</td><td class="r">${num(u.left)}</td></tr>`).join('')}</tbody>
+        </table></div>` : '<p class="note">No paid calls logged yet.</p>'}
+        <div class="section-head" style="margin-top:20px"><h2>Cloud renders</h2><p class="note">${dash.renders.length}</p></div>
+        ${requests.length ? `<div class="table wide"><table>
+          <thead><tr><th>When</th><th>Project</th><th>Render</th><th>Status</th><th class="r">Price</th><th class="r">Charged</th></tr></thead>
+          <tbody>${requests.map((r) => `<tr><td>${when(r.createdAt)}</td><td>${esc(r.project)}</td><td>${esc(r.action)} <span class="note">${esc((r.args ?? []).join(' · '))}</span></td>
+            <td><span class="chip ${r.status === 'done' ? 'ok' : r.status === 'failed' || r.status === 'priced' ? 'warn' : ''}">${esc(STATUS[r.status] ?? r.status)}</span></td>
+            <td class="r">${r.price?.free ? 'free' : r.price ? `${r.price.unit === 'dollars' ? `$${r.price.amount}` : num(r.price.amount)}${r.price.unknown ? '+' : ''}` : ''}</td>
+            <td class="r">${r.usage?.length ? num(r.usage.reduce((sum, u) => sum + (u.credits ?? 0), 0)) : ''}</td></tr>`).join('')}</tbody>
+        </table></div>` : '<p class="note">No cloud renders yet.</p>'}
+      </section>
+
+      <section>
+        <div class="section-head"><h2>Revenue</h2><p class="note">last synced period</p></div>
+        <div class="metric-grid revenue">
+          <article class="metric-card">
+            <div class="bar"><strong>Midtrans</strong>${mid?.checkedAt ? asOfChip(mid.checkedAt, mid.checkedBy) : ''}</div>
+            ${midBody}
+          </article>
+          <article class="metric-card">
+            <div class="bar"><strong>AdMob</strong>${admob?.checkedAt ? asOfChip(admob.checkedAt, admob.checkedBy) : ''}</div>
+            ${admobBody}
+          </article>
+          ${storeCard('App Store', appStore, 'Set <code>ASC_ISSUER_ID</code>, <code>ASC_KEY_ID</code>, <code>ASC_PRIVATE_KEY_PATH</code> and optional <code>ASC_APP_IDS</code>, then run <code>account</code>.')}
+          ${storeCard('Play Store', playStore, 'Set <code>PLAY_SERVICE_ACCOUNT_JSON</code> and <code>PLAY_PACKAGE_NAMES</code>, then run <code>account</code>.')}
+        </div>
+      </section>
+    </div>`
 }
 
 // AI: a chat about the project, captions and video lines. Answers are drafts:
