@@ -27,9 +27,13 @@ const esc = (value) => String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', 
 const remember = (key, value) => { try { localStorage.setItem(key, value) } catch {} }
 const recall = (key) => { try { return localStorage.getItem(key) } catch { return null } }
 
+const SHARED = 'studio'
+const SHARED_VIEWS = new Set(['dashboard', 'screenshots'])
+const PROJECT_VIEWS = new Set(['plan', 'posts', 'media', 'render', 'ai'])
+
 let projects = []
-let current = recall('project')
-let view = recall('view') || 'plan'
+let current = recall('project') || SHARED
+let view = recall('view') || 'dashboard'
 let lang = recall('lang') || 'all'
 let editing = false
 let unsubscribe = null
@@ -40,6 +44,12 @@ let postsFilter = recall('postsFilter') || 'todo'
 let aiMode = recall('aiMode') || 'chat'
 let aiShown = '' // the project and mode the AI view shows, so a snapshot doesn't wipe it
 const chats = new Map() // project id → { session, messages }
+
+// Migrate older sessions: shared views belong under Studio, project views need an app.
+if (SHARED_VIEWS.has(view)) current = SHARED
+else if (current === SHARED || !current) view = 'dashboard', current = SHARED
+
+const isShared = () => current === SHARED
 
 $('google').onclick = () => signInWithPopup(auth, new GoogleAuthProvider())
 $('signout').onclick = () => signOut(auth)
@@ -66,10 +76,26 @@ onAuthStateChanged(auth, (user) => {
   ]
   unsubscribe = onSnapshot(collection(db, 'projects'), (snap) => {
     projects = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    if (!projects.some((p) => p.id === current)) current = projects[0]?.id
+    if (current !== SHARED && !projects.some((p) => p.id === current)) {
+      current = projects[0]?.id ?? SHARED
+      if (current === SHARED) view = 'dashboard'
+      remember('project', current)
+      remember('view', view)
+    }
     render()
   })
 })
+
+for (const button of document.querySelectorAll('#shared-nav [data-shared]')) {
+  button.onclick = () => {
+    current = SHARED
+    view = button.dataset.shared
+    editing = false
+    remember('project', current)
+    remember('view', view)
+    render()
+  }
+}
 
 for (const button of document.querySelectorAll('#views [data-view]')) {
   button.onclick = () => {
@@ -80,17 +106,29 @@ for (const button of document.querySelectorAll('#views [data-view]')) {
 }
 
 function render() {
+  if (isShared() && !SHARED_VIEWS.has(view)) view = 'dashboard'
+  if (!isShared() && !PROJECT_VIEWS.has(view)) view = 'plan'
+
+  for (const button of document.querySelectorAll('#shared-nav [data-shared]')) {
+    button.classList.toggle('on', isShared() && button.dataset.shared === view)
+  }
+
   $('projects').innerHTML = projects
-    .map((p) => `<button data-id="${esc(p.id)}" class="${p.id === current ? 'on' : ''}">${esc(p.name || p.id)}</button>`)
-    .join('')
+    .map((p) => `<button type="button" data-id="${esc(p.id)}" class="${!isShared() && p.id === current ? 'on' : ''}">${esc(p.name || p.id)}</button>`)
+    .join('') || '<p class="aside-empty">Nothing pushed yet</p>'
   for (const button of $('projects').querySelectorAll('button')) {
     button.onclick = () => {
+      const wasShared = isShared()
       current = button.dataset.id
       editing = false
+      if (wasShared || SHARED_VIEWS.has(view)) view = 'plan'
       remember('project', current)
+      remember('view', view)
       render()
     }
   }
+
+  $('views').hidden = isShared()
   for (const button of document.querySelectorAll('#views [data-view]')) button.classList.toggle('on', button.dataset.view === view)
   $('plan').hidden = view !== 'plan'
   $('posts').hidden = view !== 'posts'
@@ -101,6 +139,8 @@ function render() {
   $('dashboard').hidden = view !== 'dashboard'
   if (view === 'dashboard') renderDashboard()
   if (view === 'screenshots') renderScreenshots()
+  if (isShared()) return
+
   const project = projects.find((p) => p.id === current)
   if (!project) {
     $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
@@ -147,7 +187,7 @@ async function renderScreenshots() {
         </div>
         ${emptyPanel(
           'Run Studio locally',
-          'On the Mac: <code>npm run studio</code> (or <code>npm start</code> → store-screenshots → Studio). Open <code>http://127.0.0.1:4173/</code>, sign in, then use this Screenshots tab — the editor loads in-page. Export bundles stay under <code>store-screenshots/</code>; the live site stays plans, media and Insights.',
+          'On the Mac: <code>npm run studio</code> (or <code>npm start</code> → store-screenshots → Studio). Open <code>http://127.0.0.1:4173/</code>, sign in, then open Screenshots here — the editor loads in-page. Export bundles stay under <code>store-screenshots/</code>; the live site keeps plans, media and the shared Dashboard.',
         )}
       </div>`
     return
@@ -594,7 +634,7 @@ function renderCard(r) {
   </article>`
 }
 
-// Insights: credits (ElevenLabs / fal) and revenue snapshots pushed by
+// Dashboard: credits (ElevenLabs / fal) and revenue snapshots pushed by
 // shared/cloud.mjs account. The page never holds vendor keys.
 const num = (n) => Math.round(n ?? 0).toLocaleString('en-US')
 const idr = (n) => `Rp ${Math.round(n ?? 0).toLocaleString('id-ID')}`
@@ -636,7 +676,7 @@ function renderDashboard() {
     $('dashboard').innerHTML = `
       <div class="insights">
         <div class="insights-hero">
-          <h1>Insights</h1>
+          <h1>Dashboard</h1>
           <p class="lede">Credits and revenue across every project.</p>
         </div>
         ${emptyPanel('Nothing synced yet', 'Run <code>node shared/cloud.mjs account</code> on the Mac (also runs after every <code>push</code>).')}
@@ -714,7 +754,7 @@ function renderDashboard() {
     <div class="insights">
       <div class="insights-hero">
         <div>
-          <h1>Insights</h1>
+          <h1>Dashboard</h1>
           <p class="lede">Credits left and revenue across projects. Refresh with <code>node shared/cloud.mjs account</code>.</p>
         </div>
       </div>

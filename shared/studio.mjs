@@ -95,10 +95,10 @@ const server = http.createServer((req, res) => {
 server.listen(STUDIO_PORT, '127.0.0.1', () => {
   console.log(`
 Pamer Studio (local)
-  Web + Screenshots tab  http://127.0.0.1:${STUDIO_PORT}/
-  Screenshot editor      http://127.0.0.1:${EDITOR_PORT}/
+  Web (Dashboard + projects)  http://127.0.0.1:${STUDIO_PORT}/
+  Screenshot editor           http://127.0.0.1:${EDITOR_PORT}/
 
-Sign in on the web tab as usual. Open Screenshots there to edit store shots in-page.
+Sign in as usual. Shared → Screenshots embeds the editor; Shared → Dashboard is credits and revenue.
 Ctrl+C stops both.
 `)
 })

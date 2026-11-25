@@ -2,7 +2,7 @@
 // (https://pamer-studio.web.app), and brings plan edits made there back. Usage:
 //   node shared/cloud.mjs push [project...] [--dry-run] [--force]
 //   node shared/cloud.mjs pull [project...] [--force]
-//   node shared/cloud.mjs account        Insights tab: credits + revenue snapshots
+//   node shared/cloud.mjs account        Dashboard: credits + revenue snapshots
 //   node shared/cloud.mjs admob-login    one-time AdMob OAuth (refresh token in .secrets/)
 // It signs in as the gcloud account (`gcloud auth login`), so no key is stored.
 // Media uploads only what changed (by MD5) and deletes cloud files that are gone
@@ -288,7 +288,7 @@ async function pullPlan(id) {
   console.log(`${id}: pulled the web's plan into ${id}/${PLAN}`)
 }
 
-// Credits + revenue snapshots for the Insights tab. The page can't hold vendor
+// Credits + revenue snapshots for the Dashboard. The page can't hold vendor
 // keys, so the Mac reads them (mostly free) on every push / account.
 async function pushAccount() {
   let account

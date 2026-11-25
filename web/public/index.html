@@ -24,38 +24,48 @@
       <div class="card signin-card">
         <span class="mark big">P</span>
         <h1>Pamer Studio</h1>
-        <p>Marketing plans, campaign links, media and insights for every project.</p>
+        <p>Marketing plans, campaign links, media and a shared dashboard for every project.</p>
         <button id="google" class="primary">Sign in with Google</button>
         <p id="denied" class="note" hidden>This account has no access.</p>
       </div>
     </section>
     <section id="app" hidden>
-      <div class="toolbar">
-        <nav id="projects" class="tabs scroll-fade"></nav>
-        <nav id="views" class="views scroll-fade">
-          <div class="segmented">
-            <button data-view="plan" class="on">Plan</button>
-            <button data-view="posts">Posts</button>
-            <button data-view="media">Media</button>
+      <div class="app-shell">
+        <aside class="app-aside" aria-label="Studio navigation">
+          <div class="aside-section">
+            <div class="aside-label">Shared</div>
+            <nav id="shared-nav" class="aside-nav">
+              <button type="button" data-shared="dashboard">Dashboard</button>
+              <button type="button" data-shared="screenshots">Screenshots</button>
+            </nav>
           </div>
-          <div class="segmented">
-            <button data-view="render">Render</button>
-            <button data-view="ai">AI</button>
-            <button data-view="screenshots">Screenshots</button>
+          <div class="aside-section">
+            <div class="aside-label">Projects</div>
+            <nav id="projects" class="aside-nav"></nav>
           </div>
-          <div class="segmented">
-            <button data-view="dashboard">Insights</button>
+        </aside>
+        <div class="app-main">
+          <nav id="views" class="views scroll-fade" hidden>
+            <div class="segmented">
+              <button data-view="plan" class="on">Plan</button>
+              <button data-view="posts">Posts</button>
+              <button data-view="media">Media</button>
+            </div>
+            <div class="segmented">
+              <button data-view="render">Render</button>
+              <button data-view="ai">AI</button>
+            </div>
+          </nav>
+          <div id="views-stage">
+            <div id="plan" class="view-pane"></div>
+            <div id="posts" class="view-pane" hidden></div>
+            <div id="media" class="view-pane" hidden></div>
+            <div id="render" class="view-pane" hidden></div>
+            <div id="ai" class="view-pane" hidden></div>
+            <div id="screenshots" class="view-pane" hidden></div>
+            <div id="dashboard" class="view-pane" hidden></div>
           </div>
-        </nav>
-      </div>
-      <div id="views-stage">
-        <div id="plan" class="view-pane"></div>
-        <div id="posts" class="view-pane" hidden></div>
-        <div id="media" class="view-pane" hidden></div>
-        <div id="render" class="view-pane" hidden></div>
-        <div id="ai" class="view-pane" hidden></div>
-        <div id="screenshots" class="view-pane" hidden></div>
-        <div id="dashboard" class="view-pane" hidden></div>
+        </div>
       </div>
     </section>
   </main>
