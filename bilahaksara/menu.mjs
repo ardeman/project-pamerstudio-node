@@ -7,6 +7,11 @@ export const menu = [
     paid: true,
   },
   {
+    label: 'Dialogue VO · export narrative mp3 (ID)',
+    script: 'scripts/export-dialogue-vo.mjs',
+    paid: true,
+  },
+  {
     label: 'Sounds · copy into Godot assets/audio',
     script: 'scripts/install-audio.mjs',
   },

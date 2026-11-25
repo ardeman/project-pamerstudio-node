@@ -53,7 +53,11 @@ mkdirSync(join(root, 'vo'), { recursive: true })
 let n = 0
 for (const name of files) {
   const key = name.replace(/\.mp3$/, '')
-  const rel = map[key]
+  let rel = map[key]
+  // Dialogue VO: vo_dlg_ch1_empty_0 → vo/dlg_ch1_empty_0.mp3 (+ optional _en)
+  if (!rel && key.startsWith('vo_dlg_')) {
+    rel = `vo/${key.slice('vo_'.length)}.mp3`
+  }
   if (!rel) {
     console.warn(`skip unmapped ${name}`)
     continue

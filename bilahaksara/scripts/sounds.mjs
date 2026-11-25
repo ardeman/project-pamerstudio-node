@@ -7,11 +7,13 @@
 // Indonesian chants. Never name real history in VO text.
 
 import { dryRun, estimate, music, sfx, speak } from '../../shared/eleven.mjs'
+import { elevenVoiceId } from './voices.mjs'
 
 const dir = new URL('../audio/', import.meta.url).pathname
 
-// Gavrila — native Indonesian library voice (same as Krida / Catat Saja stories).
-const VOICE = 'gjhfBUoH6DHh0DG1X4u0'
+// Dakocan — young standard Indonesian male (narrator / UI stingers). See data/vo_voices.json.
+
+const VOICE = elevenVoiceId('narrator')
 // Storyteller, not arcade announcer: steady, warm, a touch of chant.
 const VO_STORY = { stability: 0.48, similarity_boost: 0.72, style: 0.35, speed: 0.95 }
 
@@ -70,17 +72,17 @@ export const effects = {
 export const lines = {
   title: 'Bilah Aksara.',
   start: 'Mulai.',
-  blade: 'Ingat.',
+  blade: 'Nusa.',
   fire: 'Tembak!',
-  remember: 'Ingah.',
+  remember: 'Nusa.',
 }
 
 export const linesEn = {
   title: 'Bilah Aksara.',
   start: 'Begin.',
-  blade: 'Remember.',
+  blade: 'Nusa.',
   fire: 'Fire!',
-  remember: 'Ingah.',
+  remember: 'Nusa.',
 }
 
 const bed = (name, colour) => ({
