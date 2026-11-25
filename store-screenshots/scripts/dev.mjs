@@ -11,8 +11,9 @@ if (!existsSync(`${dir}/package.json`)) {
   process.exit(1)
 }
 
-console.log('Editor → http://localhost:3456/  (Ctrl+C to stop)\n')
-const result = spawnSync('npm', ['run', 'dev', '--', '-p', '3456'], {
+console.log('Editor → http://127.0.0.1:3456/  (Ctrl+C to stop)')
+console.log('Tip: npm run studio  → web + this editor, Screenshots tab embeds it\n')
+const result = spawnSync('npm', ['run', 'dev', '--', '-p', '3456', '-H', '127.0.0.1'], {
   cwd: dir,
   stdio: 'inherit',
   shell: process.platform === 'win32',

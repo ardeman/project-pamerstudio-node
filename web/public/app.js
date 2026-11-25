@@ -97,8 +97,10 @@ function render() {
   $('media').hidden = view !== 'media'
   $('ai').hidden = view !== 'ai'
   $('render').hidden = view !== 'render'
+  $('screenshots').hidden = view !== 'screenshots'
   $('dashboard').hidden = view !== 'dashboard'
   if (view === 'dashboard') renderDashboard()
+  if (view === 'screenshots') renderScreenshots()
   const project = projects.find((p) => p.id === current)
   if (!project) {
     $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
@@ -114,6 +116,59 @@ function render() {
   renderMedia(project)
   watchRenders(project)
   if (view === 'ai' && aiShown !== `${project.id}/${aiMode}`) renderAI(project)
+}
+
+const EDITOR_URL = 'http://127.0.0.1:3456/'
+const isLocalHost = () => {
+  const host = location.hostname
+  return host === 'localhost' || host === '127.0.0.1'
+}
+
+async function editorReachable() {
+  try {
+    await fetch(EDITOR_URL, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(1200) })
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function renderScreenshots() {
+  const pane = $('screenshots')
+  const local = isLocalHost()
+  if (!local) {
+    pane.innerHTML = `
+      <div class="insights">
+        <div class="insights-hero">
+          <div>
+            <h1>Screenshots</h1>
+            <p class="lede">App Store / Play decks are edited on the Mac in the shared screenshot editor.</p>
+          </div>
+        </div>
+        ${emptyPanel(
+          'Run Studio locally',
+          'On the Mac: <code>npm run studio</code> (or <code>npm start</code> → store-screenshots → Studio). Open <code>http://127.0.0.1:4173/</code>, sign in, then use this Screenshots tab — the editor loads in-page. Export bundles stay under <code>store-screenshots/</code>; the live site stays plans, media and Insights.',
+        )}
+      </div>`
+    return
+  }
+  pane.innerHTML = `
+    <div class="screenshots-shell">
+      <div class="screenshots-bar">
+        <strong>Store screenshots</strong>
+        <span class="note" id="screenshots-status">Checking editor…</span>
+        <a class="chip" href="${EDITOR_URL}" target="_blank" rel="noreferrer">Open in tab</a>
+      </div>
+      <iframe class="screenshots-frame" title="Store screenshot editor" src="${EDITOR_URL}"></iframe>
+    </div>`
+  const status = $('screenshots-status')
+  const up = await editorReachable()
+  if (status) {
+    status.textContent = up
+      ? 'Editor on :3456'
+      : 'Editor not running — start with npm run studio'
+    status.classList.toggle('warn-text', !up)
+  }
 }
 
 // The current version of a project, after any snapshot since the view was drawn.
