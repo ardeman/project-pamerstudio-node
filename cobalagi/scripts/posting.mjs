@@ -23,13 +23,14 @@ export function campaignLinks() {
 }
 
 // Each app's limits, the strictest of what its app and its posting API allow.
-// `link` is what X counts for any link, however long. web/public/ai.js has a
-// copy for the AI tab: change both together.
+// `link` is what X counts for any link, however long. `bioLink`: links in
+// captions show as plain text; only the profile's bio link opens.
+// web/public/ai.js has a copy for the AI tab: change both together.
 export const platforms = {
   X: { caption: 280, link: 23 },
   Threads: { caption: 500, hashtags: 1 },
-  Instagram: { caption: 2200, hashtags: 5 },
-  TikTok: { caption: 2200 },
+  Instagram: { caption: 2200, hashtags: 5, bioLink: true },
+  TikTok: { caption: 2200, bioLink: true },
   LinkedIn: { caption: 3000 },
   YouTube: { title: 100, caption: 5000 },
   Facebook: { caption: 63206 },
@@ -59,6 +60,7 @@ export function captionProblems(text, limits, field = 'caption') {
   if (used > max) problems.push(`${field} is ${used} characters (max ${max})`)
   const hashtags = text.match(/(?:^|\s)#[\p{L}\p{N}_]+/gu)?.length ?? 0
   if (field === 'caption' && limits.hashtags != null && hashtags > limits.hashtags) problems.push(`${hashtags} hashtags (max ${limits.hashtags})`)
+  if (limits.bioLink && /https?:\/\//.test(text)) problems.push('has a URL, which the app shows as plain text (point to the link in bio)')
   if (/\{[a-zA-Z]+\}/.test(text)) problems.push(`${field} has an unfilled {…}`)
   return problems
 }

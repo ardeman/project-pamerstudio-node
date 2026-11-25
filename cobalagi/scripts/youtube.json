@@ -10,6 +10,16 @@
       "id": "App Store (iPhone, iPad, Mac): https://apps.apple.com/app/id6823508005 Google Play: https://play.google.com/store/apps/details?id=com.ardeman.cobalagi"
     }
   },
+  "storeSearch": {
+    "soon": {
+      "en": "Search \"Coba Lagi\" on the App Store, soon on Google Play.",
+      "id": "Cari \"Coba Lagi\" di App Store, segera di Google Play."
+    },
+    "live": {
+      "en": "Search \"Coba Lagi\" on the App Store and Google Play.",
+      "id": "Cari \"Coba Lagi\" di App Store & Google Play."
+    }
+  },
   "tags": "Coba Lagi, cobalagi, coding for kids, learn to code, block coding, kids coding app, belajar coding anak",
   "settings": [
     {
@@ -126,12 +136,12 @@
     }
   },
   "social": {
-    "_comment": "Captions for the vertical shorts on other apps, written into each short's .youtube.txt under OTHER PLATFORMS. {store} as in descriptions. Each caption is checked against its app's limits in posting.mjs.",
+    "_comment": "Captions for the vertical shorts on other apps, written into each short's .youtube.txt under OTHER PLATFORMS. {store} as in descriptions; {storeSearch} names the stores without links, for apps whose captions show links as plain text (bioLink in posting.mjs). Each caption is checked against its app's limits in posting.mjs.",
     "platforms": [
       {
         "name": "Instagram (Reels and Stories)",
-        "en": "Kids can learn to code through play, even before they can read. Coba Lagi: picture blocks, Koba the robot and nine planets. Free, no ads, works offline. {store} Link: cobalagi.ardeman.com\n#codingforkids #learntocode #kidsapp #parenting",
-        "id": "Anak bisa belajar coding sambil bermain, bahkan sebelum bisa membaca. Coba Lagi: blok bergambar, robot Koba, dan sembilan planet. Gratis, tanpa iklan, bisa offline. {store} Tautan: cobalagi.ardeman.com\n#codinganak #belajarcoding #aplikasianak #parenting"
+        "en": "Kids can learn to code through play, even before they can read. Coba Lagi: picture blocks, Koba the robot and nine planets. Free, no ads, works offline. {storeSearch} cobalagi.ardeman.com (link in bio)\n#codingforkids #learntocode #kidsapp #parenting",
+        "id": "Anak bisa belajar coding sambil bermain, bahkan sebelum bisa membaca. Coba Lagi: blok bergambar, robot Koba, dan sembilan planet. Gratis, tanpa iklan, bisa offline. {storeSearch} cobalagi.ardeman.com (link di bio)\n#codinganak #belajarcoding #aplikasianak #parenting"
       },
       {
         "name": "Facebook (Reels)",
@@ -155,8 +165,8 @@
       },
       {
         "name": "TikTok",
-        "en": "Kids can learn to code before they can read Coba Lagi: free, no ads, works offline. {store} Link: cobalagi.ardeman.com #codingforkids #learntocode #parentsoftiktok",
-        "id": "Anak bisa belajar coding sebelum bisa membaca Coba Lagi: gratis, tanpa iklan, bisa offline. {store} Tautan: cobalagi.ardeman.com #codinganak #belajarcoding #parenting"
+        "en": "Kids can learn to code before they can read Coba Lagi: free, no ads, works offline. {storeSearch} cobalagi.ardeman.com #codingforkids #learntocode #parentsoftiktok",
+        "id": "Anak bisa belajar coding sebelum bisa membaca Coba Lagi: gratis, tanpa iklan, bisa offline. {storeSearch} cobalagi.ardeman.com #codinganak #belajarcoding #parenting"
       }
     ]
   }

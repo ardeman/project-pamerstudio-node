@@ -9,11 +9,12 @@ const SITE_KEY = '6LfkbAguAAAAALX2p5OEZjJLZDxOltIOjd97iD9y'
 
 // Each app's caption limits: a copy of cobalagi/scripts/posting.mjs (keep both
 // the same). `link` is what X counts for any link, however long.
+// `bioLink`: links in captions show as plain text; only the profile's bio link opens.
 export const platforms = {
   X: { caption: 280, link: 23 },
   Threads: { caption: 500, hashtags: 1 },
-  Instagram: { caption: 2200, hashtags: 5 },
-  TikTok: { caption: 2200 },
+  Instagram: { caption: 2200, hashtags: 5, bioLink: true },
+  TikTok: { caption: 2200, bioLink: true },
   LinkedIn: { caption: 3000 },
   YouTube: { title: 100, caption: 5000 },
   Facebook: { caption: 63206 },
@@ -29,6 +30,7 @@ export function captionProblems(text, limits) {
   if (used > limits.caption) problems.push(`${used} characters (max ${limits.caption})`)
   const hashtags = text.match(/(?:^|\s)#[\p{L}\p{N}_]+/gu)?.length ?? 0
   if (limits.hashtags != null && hashtags > limits.hashtags) problems.push(`${hashtags} hashtags (max ${limits.hashtags})`)
+  if (limits.bioLink && /https?:\/\//.test(text)) problems.push('has a URL, which the app shows as plain text (point to the link in bio)')
   return problems
 }
 
@@ -79,9 +81,10 @@ export const caption = (app, project, platform, ask) => {
   const fit = [
     `at most ${limits.caption} characters${limits.link ? ` (every link counts as ${limits.link})` : ''}`,
     limits.hashtags != null && `at most ${limits.hashtags} hashtag${limits.hashtags === 1 ? '' : 's'}`,
+    limits.bioLink && 'no URLs (they show as plain text there; point to the link in bio instead)',
   ].filter(Boolean).join(', ')
   return json(app, project,
-    `Write a ${platform} caption, ${fit}, in English (en) and Indonesian (id). Use the plan's campaign link for ${platform} if it has one; otherwise leave links out. note: anything the owner should check, in one short English sentence, or empty.\n\nWhat it's for, or a caption to rewrite:\n${ask}`,
+    `Write a ${platform} caption, ${fit}, in English (en) and Indonesian (id). ${limits.bioLink ? '' : `Use the plan's campaign link for ${platform} if it has one; otherwise leave links out. `}note: anything the owner should check, in one short English sentence, or empty.\n\nWhat it's for, or a caption to rewrite:\n${ask}`,
     { en: 'text', id: 'text', note: 'text' })
 }
 

@@ -123,8 +123,10 @@ const modelFor = async (lang) => {
 export const speak = async ({ dir, lang, name, text, voice, settings, model: wanted }) => {
   const model = wanted ?? (await modelFor(lang))
   const voiceId = voice ?? env[`VOICE_${lang.toUpperCase()}`] ?? env.VOICE_EN ?? DEFAULT_VOICE
-  const voiceSettings = { stability: 0.45, similarity_boost: 0.75, style: 0.35, speed: 1.05, ...settings }
-  const file = `${dir}/${name}-${hash(settings ? [text, model, voiceId, voiceSettings] : [text, model, voiceId])}.mp3`
+  // Defaults lean cheerful (arcade board-game announcer); callers can override.
+  const voiceSettings = { stability: 0.28, similarity_boost: 0.7, style: 0.72, speed: 1.12, ...settings }
+  // Hash includes settings so a tone change regenerates the clip.
+  const file = `${dir}/${name}-${hash([text, model, voiceId, voiceSettings])}.mp3`
   if (!existsSync(file)) {
     if (dryRun) {
       pending.push({ kind: 'voice', lang, name, chars: text.length })

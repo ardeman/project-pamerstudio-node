@@ -39,8 +39,15 @@ function titleOf(video, version) {
   return raw.replaceAll('{version}', version)
 }
 
+// {store} gives the store links; {storeSearch} names the stores without links,
+// for apps whose captions can't hold one (bioLink in posting.mjs).
+function fillStore(text, live, lang) {
+  const which = live ? 'live' : 'soon'
+  return text.replaceAll('{store}', copy.store[which][lang]).replaceAll('{storeSearch}', copy.storeSearch[which][lang])
+}
+
 function descriptionOf(video, live) {
-  return entry(video).description.replaceAll('{store}', copy.store[live ? 'live' : 'soon'][langOf(video)])
+  return fillStore(entry(video).description, live, langOf(video))
 }
 
 function youtubeText(video, { version, live }) {
@@ -76,14 +83,13 @@ ${settings}${kind === 'short' ? otherPlatforms(video, live) : ''}`
 
 // The same vertical short on other apps, each with its caption.
 function otherPlatforms(video, live) {
-  const store = copy.store[live ? 'live' : 'soon'][langOf(video)]
   return `
 OTHER PLATFORMS
 Upload the same ${video}.mp4 (1080 x 1920). Most play muted, so turn on
 captions where the app offers them, or upload ${video}.srt.
 ${copy.social.platforms.map((p) => `
 ${p.name}
-${p[langOf(video)].replaceAll('{store}', store)}
+${fillStore(p[langOf(video)], live, langOf(video))}
 `).join('')}`
 }
 
@@ -109,7 +115,7 @@ function check(version) {
     }
     for (const p of copy.social.platforms) {
       for (const live of [false, true]) {
-        const caption = p[langOf(video)]?.replaceAll('{store}', copy.store[live ? 'live' : 'soon'][langOf(video)])
+        const caption = p[langOf(video)] && fillStore(p[langOf(video)], live, langOf(video))
         const limits = platformOf(p.name)
         if (caption == null) problems.push(`${p.name}: no ${langOf(video)} caption`)
         else if (!limits) problems.push(`${p.name}: no limits in posting.mjs`)
