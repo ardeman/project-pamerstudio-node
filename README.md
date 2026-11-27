@@ -1,11 +1,11 @@
 # Pamer Studio
 
-Promo videos and other generated media, one folder per project. Rules for AI agents working here: [`AGENTS.md`](AGENTS.md).
+Cloud-first home for marketing every app, money/growth snapshots, and an ops console for the owner's stack. Firestore + Storage are the system of record; the Mac is an optional worker (captures, App Store bezels, screenshot editor, install-into-app). Rules for AI agents: [`AGENTS.md`](AGENTS.md).
 
 | Folder | What |
 | --- | --- |
-| `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs`: ElevenLabs voice-over (`speak`), instrumental music (`music`) and sound effects (`sfx`), cached so re-renders cost no credits; every paid call is checked against the credits left and logged to `usage.jsonl`. `fal.mjs`: pictures and videos from fal.ai (`picture`, `video`, through fal's queue, with local files sent as data URIs), cached the same way, priced by fal's pricing API and logged to `fal-usage.jsonl`; its balance is on the Dashboard. `midtrans-revenue.mjs` / `admob.mjs` / `store-revenue.mjs`: revenue snapshots for the Dashboard. `cloud.mjs`: puts the marketing plans, finished media and Dashboard snapshots on the web (below). `studio.mjs`: local web UI + screenshot editor together. |
-| `cloud/` | Rendering in the cloud (below): the render image, `inputs.mjs`, which syncs what renders read with Storage, and the render requests from the web page (`render.mjs`, `actions.mjs`, `trigger/`). |
+| `shared/` | Helpers any project can use. `cli.mjs`: the terminal menu (`npm start`). `eleven.mjs` / `fal.mjs`: paid media, cached. `account.mjs` / `services.mjs`: Dashboard + Services snapshots. `midtrans-revenue.mjs` / `admob.mjs` / `store-revenue.mjs`: revenue. `cloud.mjs`: Mac mirror of plans/posts/media (pull first). `studio.mjs`: local web UI + screenshot editor. |
+| `cloud/` | Cloud Run image for **render** and **sync** jobs, `inputs.mjs`, `actions.mjs`, `render.mjs`, `sync.mjs`, `posting-worker.mjs` (scaffold), `trigger/` and `sync-trigger/`. |
 | `web/` | Pamer Studio on the web (https://pamer-studio.web.app): Firebase Hosting, Firestore and Storage rules. |
 | `.agents/skills/` | Canonical marketing agent skills (reuse via `~/.cursor/skills/` + per-app symlinks). `app-store-screenshots` scaffolds the shared editor in `store-screenshots/`. |
 | `bedug/` | Bedug's notification sounds (app repo: `../project_bedug_flutter`). |
@@ -33,63 +33,74 @@ npm run studio           # web UI + screenshot editor together (http://127.0.0.1
 `npm start` shows the credits left on top and every project's actions (each project lists them in its `menu.mjs`): move with the arrow keys, Enter to choose, Esc to go back. A paid render first runs a free `--dry-run`; if anything isn't cached it shows the cost and asks before buying. Its last item sends the credits to the web Dashboard.
 
 
-The web UI is a light admin shell: **Shared** (Dashboard, Screenshots) sits outside any app; **Projects** open Plan / Posts / Media / Render / AI for one app. The **Dashboard** shows credits and revenue in one place: ElevenLabs credits left and when they reset, per-project spend this period, recent paid calls (from `usage.jsonl` on the Mac and from each cloud render), the fal.ai prepaid balance, Midtrans totals from Dahlunas production orders, AdMob estimated earnings, and App Store / Play Store snapshots when those credentials are set. The page can't hold vendor keys, so the Mac reads them and writes Firestore `dashboard/account` on every `node shared/cloud.mjs push`, on `node shared/cloud.mjs account`, and after each cloud render (credits portion). Snapshots older than a day show a warning chip. Speech to text (`check-voice.mjs`) isn't logged, but it shows in the ElevenLabs balance. Stills stay on the Mac (`out/stills/`, `out/stories/stills/`); they aren't uploaded.
+The web UI is the day-to-day product: **Shared** (Dashboard, Services, Screenshots) and **Projects** (Plan / Posts / Media / Render / AI). Register a project with **+ Project** on the web; no Mac push required to appear in the aside.
 
-**Revenue sync**
+**Dashboard** — credits and revenue (ElevenLabs, fal, Midtrans, AdMob, App Store, Play). Freshness comes from the Cloud Run Job `sync` (every 4 hours Asia/Jakarta, or **Refresh now** on the page). The Mac can still run `node shared/cloud.mjs account`. Snapshots older than a day show a warning chip.
 
-| Channel | Source | Setup |
+**Services** — ops console: vendor connection health, GCP/Firebase, GitHub repo links, Hosting probe, Secret Manager *age* (never values). Written by the same sync job into Firestore `services/{id}`.
+
+**Screenshots** — Mac-only worker: run `npm run studio` and open Screenshots locally. Live Hosting tells you the same.
+
+**Revenue / vendor sync**
+
+| Channel | Source | Cloud setup |
 | --- | --- | --- |
-| Midtrans | Paid orders in Firestore `dah-lunas` / `orders-production` (via Dahlunas) | gcloud user must read that project |
-| AdMob | Network report API (OAuth user) | `ADMOB_PUBLISHER_ID` + OAuth client in `.env`, then `node shared/cloud.mjs admob-login` |
-| App Store | App Store Connect Sales reports | `ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_PRIVATE_KEY_PATH`; add `ASC_VENDOR_NUMBER` for totals |
-| Play Store | Play Console service account (+ optional earnings GCS bucket) | `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAMES`; optional `PLAY_EARNINGS_BUCKET` |
+| Midtrans | Dahlunas Firestore `orders-production` | Sync job SA needs `datastore.viewer` on `dah-lunas` (`build.sh` tries to grant it) |
+| AdMob | Network report (OAuth) | `admob-login` once on the Mac → `build.sh` seeds refresh token + client secrets |
+| App Store | ASC Sales | `ASC_*` in `.env` → `build.sh` seeds Secret Manager (`asc-private-key` from the `.p8`) |
+| Play Store | Play SA (+ optional earnings bucket) | `PLAY_*` → `build.sh` seeds JSON + package names |
 
-Any render that goes through `eleven.mjs` also takes `--dry-run`: it buys nothing, lists the clips and tracks that aren't cached with their estimated credits (one per character; music at the rate earlier tracks cost, once one is logged), and compares the total with the balance. Without it, a clip that needs more credits than are left stops the render, unless you pass `--force`. `fal.mjs` takes `--dry-run` too, with the price in dollars; the balance left is on the Dashboard after `node shared/cloud.mjs account`.
+Any render that goes through `eleven.mjs` also takes `--dry-run`. Without it, a clip that needs more credits than are left stops unless you pass `--force`. `fal.mjs` takes `--dry-run` too.
 
 ## Pamer Studio on the web
 
-https://pamer-studio.web.app shows each project's marketing plan (tick tasks or edit it from a phone, with a Copy button on every campaign link) and its posts and its finished media (videos, covers, subtitles, YouTube text and captions, filterable by language). Posts shows a project's posting calendar by date: captions as each app will show them, with their length against its limit; other drafts split into what gets pasted (title, URL, text…), each with a Copy button; and the campaign links. Mark a post as posted there, or approve a caption for the server to post once scheduled posting is built (Posting kit step 4 in Coba Lagi's plan). The shared Dashboard shows credits and revenue (above). Only the Google account `are.theman@gmail.com` can sign in, and nothing shows before it does: the Firestore rules give every document only to that account, and the `dashboard` documents are read only from the page. It runs on the Firebase project `pamer-studio`.
+https://pamer-studio.web.app — plans, posts, media, cloud renders, AI drafts, Dashboard and Services. Only `are.theman@gmail.com` can sign in. Approve a caption for the server to post once platform tokens are wired (`cloud/posting-worker.mjs` lists what is ready).
 
 ```sh
-node shared/cloud.mjs push [project...] [--dry-run] [--force]            # plan, posts and media up
-node shared/cloud.mjs pull [project...] [--force]                         # plan edits, posted and approved back
-node shared/cloud.mjs account                                             # Dashboard: credits + revenue snapshots
+node shared/cloud.mjs pull [project...] [--force]                         # prefer first: web → Mac mirror
+node shared/cloud.mjs push [project...] [--dry-run] [--force]            # Mac → web (plans/posts/local out/)
+node shared/cloud.mjs account                                             # optional Mac Dashboard push
 node shared/cloud.mjs admob-login                                         # one-time AdMob OAuth (writes .secrets/)
-cd web && npx -y firebase-tools deploy                                    # the page and the rules, by hand
+cd web && npx -y firebase-tools deploy                                    # page + rules by hand
 ```
 
-GitHub Actions (`.github/workflows/web.yml`) deploys the page and the rules whenever `web/` changes on `main`, or on demand from the Actions tab. It signs in without a key, through Workload Identity Federation, as the service account `github-deploy`, which may only deploy Hosting and rules; `web/setup-ci.sh` (run once, free) sets that up, and only this repo's workflows can use it.
+GitHub Actions (`.github/workflows/web.yml`) deploys Hosting + rules when `web/` changes on `main`.
 
-`cloud.mjs` signs in with the gcloud account (`gcloud auth login`), so no key is stored. Firestore holds each project's marketing plan; `marketing-plan.md` is a local copy that git ignores, for the scripts that read it (Coba Lagi's `posting.mjs` and `calendar.mjs`) and for editing on the Mac. `pull` writes it, also when it's missing (a fresh clone), so pull before editing it and push after; there's nothing to commit. `push` sends the plan up and, from `out/`, the `.mp4`, `.jpg`, `.wav`, `.srt`, `.txt` and `.md` files, skipping `stills/` and frame folders. Only files that changed are uploaded, and cloud files that are gone here (deleted, renamed, or no longer pushed) are deleted, so Storage holds only what `out/` has; `--dry-run` lists both first. A plan edited on the web isn't overwritten: `push` stops until you `pull`, and `pull` stops when the file here changed too. `--force` overrides either. Every save that replaces a plan, a push or a save on the web, first keeps the old one in `projects/<id>/versions`; the plan editor lists them under "Earlier versions", and Restore puts one in the editor to Save like any edit. The Firestore rules let the page add versions but never change or delete them. A project with `calendar.json` and `scripts/posting.mjs` also pushes its posts (`cloudPosts()` there), one Firestore document each, only those that changed. `pull` writes what was marked posted or approved on the web into `calendar.json`; a post marked posted on the Mac stays posted. Media links carry a download token, so anyone with a link can open that file; the list of links is only visible after signing in.
+Firestore is the source of truth for plans; `marketing-plan.md` is a local mirror git ignores — **pull before editing on the Mac**, push after if you changed the file. Cloud renders promote outputs (including stills) into the project's Media list automatically; a Mac `push` of `out/` is only needed for Mac-made files. Mac `push` still skips `stills/` and frame folders when uploading from disk.
 
 The AI tab (`web/public/ai.js`) runs Gemini through Firebase AI Logic (the Agent Platform Gemini API, billed to `pamer-studio` like Catat Saja's AI), with the project's plan as what it knows: a chat, a caption for one app in both languages (checked against a copy of the limits in `cobalagi/scripts/posting.mjs`; keep both the same), and video lines in both languages. "Rewrite with AI" on a `.txt` file in Media opens it as a caption to rewrite, and "Ask AI" in the plan editor changes the plan, which saves only when you press Save. Any answer can go to a `## Drafts` section at the end of the plan, so it reaches the Mac on `pull`. App Check (reCAPTCHA Enterprise, enforced for AI Logic) lets only this page on `pamer-studio.web.app`, `pamer-studio.firebaseapp.com` and localhost call it; trying it on localhost needs a debug token, which the page prints to the console, registered in App Check.
 
-## Rendering in the cloud
-
-The page's Render tab starts a render in the cloud, for the actions in `cloud/actions.mjs` (each project's `menu.mjs`, cut down to what works in Linux: for now Catat Saja's promo and stories). Voices, captures, the App Store video and everything else stay on the Mac.
+## Cloud jobs (render + sync)
 
 ```sh
-cloud/build.sh                                                            # the image, the job and the trigger (after changing cloud/ or a script it runs)
-gcloud run jobs execute render --region asia-southeast2 --wait            # a free check of the image (cloud/check.mjs)
-node cloud/inputs.mjs push [project...] [--caches] [--dry-run]            # what renders read, here → Storage
-node cloud/inputs.mjs pull [project...] [--inputs] [--dry-run]            # clips bought in the cloud, Storage → here
+cloud/build.sh                                                            # image, render+sync jobs, triggers, scheduler (ask first)
+gcloud run jobs execute render --region asia-southeast2 --wait            # free image check (cloud/check.mjs)
+gcloud run jobs execute sync --region asia-southeast2 --wait              # Dashboard + Services now
+node cloud/inputs.mjs push [project...] [--caches] [--dry-run]            # what renders read, Mac → Storage
+node cloud/inputs.mjs pull [project...] [--inputs] [--dry-run]            # clips bought in the cloud → Mac
 ```
+
+**Sync job** (`cloud/sync.mjs`): every 4 hours via Cloud Scheduler, or when the page writes `syncs/{id}` with status `requested` (**Refresh now**). Writes `dashboard/account`, `services/*`, and refreshes each project's `renders` catalog from `cloud/actions.mjs`.
+
+**Render tab** actions (Linux-safe subset of each `menu.mjs`):
+
+| Project | Cloud actions |
+| --- | --- |
+| Catat Saja | promo + stories render (incl. stills / meta) |
+| Coba Lagi | promo videos (Nunito stands in for SF Pro Rounded) |
+| Krida / Bilah Aksara / Bedug | audio export (paid while uncached) |
+
+Mac-only: captures, App Store bezels / store video, screenshot editor, install-into-app-repo, fal places-art, simulator promos.
 
 How a render goes:
 
-1. **Request.** The tab writes `renders/<id>` in Firestore (project, menu action, its picks). The rules let only the owner create one, and the page may change it only to approve a priced one.
-2. **Start.** The function `render-trigger` (`cloud/trigger/`) runs on every write to `renders/`. It runs as one instance, one write at a time, and starts the oldest waiting request only while none is `queued`, `pricing` or `rendering`, by setting it to `queued` and starting the Cloud Run Job `render` with `RENDER_ID` and `RENDER_STEP`. A request active for 70 minutes without a change (a job killed at its timeout never says so) is marked `failed`.
-3. **Price.** The job (`cloud/render.mjs`) checks the request against `cloud/actions.mjs`, pulls the inputs from Storage, and for a paid action runs `--dry-run` and writes the price (`priced`). A free action, or one with everything cached, renders at once.
-4. **Approve.** Approve on the page is the go-ahead AGENTS.md asks for. The job prices it again, asks again if it would now cost more, and renders without `--force`.
-5. **Results.** New files in `out/` go to Storage under `renders/<id>/` and show on the card; clips it bought go back to `inputs/` (`inputs.mjs pull` brings them to the Mac); its `usage.jsonl` lines are kept on the request, not in the Mac's log; and it refreshes Dashboard credits.
+1. **Request** → Firestore `renders/<id>` (`requested`).
+2. **Start** → `render-trigger` claims one job at a time → Cloud Run Job `render`.
+3. **Price** → `--dry-run` for paid actions → `priced` (or render at once if free/cached).
+4. **Approve** on the page (AGENTS.md go-ahead). Job re-prices; never `--force`.
+5. **Results** → `renders/<id>/` on the card **and** merged into `media/<project>/` for the Media tab; caches → `inputs/`; credits refresh on Dashboard.
 
-The image (`cloud/Dockerfile`) has Node 24, Google Chrome, Playwright 1.64.0 (the version the Mac links from the Catat Saja repo), ffmpeg and Noto fonts with emoji, plus the scripts; `.gcloudignore` keeps keys and caches out of the upload. `build.sh` builds it with Cloud Build (no Docker on the Mac) into Artifact Registry (`render`, the newest 3 images kept, about 600 MB each), points the job at it (asia-southeast2, 2 CPU, 4 GiB, an hour's timeout, no retries, as the service account `render-job`) and deploys the trigger. `lib.sh` takes `CHROME` from the environment, since the image's Chrome isn't at the Mac's path. In the job, Google calls go without the `x-goog-user-project` header the gcloud account needs, since the job's account bills its own project.
-
-The ElevenLabs key is the Secret Manager secret `elevenlabs-api-key`, made from `.env` by the first `build.sh` and readable by the job only; a later run doesn't update it, so after changing the key in `.env` add a new version (`gcloud secrets versions add elevenlabs-api-key --data-file -`, the key on stdin). The fal.ai key is `fal-api-key`, made the same way and updated the same way (`gcloud secrets versions add fal-api-key --data-file -`); Catat Saja's renders call no fal.ai, so the job only reads its balance for the Dashboard.
-
-Inputs live in Storage under `inputs/<repo>/`: the paid caches (`*/audio`, `catatsaja/art`), Catat Saja's captured screens (`catatsaja/shots`) and logo, and from Coba Lagi's app repo its frames, clips, music, ARB words, robot art, `tool/elevenlabs.json` and `pubspec.yaml`, about 2 GB, roughly $0.05 a month. Caches are named by what made them and never change, so both directions only add what the other side lacks and never delete. Inputs go one way: push makes Storage match the Mac, skipping any that aren't on this machine. The job runs `pull --inputs` before a render and `push --caches` after it. Files keep their modification time, since Catat Saja picks the newest avatar clip by it. Apple's bezels and the iPhone and iPad frames aren't uploaded (the bezels may only be used in App Store material).
-
-Cost: the cached Catat Saja promo ran for 3¼ minutes, about $0.02 of compute at the Jakarta list price and within Cloud Run's monthly free tier; its video takes 12 MiB in Storage, and reading the inputs in the same region is free. The Rp 80.000 budget alert on `pamer-studio` stays.
+The image has Node 24, Chrome, Playwright 1.64.0, ffmpeg, Noto, Nunito. Secrets (ElevenLabs, fal, AdMob, ASC, Play) are seeded once by `build.sh` from `.env` / `.secrets/`; later updates use `gcloud secrets versions add … --data-file -`. Inputs stay under `inputs/<repo>/` (caches + captures); Apple bezels never upload.
 
 ## Bedug
 
@@ -260,11 +271,10 @@ YouTube can't replace a video's file: to update a video, delete it and upload th
 
 ## Roadmap
 
-### Cloud renders: still open
+### Cloud-first: still open
 
-Built 2026-10-31 (Rendering in the cloud, above). Still open:
-
-- Paying for clips after Approve isn't tried yet: so far only a fully cached render ran in the cloud.
-- Coba Lagi's cards ask for SF Pro Rounded, an Apple font that can't go in a Linux image. Pick an openly licensed rounded font for the cloud before its first cloud render, and check the stills against a Mac render.
-- Request files in Storage (`renders/<id>/`) aren't cleaned up, and a finished video reaches the Mac's `out/` only by downloading it.
-- Add the other projects' cloud actions to `cloud/actions.mjs` as their scripts are made to work in Linux.
+- Prove a **paid** cloud buy after Approve (cached renders already work; paid path prices but needs a real uncached run).
+- Wire `cloud/posting-worker.mjs` to platform APIs (tokens in Secret Manager) for approved captions.
+- Clean up old `renders/<id>/` objects in Storage.
+- Compare Coba Lagi cloud stills (Nunito) against a Mac SF Pro render and tweak if needed.
+- Optional: Cloud-backed screenshot editor (today Mac-only via `npm run studio`).

@@ -9,7 +9,14 @@ const COLLECTION = 'orders-production'
 const DOCS = `https://firestore.googleapis.com/v1/projects/${DAHLUNAS}/databases/(default)/documents`
 const PERIOD_DAYS = 30
 
-const token = () => execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8' }).trim()
+async function accessToken() {
+  if (process.env.CLOUD_RUN_JOB) {
+    return (await (await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token', {
+      headers: { 'Metadata-Flavor': 'Google' },
+    })).json()).access_token
+  }
+  return execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8' }).trim()
+}
 
 const fromValue = (v) =>
   'stringValue' in v ? v.stringValue
@@ -45,14 +52,14 @@ async function listOrders(access) {
 }
 
 /**
+ * @param {string} [checkedBy]
  * @returns {{ grossIdr: number, paidCount: number, byProduct: object[], periodDays: number, checkedAt: Date, checkedBy: string }
  *   | { error: string, checkedAt: Date, checkedBy: string }}
  */
-export async function midtransRevenue() {
+export async function midtransRevenue(checkedBy = 'Mac') {
   const checkedAt = new Date()
-  const checkedBy = 'Mac'
   try {
-    const access = token()
+    const access = await accessToken()
     const orders = await listOrders(access)
     const since = Date.now() - PERIOD_DAYS * 864e5
     // Empty Gateway in JSON means Midtrans (Dahlunas default).

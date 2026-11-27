@@ -25,8 +25,12 @@ const PROJECT = 'pamer-studio'
 const BUCKET = 'pamer-studio.firebasestorage.app'
 const { RENDER_ID: id, RENDER_STEP: step } = process.env
 const DOC = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/renders/${id}`
-const TYPES = { mp4: 'video/mp4', png: 'image/png', jpg: 'image/jpeg', wav: 'audio/wav', srt: 'text/plain', txt: 'text/plain', md: 'text/markdown', json: 'application/json' }
+const TYPES = { mp4: 'video/mp4', png: 'image/png', jpg: 'image/jpeg', wav: 'audio/wav', m4a: 'audio/mp4', mp3: 'audio/mpeg', srt: 'text/plain', txt: 'text/plain', md: 'text/markdown', json: 'application/json' }
+const MEDIA_TYPES = { mp4: 'video', jpg: 'image', png: 'image', wav: 'audio', m4a: 'audio', mp3: 'audio', srt: 'text', txt: 'text', md: 'text' }
+const INLINE_TEXT = 50_000
 const LOG_TAIL = 4000
+// Stills are promoted for remote QA; frame folders stay local-only noise.
+const SKIP_DIR = /frames$/
 
 const token = process.env.CLOUD_RUN_JOB
   ? (await (await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token', { headers: { 'Metadata-Flavor': 'Google' } })).json()).access_token
@@ -94,7 +98,7 @@ function priceOf(out) {
 
 const walk = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
-    entry.isDirectory() ? (/frames$/.test(entry.name) ? [] : walk(`${dir}/${entry.name}`)) : [`${dir}/${entry.name}`],
+    entry.isDirectory() ? (SKIP_DIR.test(entry.name) ? [] : walk(`${dir}/${entry.name}`)) : [`${dir}/${entry.name}`],
   )
 
 async function upload(name, file) {
@@ -111,18 +115,48 @@ async function upload(name, file) {
       Buffer.from(`\r\n--${boundary}--\r\n`),
     ]),
   })
-  return `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(name)}?alt=media&token=${downloadToken}`
+  return { url: `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodeURIComponent(name)}?alt=media&token=${downloadToken}`, downloadToken }
 }
 
-// The files the render wrote, in Storage for the page to show.
+// The files the render wrote, under renders/<id>/ for the card, and also into
+// media/<project>/ so the Media tab lists them without a Mac push.
 async function publish(project, since) {
   const out = `${ROOT}${project}/out`
   const files = existsSync(out) ? walk(out).filter((f) => TYPES[f.split('.').pop()] && statSync(f).mtimeMs >= since).sort() : []
   const outputs = []
+  const mediaPrefix = `media/${project}/`
+  const projectDoc = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/projects/${project}`
+  let existing = []
+  try {
+    const doc = await call(projectDoc)
+    existing = (doc.fields?.media ? fromValue(doc.fields.media) : []) ?? []
+  } catch {
+    existing = []
+  }
+  const byPath = new Map(existing.map((m) => [m.path, m]))
+
   for (const file of files) {
     const path = relative(`${ROOT}${project}`, file)
-    outputs.push({ path, size: statSync(file).size, url: await upload(`renders/${id}/${path}`, file) })
+    const ext = file.split('.').pop()
+    const { url } = await upload(`renders/${id}/${path}`, file)
+    outputs.push({ path, size: statSync(file).size, url })
+
+    if (!MEDIA_TYPES[ext]) continue
+    const { url: mediaUrl } = await upload(`${mediaPrefix}${path}`, file)
+    const entry = { path, type: MEDIA_TYPES[ext], size: statSync(file).size, url: mediaUrl }
+    if (MEDIA_TYPES[ext] === 'text') {
+      const data = readFileSync(file)
+      if (data.length <= INLINE_TEXT) entry.text = data.toString('utf8')
+    }
+    byPath.set(path, entry)
   }
+
+  const media = [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path))
+  const mask = ['media', 'mediaAt'].map((k) => `updateMask.fieldPaths=${k}`).join('&')
+  await call(`${projectDoc}?${mask}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ fields: toFields({ media, mediaAt: new Date() }) }),
+  })
   return outputs
 }
 

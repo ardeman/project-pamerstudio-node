@@ -30,7 +30,7 @@ fi
 
 BASE_STYLE='
   html,body{margin:0;overflow:hidden}
-  body{font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;color:#fff;
+  body{font-family:"Nunito",ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;color:#fff;
        background:radial-gradient(circle at 85% 12%,#ffb38a 0,transparent 45%),
                   radial-gradient(circle at 10% 92%,#ffc83d66 0,transparent 42%),
                   linear-gradient(180deg,#ff9a6b,#e0532f)}

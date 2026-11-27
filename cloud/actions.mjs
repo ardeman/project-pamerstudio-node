@@ -1,11 +1,15 @@
 // What the web page may ask the render job to run: each project's menu
 // (<project>/menu.mjs) cut down to the scripts that work in the cloud. The
 // job checks a request against this list; shared/cloud.mjs pushes it to the
-// project's document for the page's Render tab. Coba Lagi waits for a font
-// to stand in for SF Pro Rounded (README → Roadmap).
+// project's document for the page's Render tab.
+// Coba Lagi uses Nunito (open) in the Linux image instead of SF Pro Rounded.
 
 const CLOUD = {
   catatsaja: ['scripts/render.mjs', 'scripts/render-stories.mjs'],
+  cobalagi: ['scripts/render.mjs'],
+  krida: ['scripts/export.mjs'],
+  bilahaksara: ['scripts/export.mjs', 'scripts/export-dialogue-vo.mjs'],
+  bedug: ['scripts/export.mjs'],
 }
 
 export async function cloudActions(id) {

@@ -14,12 +14,21 @@ function resolvePath(p) {
   return p.startsWith('/') ? p : `${ROOT_DIR}${p}`
 }
 
-async function googleServiceToken(jsonPath, scopes) {
-  const raw = JSON.parse(readFileSync(jsonPath, 'utf8'))
+/** Play SA JSON: inline (Secret Manager) or a path on the Mac. */
+function playServiceAccount() {
+  const raw = envGet('PLAY_SERVICE_ACCOUNT_JSON')
+  if (!raw) return null
+  if (raw.trim().startsWith('{')) return JSON.parse(raw)
+  const path = resolvePath(raw)
+  if (!existsSync(path)) return null
+  return JSON.parse(readFileSync(path, 'utf8'))
+}
+
+async function googleServiceToken(sa, scopes) {
   const now = Math.floor(Date.now() / 1000)
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url')
   const claim = Buffer.from(JSON.stringify({
-    iss: raw.client_email,
+    iss: sa.client_email,
     scope: scopes.join(' '),
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
@@ -28,7 +37,7 @@ async function googleServiceToken(jsonPath, scopes) {
   const unsigned = `${header}.${claim}`
   const sign = createSign('RSA-SHA256')
   sign.update(unsigned)
-  const jwt = `${unsigned}.${sign.sign(raw.private_key, 'base64url')}`
+  const jwt = `${unsigned}.${sign.sign(sa.private_key, 'base64url')}`
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -39,14 +48,22 @@ async function googleServiceToken(jsonPath, scopes) {
   return body.access_token
 }
 
+function ascPrivateKey() {
+  // Cloud sync mounts the .p8 PEM as ASC_PRIVATE_KEY; Mac uses a path.
+  const inline = envGet('ASC_PRIVATE_KEY')
+  if (inline) return inline.replace(/\\n/g, '\n')
+  const keyPath = resolvePath(envGet('ASC_PRIVATE_KEY_PATH'))
+  if (!keyPath || !existsSync(keyPath)) return null
+  return readFileSync(keyPath, 'utf8')
+}
+
 function ascJwt() {
   const issuer = envGet('ASC_ISSUER_ID')
   const keyId = envGet('ASC_KEY_ID')
-  const keyPath = resolvePath(envGet('ASC_PRIVATE_KEY_PATH'))
-  if (!issuer || !keyId || !keyPath || !existsSync(keyPath)) {
+  const privateKey = ascPrivateKey()
+  if (!issuer || !keyId || !privateKey) {
     return null
   }
-  const privateKey = readFileSync(keyPath, 'utf8')
   const now = Math.floor(Date.now() / 1000)
   const header = Buffer.from(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' })).toString('base64url')
   const claim = Buffer.from(JSON.stringify({
@@ -136,9 +153,8 @@ function parseSalesTsv(text, appIds) {
   return { proceeds: total, byApp }
 }
 
-export async function appStoreRevenue() {
+export async function appStoreRevenue(checkedBy = 'Mac') {
   const checkedAt = new Date()
-  const checkedBy = 'Mac'
   const token = (() => {
     try {
       return ascJwt()
@@ -149,7 +165,7 @@ export async function appStoreRevenue() {
   if (token?.error) return { error: token.error, checkedAt, checkedBy }
   if (!token) {
     return {
-      error: 'Set ASC_ISSUER_ID, ASC_KEY_ID and ASC_PRIVATE_KEY_PATH in .env',
+      error: 'Set ASC_ISSUER_ID, ASC_KEY_ID and ASC_PRIVATE_KEY_PATH (or ASC_PRIVATE_KEY) in .env / secrets',
       checkedAt,
       checkedBy,
     }
@@ -207,14 +223,18 @@ export async function appStoreRevenue() {
   }
 }
 
-export async function playStoreRevenue() {
+export async function playStoreRevenue(checkedBy = 'Mac') {
   const checkedAt = new Date()
-  const checkedBy = 'Mac'
-  const saPath = resolvePath(envGet('PLAY_SERVICE_ACCOUNT_JSON'))
+  let sa
+  try {
+    sa = playServiceAccount()
+  } catch (error) {
+    return { error: `Play SA JSON: ${error.message}`, checkedAt, checkedBy }
+  }
   const packages = envGet('PLAY_PACKAGE_NAMES').split(',').map((s) => s.trim()).filter(Boolean)
-  if (!saPath || !existsSync(saPath)) {
+  if (!sa) {
     return {
-      error: 'Set PLAY_SERVICE_ACCOUNT_JSON (path to a Play Console service-account JSON) in .env',
+      error: 'Set PLAY_SERVICE_ACCOUNT_JSON (path or inline JSON) in .env / secrets',
       checkedAt,
       checkedBy,
     }
@@ -227,7 +247,7 @@ export async function playStoreRevenue() {
     }
   }
   try {
-    const access = await googleServiceToken(saPath, [
+    const access = await googleServiceToken(sa, [
       'https://www.googleapis.com/auth/androidpublisher',
       'https://www.googleapis.com/auth/devstorage.read_only',
     ])

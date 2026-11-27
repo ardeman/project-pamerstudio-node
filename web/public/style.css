@@ -595,6 +595,30 @@ h2.day { display: flex; align-items: center; gap: 10px; font-size: 15px; margin:
   line-height: 1.15;
 }
 .insights-hero .lede { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 42ch; }
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.aside-add {
+  margin: 4px 10px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.aside-add:hover { color: var(--accent); }
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.service-card .bar { flex-wrap: wrap; }
 .glance {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

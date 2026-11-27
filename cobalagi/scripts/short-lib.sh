@@ -5,7 +5,7 @@
 
 # overlay_png <html> <out>: a transparent W x H picture.
 overlay_png() {
-  printf '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:%spx;height:%spx;background:transparent;overflow:hidden;font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}</style></head><body>%s</body></html>' \
+  printf '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:%spx;height:%spx;background:transparent;overflow:hidden;font-family:"Nunito",ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}</style></head><body>%s</body></html>' \
     "$W" "$H" "$1" > "$TMP/overlay.html"
   "$CHROME" --headless=new --disable-gpu --hide-scrollbars --default-background-color=00000000 \
     --window-size="$W,$H" --screenshot="$2" "file://$TMP/overlay.html" 2>/dev/null

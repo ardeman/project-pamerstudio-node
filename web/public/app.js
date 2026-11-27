@@ -1,12 +1,12 @@
-// Pamer Studio on the web: each project's marketing plan (tick tasks, edit it),
-// its posts (preview, approve, mark posted), its media and cloud renders. shared/cloud.mjs pushes both from the Mac and pulls web edits.
+// Pamer Studio on the web (cloud-first): plans, posts, media, renders, AI,
+// Dashboard + Services. Mac pull/push mirrors Firestore; sync job refreshes account.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js'
 import {
   getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js'
 import {
   addDoc, collection, doc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, runTransaction,
-  serverTimestamp, updateDoc, where,
+  serverTimestamp, setDoc, updateDoc, where,
 } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js'
 import { caption, captionProblems, changePlan, chat as startChat, platforms, videoLines } from './ai.js'
 
@@ -28,8 +28,15 @@ const remember = (key, value) => { try { localStorage.setItem(key, value) } catc
 const recall = (key) => { try { return localStorage.getItem(key) } catch { return null } }
 
 const SHARED = 'studio'
-const SHARED_VIEWS = new Set(['dashboard', 'screenshots'])
+const SHARED_VIEWS = new Set(['dashboard', 'services', 'screenshots'])
 const PROJECT_VIEWS = new Set(['plan', 'posts', 'media', 'render', 'ai'])
+const KNOWN_PROJECTS = [
+  { id: 'catatsaja', name: 'Catat Saja' },
+  { id: 'cobalagi', name: 'Coba Lagi' },
+  { id: 'krida', name: 'Krida' },
+  { id: 'bilahaksara', name: 'Bilah Aksara' },
+  { id: 'bedug', name: 'Bedug' },
+]
 
 let projects = []
 let current = recall('project') || SHARED
@@ -39,7 +46,7 @@ let editing = false
 let unsubscribe = null
 let posts = { project: null, list: [], unsubscribe: null }
 let renders = { project: null, list: [], unsubscribe: null }
-let dash = { account: null, renders: [], unsubscribe: [] }
+let dash = { account: null, renders: [], services: [], syncs: [], unsubscribe: [] }
 let postsFilter = recall('postsFilter') || 'todo'
 let aiMode = recall('aiMode') || 'chat'
 let aiShown = '' // the project and mode the AI view shows, so a snapshot doesn't wipe it
@@ -68,11 +75,29 @@ onAuthStateChanged(auth, (user) => {
   renders.unsubscribe?.()
   renders = { project: null, list: [], unsubscribe: null }
   for (const stop of dash.unsubscribe) stop()
-  dash = { account: null, renders: [], unsubscribe: [] }
+  dash = { account: null, renders: [], services: [], syncs: [], unsubscribe: [] }
   if (!allowed) return
   dash.unsubscribe = [
-    onSnapshot(doc(db, 'dashboard', 'account'), (snap) => { dash.account = snap.data() ?? null; if (view === 'dashboard') renderDashboard() }),
-    onSnapshot(collection(db, 'renders'), (snap) => { dash.renders = snap.docs.map((d) => ({ id: d.id, ...d.data() })); if (view === 'dashboard') renderDashboard() }),
+    onSnapshot(doc(db, 'dashboard', 'account'), (snap) => {
+      dash.account = snap.data() ?? null
+      if (view === 'dashboard') renderDashboard()
+      if (view === 'services') renderServices()
+    }),
+    onSnapshot(collection(db, 'renders'), (snap) => {
+      dash.renders = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      if (view === 'dashboard') renderDashboard()
+    }),
+    onSnapshot(collection(db, 'services'), (snap) => {
+      dash.services = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      if (view === 'services') renderServices()
+    }),
+    onSnapshot(query(collection(db, 'syncs'), orderBy('createdAt', 'desc'), limit(5)), (snap) => {
+      dash.syncs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      if (view === 'dashboard' || view === 'services') {
+        if (view === 'dashboard') renderDashboard()
+        else renderServices()
+      }
+    }),
   ]
   unsubscribe = onSnapshot(collection(db, 'projects'), (snap) => {
     projects = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
@@ -84,6 +109,52 @@ onAuthStateChanged(auth, (user) => {
     }
     render()
   })
+}
+
+$('new-project').onclick = () => createProject()
+
+async function createProject() {
+  const known = KNOWN_PROJECTS.filter((k) => !projects.some((p) => p.id === k.id))
+  const pick = known.length
+    ? window.prompt(`Project id (${known.map((k) => k.id).join(', ')}, or a new id):`, known[0].id)
+    : window.prompt('New project id (lowercase, no spaces):')
+  if (!pick) return
+  const id = pick.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+  if (!id) return alert('Need a simple id like catatsaja')
+  if (projects.some((p) => p.id === id)) return alert(`Project ${id} already exists`)
+  const name = KNOWN_PROJECTS.find((k) => k.id === id)?.name
+    || window.prompt('Display name:', id) || id
+  const plan = `# ${name} marketing plan\n\nRegistered from the web. Pull on the Mac with \`node shared/cloud.mjs pull ${id}\` when you want a local copy.\n`
+  try {
+    await setDoc(doc(db, 'projects', id), {
+      name,
+      plan,
+      planHash: '',
+      editedOnWeb: true,
+      media: [],
+      renders: [],
+      updatedAt: serverTimestamp(),
+    })
+    current = id
+    view = 'plan'
+    remember('project', current)
+    remember('view', view)
+  } catch (error) {
+    alert(error.message)
+  }
+}
+
+async function requestSync() {
+  const active = dash.syncs.find((s) => ['requested', 'queued', 'running'].includes(s.status))
+  if (active) {
+    alert(`A sync is already ${active.status}.`)
+    return
+  }
+  try {
+    await addDoc(collection(db, 'syncs'), { status: 'requested', createdAt: serverTimestamp() })
+  } catch (error) {
+    alert(error.message)
+  }
 })
 
 for (const button of document.querySelectorAll('#shared-nav [data-shared]')) {
@@ -115,7 +186,7 @@ function render() {
 
   $('projects').innerHTML = projects
     .map((p) => `<button type="button" data-id="${esc(p.id)}" class="${!isShared() && p.id === current ? 'on' : ''}">${esc(p.name || p.id)}</button>`)
-    .join('') || '<p class="aside-empty">Nothing pushed yet</p>'
+    .join('') || '<p class="aside-empty">No projects yet — use + Project</p>'
   for (const button of $('projects').querySelectorAll('button')) {
     button.onclick = () => {
       const wasShared = isShared()
@@ -137,13 +208,15 @@ function render() {
   $('render').hidden = view !== 'render'
   $('screenshots').hidden = view !== 'screenshots'
   $('dashboard').hidden = view !== 'dashboard'
+  $('services').hidden = view !== 'services'
   if (view === 'dashboard') renderDashboard()
+  if (view === 'services') renderServices()
   if (view === 'screenshots') renderScreenshots()
   if (isShared()) return
 
   const project = projects.find((p) => p.id === current)
   if (!project) {
-    $('plan').innerHTML = '<p class="note">Nothing pushed yet: run <code>node shared/cloud.mjs push</code> on the Mac.</p>'
+    $('plan').innerHTML = '<p class="note">No project selected. Use <strong>+ Project</strong> to register one from the web, or pull/push from the Mac.</p>'
     $('posts').innerHTML = ''
     $('media').innerHTML = ''
     $('ai').innerHTML = ''
@@ -644,7 +717,12 @@ const microsToMoney = (micros, currency = 'USD') => {
   if (currency === 'IDR') return idr(value)
   return usd(value)
 }
-const readBy = (by) => (by === 'Mac' ? 'read on the Mac' : by ? `read by a ${esc(by)}` : '')
+const readBy = (by) => {
+  if (!by) return ''
+  if (by === 'Mac') return 'read on the Mac'
+  if (String(by).startsWith('cloud')) return esc(by)
+  return `read by ${esc(by)}`
+}
 const isStale = (ts) => {
   const ms = ts?.toMillis?.() ?? (typeof ts === 'string' ? Date.parse(ts) : 0)
   return !ms || Date.now() - ms > 864e5
@@ -670,17 +748,29 @@ const breakdownList = (rows) => rows?.length
   ? `<ul class="breakdown">${rows.map((r) => `<li><span>${esc(r.label)}</span><strong>${esc(r.value)}</strong></li>`).join('')}</ul>`
   : ''
 
+const syncChip = () => {
+  const latest = dash.syncs[0]
+  if (!latest) return ''
+  const label = latest.status === 'done' ? 'Last sync ok' : latest.status === 'failed' ? 'Sync failed' : `Sync ${latest.status}`
+  const cls = latest.status === 'done' ? 'ok' : latest.status === 'failed' || latest.status === 'priced' ? 'warn' : ''
+  return `<span class="chip ${cls}">${esc(label)}${latest.createdAt ? ` · ${when(latest.createdAt)}` : ''}</span>`
+}
+
 function renderDashboard() {
   const a = dash.account
   if (!a) {
     $('dashboard').innerHTML = `
       <div class="insights">
         <div class="insights-hero">
-          <h1>Dashboard</h1>
-          <p class="lede">Credits and revenue across every project.</p>
+          <div>
+            <h1>Dashboard</h1>
+            <p class="lede">Credits and revenue across every project.</p>
+          </div>
+          <button type="button" class="primary" id="sync-now">Refresh now</button>
         </div>
-        ${emptyPanel('Nothing synced yet', 'Run <code>node shared/cloud.mjs account</code> on the Mac (also runs after every <code>push</code>).')}
+        ${emptyPanel('Nothing synced yet', 'Press <strong>Refresh now</strong> (cloud sync job) or wait for the 4-hour schedule. The Mac can still run <code>node shared/cloud.mjs account</code>.')}
       </div>`
+    $('sync-now').onclick = () => requestSync()
     return
   }
   const calls = [
@@ -720,15 +810,15 @@ function renderDashboard() {
       ? `<div class="stat">${idr(mid.grossIdr)} <span>${mid.paidCount ?? 0} paid · ${mid.periodDays}d</span></div>
          ${breakdownList((mid.byProduct ?? []).map((p) => ({ label: p.name || p.slug, value: `${idr(p.grossIdr)} · ${p.count}` })))}
          <p class="note">Dahlunas production orders (Midtrans). ${asOfChip(mid.checkedAt, mid.checkedBy)}</p>`
-      : emptyPanel('Midtrans not synced', 'Run <code>node shared/cloud.mjs account</code> with gcloud access to Firestore project <code>dah-lunas</code>.')
+      : emptyPanel('Midtrans not synced', 'Cloud sync needs datastore.viewer on <code>dah-lunas</code> for the sync job SA. Or run <code>account</code> on the Mac.')
 
   const admobBody = admob?.error
-    ? emptyPanel('AdMob unavailable', `${esc(admob.error)} Try <code>node shared/cloud.mjs admob-login</code> then <code>account</code> again.`)
+    ? emptyPanel('AdMob unavailable', `${esc(admob.error)} Seed AdMob secrets via <code>cloud/build.sh</code> after <code>admob-login</code>, then Refresh.`)
     : admob?.earningsMicros != null
       ? `<div class="stat">${microsToMoney(admob.earningsMicros, admob.currency)} <span>est. · ${admob.periodDays}d</span></div>
          ${breakdownList((admob.byApp ?? []).map((p) => ({ label: p.name || p.appId, value: microsToMoney(p.earningsMicros, admob.currency) })))}
          <p class="note">AdMob network report. ${asOfChip(admob.checkedAt, admob.checkedBy)}</p>`
-      : emptyPanel('AdMob not connected', 'Set <code>ADMOB_PUBLISHER_ID</code>, run <code>node shared/cloud.mjs admob-login</code>, then <code>account</code>.')
+      : emptyPanel('AdMob not connected', 'Run <code>node shared/cloud.mjs admob-login</code> on the Mac once, then <code>cloud/build.sh</code> to seed secrets.')
 
   const storeCard = (title, snap, setup) => {
     if (snap?.error) return `<article class="metric-card"><div class="bar"><strong>${esc(title)}</strong></div>${emptyPanel('Unavailable', esc(snap.error))}</article>`
@@ -755,8 +845,9 @@ function renderDashboard() {
       <div class="insights-hero">
         <div>
           <h1>Dashboard</h1>
-          <p class="lede">Credits left and revenue across projects. Refresh with <code>node shared/cloud.mjs account</code>.</p>
+          <p class="lede">Credits and revenue. Cloud sync every 4 hours — or Refresh now. Connection health lives under Services.</p>
         </div>
+        <div class="hero-actions">${syncChip()}<button type="button" class="primary" id="sync-now">Refresh now</button></div>
       </div>
       <div class="glance">
         ${glance.map((g) => `<div class="glance-card">
@@ -774,13 +865,13 @@ function renderDashboard() {
             <div class="stat">${creditsLeft} <span>credits left</span></div>
             <div class="meter" role="img" aria-label="${num(a.used)} of ${num(a.limit)} used"><i style="width:${usedPct}%"></i></div>
             <p class="note">${num(a.used)} of ${num(a.limit)} used · resets ${resets ? resets.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · ${esc(a.tier)} plan</p>
-            ${isStale(a.checkedAt) ? '<p class="note">Over a day old: <code>node shared/cloud.mjs account</code> refreshes it.</p>' : ''}
+            ${isStale(a.checkedAt) ? '<p class="note">Over a day old — press Refresh now.</p>' : ''}
           </article>
           <article class="metric-card">
             <div class="bar"><strong>fal.ai</strong>${a.falCheckedAt ? asOfChip(a.falCheckedAt, a.falCheckedBy) : ''}</div>
             ${a.falBalance != null
               ? `<div class="stat">${usd(a.falBalance)} <span>${esc(a.falCurrency ?? 'USD')} left</span></div><p class="note">Prepaid balance.</p>`
-              : emptyPanel('Not pushed', 'The fal key needs the admin scope, then run <code>account</code>.')}
+              : emptyPanel('Not synced', 'The fal key needs the admin scope in Secret Manager, then Refresh.')}
           </article>
         </div>
         <div class="section-head" style="margin-top:20px"><h2>Spending</h2><p class="note">paid ElevenLabs calls</p></div>
@@ -810,11 +901,56 @@ function renderDashboard() {
             <div class="bar"><strong>AdMob</strong>${admob?.checkedAt ? asOfChip(admob.checkedAt, admob.checkedBy) : ''}</div>
             ${admobBody}
           </article>
-          ${storeCard('App Store', appStore, 'Set <code>ASC_ISSUER_ID</code>, <code>ASC_KEY_ID</code>, <code>ASC_PRIVATE_KEY_PATH</code> and optional <code>ASC_APP_IDS</code>, then run <code>account</code>.')}
-          ${storeCard('Play Store', playStore, 'Set <code>PLAY_SERVICE_ACCOUNT_JSON</code> and <code>PLAY_PACKAGE_NAMES</code>, then run <code>account</code>.')}
+          ${storeCard('App Store', appStore, 'Seed ASC secrets via <code>cloud/build.sh</code> (from .env), then Refresh.')}
+          ${storeCard('Play Store', playStore, 'Seed Play secrets via <code>cloud/build.sh</code>, then Refresh.')}
         </div>
       </section>
     </div>`
+  $('sync-now').onclick = () => requestSync()
+}
+
+function renderServices() {
+  const rows = [...dash.services].sort((a, b) => {
+    const kind = String(a.kind).localeCompare(String(b.kind))
+    return kind || String(a.name).localeCompare(String(b.name))
+  })
+  const byKind = {}
+  for (const row of rows) {
+    const k = row.kind || 'other'
+    ;(byKind[k] ??= []).push(row)
+  }
+  const labels = { vendor: 'Vendors', firebase: 'GCP / Firebase', github: 'GitHub', hosting: 'Hosting', other: 'Other' }
+  const statusChip = (s) => {
+    const cls = s === 'ok' ? 'ok' : s === 'warn' || s === 'missing' ? 'warn' : s === 'error' ? 'warn' : ''
+    return `<span class="chip ${cls}">${esc(s || '—')}</span>`
+  }
+  $('services').innerHTML = `
+    <div class="insights">
+      <div class="insights-hero">
+        <div>
+          <h1>Services</h1>
+          <p class="lede">Connection health for marketing, money and ops. Secrets show age only — never values.</p>
+        </div>
+        <div class="hero-actions">${syncChip()}<button type="button" class="primary" id="sync-now-services">Refresh now</button></div>
+      </div>
+      ${rows.length ? Object.entries(labels).filter(([k]) => byKind[k]?.length).map(([kind, label]) => `
+        <section>
+          <div class="section-head"><h2>${esc(label)}</h2><p class="note">${byKind[kind].length}</p></div>
+          <div class="services-grid">
+            ${byKind[kind].map((s) => `
+              <article class="metric-card service-card">
+                <div class="bar"><strong>${esc(s.name)}</strong>${statusChip(s.status)}</div>
+                <p class="note">${esc(s.notes || '')}</p>
+                <div class="bar">
+                  ${s.checkedAt ? asOfChip(s.checkedAt) : ''}
+                  ${s.url ? `<a class="chip" href="${esc(s.url)}" target="_blank" rel="noreferrer">Open</a>` : ''}
+                </div>
+              </article>`).join('')}
+          </div>
+        </section>`).join('') : emptyPanel('Nothing synced yet', 'Press Refresh now to run the cloud sync job, or wait for the schedule.')}
+    </div>`
+  const btn = $('sync-now-services')
+  if (btn) btn.onclick = () => requestSync()
 }
 
 // AI: a chat about the project, captions and video lines. Answers are drafts:

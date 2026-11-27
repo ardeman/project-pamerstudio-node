@@ -20,6 +20,9 @@ const clientSecret = () => envGet('ADMOB_OAUTH_CLIENT_SECRET')
 const publisherId = () => envGet('ADMOB_PUBLISHER_ID') // pub-…
 
 function loadToken() {
+  // Cloud sync mounts the refresh token as ADMOB_REFRESH_TOKEN (Secret Manager).
+  const fromEnv = envGet('ADMOB_REFRESH_TOKEN')
+  if (fromEnv) return { refresh_token: fromEnv }
   if (!existsSync(TOKEN_FILE)) return null
   return JSON.parse(readFileSync(TOKEN_FILE, 'utf8'))
 }
@@ -131,15 +134,15 @@ function dayParts(date) {
 }
 
 /**
+ * @param {string} [checkedBy]
  * @returns {{ earningsMicros: number, currency: string, byApp: object[], periodDays: number, checkedAt: Date, checkedBy: string }
  *   | { error: string, checkedAt: Date, checkedBy: string }}
  */
-export async function admobRevenue() {
+export async function admobRevenue(checkedBy = 'Mac') {
   const checkedAt = new Date()
-  const checkedBy = 'Mac'
   const pub = publisherId()
   if (!pub) {
-    return { error: 'ADMOB_PUBLISHER_ID missing from .env', checkedAt, checkedBy }
+    return { error: 'ADMOB_PUBLISHER_ID missing from .env / secrets', checkedAt, checkedBy }
   }
   try {
     const access = await accessToken()

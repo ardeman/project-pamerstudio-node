@@ -1,18 +1,11 @@
-// Puts each project's marketing plan and finished media on Pamer Studio
-// (https://pamer-studio.web.app), and brings plan edits made there back. Usage:
-//   node shared/cloud.mjs push [project...] [--dry-run] [--force]
+// Mac mirror of Pamer Studio (https://pamer-studio.web.app). Firestore is the
+// source of truth; pull before editing plans on the Mac. Day-to-day Dashboard
+// freshness is the cloud sync job — `account` here is optional. Usage:
 //   node shared/cloud.mjs pull [project...] [--force]
-//   node shared/cloud.mjs account        Dashboard: credits + revenue snapshots
-//   node shared/cloud.mjs admob-login    one-time AdMob OAuth (refresh token in .secrets/)
-// It signs in as the gcloud account (`gcloud auth login`), so no key is stored.
-// Media uploads only what changed (by MD5) and deletes cloud files that are gone
-// here, so Storage holds only what out/ has. A plan edited on the web is never overwritten without --force.
-// A project with a posting calendar (calendar.json and scripts/posting.mjs) also
-// gets its posts, one document each; pull brings back what was marked posted
-// or approved on the web. A post marked posted here stays posted.
-// Firestore holds the plans: marketing-plan.md is a local copy that git ignores,
-// written by pull (also when it's missing). A plan that a push or a web save
-// replaces is kept in projects/<id>/versions, in place of git's history.
+//   node shared/cloud.mjs push [project...] [--dry-run] [--force]
+//   node shared/cloud.mjs account        optional: credits + revenue + Services
+//   node shared/cloud.mjs admob-login    one-time AdMob OAuth (.secrets/)
+// Signs in as the gcloud account (`gcloud auth login`); no key stored.
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
@@ -20,11 +13,9 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { relative } from 'node:path'
 
 import { cloudActions } from '../cloud/actions.mjs'
-import { admobLoginFlow, admobRevenue } from './admob.mjs'
-import { subscription, usage } from './eleven.mjs'
-import { balance as falBalance } from './fal.mjs'
-import { midtransRevenue } from './midtrans-revenue.mjs'
-import { appStoreRevenue, playStoreRevenue } from './store-revenue.mjs'
+import { buildAccountSnapshot } from './account.mjs'
+import { admobLoginFlow } from './admob.mjs'
+import { buildServicesCatalog, checkHosting } from './services.mjs'
 
 const ROOT = new URL('../', import.meta.url).pathname
 const PROJECT = 'pamer-studio'
@@ -288,50 +279,26 @@ async function pullPlan(id) {
   console.log(`${id}: pulled the web's plan into ${id}/${PLAN}`)
 }
 
-// Credits + revenue snapshots for the Dashboard. The page can't hold vendor
-// keys, so the Mac reads them (mostly free) on every push / account.
+// Credits + revenue + Services catalog. Prefer the cloud sync job for day-to-day
+// freshness; the Mac still can push the same snapshot.
 async function pushAccount() {
-  let account
-  try {
-    account = await subscription()
-  } catch (error) {
-    return console.log(`credits: ${error.message}`)
+  const { fields, log } = await buildAccountSnapshot('Mac')
+  for (const line of log) console.log(`${line}${dryRun ? ' (not pushed)' : ''}`)
+  if (!fields.limit && !fields.falBalance && !fields.midtrans) {
+    // subscription failed hard with nothing else useful — still write revenue if any
   }
-  const fields = { ...account, resetsAt: new Date(account.resetsAt), checkedAt: new Date(), checkedBy: 'Mac', usage: usage().slice(-200) }
-  console.log(`credits: ${account.limit - account.used} of ${account.limit} left, ${fields.usage.length} paid calls${dryRun ? ' (not pushed)' : ''}`)
-  try {
-    const fal = await falBalance()
-    Object.assign(fields, { falBalance: fal.balance, falCurrency: fal.currency, falCheckedAt: new Date(), falCheckedBy: 'Mac' })
-    console.log(`fal.ai: $${fal.balance.toFixed(2)} left`)
-  } catch (error) {
-    console.log(error.message)
-  }
-
-  const midtrans = await midtransRevenue()
-  fields.midtrans = midtrans
-  if (midtrans.error) console.log(`midtrans: ${midtrans.error}`)
-  else console.log(`midtrans: Rp ${midtrans.grossIdr.toLocaleString('id-ID')} · ${midtrans.paidCount} paid (${midtrans.periodDays}d)`)
-
-  const admob = await admobRevenue()
-  fields.admob = admob
-  if (admob.error) console.log(`admob: ${admob.error}`)
-  else console.log(`admob: $${(admob.earningsMicros / 1e6).toFixed(2)} est. (${admob.periodDays}d)`)
-
-  const appStore = await appStoreRevenue()
-  fields.appStore = appStore
-  if (appStore.error) console.log(`app store: ${appStore.error}`)
-  else if (appStore.proceeds != null) console.log(`app store: $${appStore.proceeds.toFixed(2)} (${appStore.periodDays}d)`)
-  else console.log(`app store: ${appStore.note || appStore.reason || 'ok'}`)
-
-  const playStore = await playStoreRevenue()
-  fields.playStore = playStore
-  if (playStore.error) console.log(`play store: ${playStore.error}`)
-  else if (playStore.earnings != null) console.log(`play store: $${playStore.earnings.toFixed(2)} (${playStore.periodDays}d)`)
-  else console.log(`play store: ${playStore.note || playStore.reason || 'ok'}`)
-
   if (dryRun) return
   const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join('&')
   await call(`${DOCS}/dashboard/account?${mask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(fields) }) })
+
+  const hosting = await checkHosting()
+  const catalog = buildServicesCatalog(fields, { hosting, sync: { status: 'ok', notes: 'Last push from Mac' } })
+  for (const row of catalog) {
+    const { id, ...rest } = row
+    const rowMask = Object.keys(rest).map((k) => `updateMask.fieldPaths=${k}`).join('&')
+    await call(`${DOCS}/services/${id}?${rowMask}`, { method: 'PATCH', body: JSON.stringify({ fields: toFields(rest) }) })
+  }
+  console.log(`services: ${catalog.length} rows updated`)
 }
 
 if (command === 'push') {

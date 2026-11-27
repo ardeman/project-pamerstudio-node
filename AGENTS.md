@@ -2,12 +2,20 @@
 
 Instructions for AI agents working in this folder. `README.md` has the setup, layout and commands; this file does not repeat them.
 
+## Cloud-first
+
+- Firestore + Storage are the system of record. The Mac CLI/`npm run studio` are optional workers for captures, App Store bezels, the screenshot editor, install-into-app-repo, and offline dry-runs.
+- Prefer `node shared/cloud.mjs pull` before reading or editing a plan on the Mac. Local `marketing-plan.md`, `calendar.json` and `out/` are mirrors/exports, not the upstream.
+- Dashboard freshness comes from the Cloud Run Job `sync` (schedule + web **Refresh now**). Don't treat a Mac `account` push as required day-to-day.
+- Don't approve a cloud render or a priced sync yourself. Don't pass `--force` on paid buys without the user's go-ahead.
+- Ask before `cloud/build.sh`, seeding or rotating Secret Manager secrets, a large `cloud/inputs.mjs push`, a media `push`, or a `deploy` (including a git push to `main` that changes `web/`).
+
 ## Credits and the account
 
 - ElevenLabs is paid per character and per second of music. Don't make calls that cost credits (voice, music, speech to text) without the user's go-ahead for that render. Listing voices, models and the subscription is free.
 - Before asking, say what it will cost: run the render with `--dry-run` (free) and give its list and total against the credits left. Don't pass `--force` without the user's go-ahead.
 - A cloud render from the web page's Render tab is priced first; pressing Approve there is the user's go-ahead for that render. Don't approve a request yourself, and don't let the job pass `--force`.
-- Iterate on layout with `--stills --silent`, which makes no calls, and look at the stills before rendering a video.
+- Iterate on layout with `--stills --silent`, which makes no calls, and look at the stills before rendering a video. Cloud renders also promote stills into Media for remote QA.
 - Adding a voice from the voice library to the account, or changing the account in any other way, needs the user's approval too.
 - fal.ai (pictures and videos, through `shared/fal.mjs`) is paid per picture or second of video from a prepaid balance. The same rules apply: run `--dry-run` for the price, and ask before a new or changed prompt. Never call it from a project directly, and don't delete `art/`.
 
@@ -31,7 +39,7 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 
 ## Look at the result
 
-- Look at the stills (`out/stills/`, `out/stories/stills/`) for every format you changed, in both languages: text must not run into phones or cards, and nothing may be cut off.
+- Look at the stills (`out/stills/`, `out/stories/stills/`, or Media on the web after a cloud render) for every format you changed, in both languages: text must not run into phones or cards, and nothing may be cut off.
 - Watch the finished video (or a contact sheet of frames) before saying it's done.
 
 ## Conventions
@@ -39,11 +47,10 @@ Instructions for AI agents working in this folder. `README.md` has the setup, la
 - Scripts are Node ES modules (`.mjs`) with no dependencies beyond Playwright (linked from the app repo) and ffmpeg. Keep comments short and about why. Coba Lagi's renders are bash with headless Chrome and ffmpeg, run through `render.mjs`.
 - One folder per project; helpers more than one project can use go in `shared/`.
 - Marketing agent skills live in `.agents/skills/` here (canonical). Reuse them from every app: symlink `~/.cursor/skills/<name>` and each app's `.agents/skills/<name>` / `.cursor/skills/<name>` to this folder — do not copy the skill into app repos.
-- Store screenshots: skill `app-store-screenshots`; one shared editor at `store-screenshots/` (peer of `web/`), not under each app. Scaffold and edit there; never inside an app repo.
+- Store screenshots: skill `app-store-screenshots`; one shared editor at `store-screenshots/` (peer of `web/`), not under each app. Scaffold and edit there; never inside an app repo. Editing stays Mac-local (`npm run studio`).
 - The app repo stays clean: no media, keys or promo scripts go into it.
-- Marketing plans live in Firestore and can be edited on the web; `marketing-plan.md` is a local copy git ignores. Run `node shared/cloud.mjs pull` before reading or changing it (it writes a missing one), and `push` after; there's nothing to commit. Ask before a push that uploads media (it adds to Storage costs) or a `deploy`. A git push to `main` that changes `web/` deploys it through GitHub Actions, so it counts as a `deploy`.
-- Never write the API key anywhere but `.env`, and never print it. The cloud render job reads the keys from Secret Manager (`elevenlabs-api-key` and `fal-api-key`, made from `.env` by `cloud/build.sh`, given to the job only); never put a key in the image, an environment variable or Firestore.
-- `cloud/build.sh` changes the cloud (image, job, trigger, secret): ask before running it, like a `deploy`. `node cloud/inputs.mjs push` adds to Storage costs: run it with `--dry-run` first and ask before a large upload.
+- Never write API keys anywhere but `.env` / Secret Manager, and never print them. Cloud jobs read secrets mounted as env (`elevenlabs-api-key`, `fal-api-key`, AdMob / ASC / Play secrets seeded by `cloud/build.sh`); never put a key in the image or Firestore.
+- Services tab shows secret *age/status* only — never values.
 
 ## AI on the web
 

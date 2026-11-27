@@ -1,5 +1,6 @@
 rules_version = '2';
-// Only the owner's Google account; shared/cloud.mjs writes with gcloud, past these rules.
+// Only the owner's Google account; shared/cloud.mjs and cloud jobs write with
+// service accounts / gcloud, past these rules.
 service cloud.firestore {
   match /databases/{database}/documents {
     function owner() {
@@ -19,9 +20,20 @@ service cloud.firestore {
     match /projects/{id}/versions/{version} {
       allow read, create: if owner();
     }
-    // The credits and paid calls (shared/cloud.mjs, cloud/render.mjs): read only.
+    // Credits / revenue (cloud/sync.mjs, shared/cloud.mjs, cloud/render.mjs): read only.
     match /dashboard/{id} {
       allow read: if owner();
+    }
+    // Services catalog (cloud/sync.mjs): read only.
+    match /services/{id} {
+      allow read: if owner();
+    }
+    // On-demand Dashboard refresh (cloud/sync.mjs): page creates requested only.
+    match /syncs/{id} {
+      allow read: if owner();
+      allow create: if owner()
+        && request.resource.data.keys().hasOnly(['status', 'createdAt'])
+        && request.resource.data.status == 'requested';
     }
     // Render requests (cloud/render.mjs): the page asks and approves a price;
     // only the job (past these rules) sets the rest.
